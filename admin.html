@@ -7,90 +7,524 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Nunito:wght@400;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
     <style>
-      .admin { width: min(1100px, calc(100% - 24px)); margin: 24px auto 48px; }
-      .admin-help { color: #7a5a8a; margin-bottom: 16px; }
-      .login-box { max-width: 420px; margin: 48px auto; background: #fff; border: 2px solid #ffd6ec; border-radius: 22px; padding: 24px; display: grid; gap: 12px; }
-      .product-admin { display: grid; gap: 12px; margin-bottom: 28px; }
-      .product-admin-row, .offer-row { display: grid; grid-template-columns: 84px 1fr; gap: 12px; background: #fff; border: 1px solid #ffd6ec; border-radius: 14px; padding: 10px; align-items: start; }
-      .product-admin-row img, .offer-row img { width: 84px; height: 72px; object-fit: contain; background: #fff6fb; border-radius: 8px; }
+      body.admin-app { min-height: 100vh; }
+      .admin-top .header-inner { width: min(1240px, calc(100% - 28px)); }
+      .admin-brand { display: flex; align-items: center; gap: 10px; }
+      .admin-badge {
+        background: #ffe6f4;
+        color: #e2187a;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 4px 10px;
+        border-radius: 999px;
+      }
+      .admin-nav-links { display: flex; gap: 10px; align-items: center; }
+      .admin-nav-links a {
+        color: var(--muted);
+        font-weight: 700;
+        font-size: 0.92rem;
+      }
+      .logout-btn {
+        background: #fff;
+        color: #e2187a;
+        border: 1.5px solid #ffb3d9;
+        box-shadow: none;
+        padding: 8px 16px;
+      }
+      .login-screen {
+        min-height: calc(100vh - 72px);
+        display: grid;
+        place-items: center;
+        padding: 32px 16px;
+      }
+      .login-card {
+        width: min(440px, 100%);
+        background: #fff;
+        border: 1px solid #ffd6ec;
+        border-radius: 28px;
+        padding: 36px 32px;
+        box-shadow: 0 24px 50px rgba(226, 24, 122, 0.12);
+        display: grid;
+        gap: 14px;
+      }
+      .login-mark {
+        width: 56px;
+        height: 56px;
+        border-radius: 18px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #ff4fa3, #ff7a45);
+        color: #fff;
+        font-size: 1.4rem;
+        font-weight: 800;
+      }
+      .login-card h1 { font-size: 1.8rem; }
+      .login-card p { color: var(--muted); }
+      .login-error { color: #e2187a; min-height: 1.2em; font-weight: 700; }
+      .admin-shell {
+        width: min(1240px, calc(100% - 28px));
+        margin: 24px auto 56px;
+        display: grid;
+        gap: 20px;
+      }
+      .admin-sidebar {
+        background: #fff;
+        border: 1px solid #ffd6ec;
+        border-radius: 22px;
+        padding: 12px;
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+      }
+      .admin-nav-btn {
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        font: inherit;
+        font-weight: 800;
+        padding: 12px 16px;
+        border-radius: 14px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .admin-nav-btn.is-active {
+        background: linear-gradient(90deg, #ff4fa3, #ff7a45);
+        color: #fff;
+      }
+      .admin-page { display: none; }
+      .admin-page.is-active { display: grid; gap: 18px; }
+      .page-head h2 { font-size: 1.7rem; margin-bottom: 4px; }
+      .page-head p { color: var(--muted); }
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+      .stat-card {
+        background: #fff;
+        border: 1px solid #ffd6ec;
+        border-radius: 20px;
+        padding: 18px;
+      }
+      .stat-card span { color: var(--muted); font-size: 0.85rem; font-weight: 700; }
+      .stat-card strong { display: block; font-size: 1.7rem; margin-top: 6px; }
+      .stat-card:nth-child(1) { background: #fff7fb; }
+      .stat-card:nth-child(2) { background: #f3fffe; }
+      .stat-card:nth-child(3) { background: #fffbeb; }
+      .stat-card:nth-child(4) { background: #f8f3ff; }
+      .panel {
+        background: #fff;
+        border: 1px solid #ffd6ec;
+        border-radius: 22px;
+        padding: 20px;
+      }
+      .panel h3 { margin-bottom: 12px; font-size: 1.1rem; }
+      .mode-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #e8fff4;
+        color: #187a45;
+        font-size: 0.82rem;
+        font-weight: 800;
+        padding: 8px 12px;
+        border-radius: 999px;
+      }
+      .mode-pill.is-local { background: #fff4e5; color: #b86a00; }
+      .add-grid, .pass-grid {
+        display: grid;
+        gap: 12px;
+      }
+      .repeat-row {
+        display: grid;
+        gap: 8px;
+        background: #fffafd;
+        border: 1px solid #ffd6ec;
+        border-radius: 16px;
+        padding: 12px;
+        margin-bottom: 10px;
+      }
+      .site-grid { display: grid; gap: 12px; }
+      .logo-preview { width: 72px; height: 48px; object-fit: contain; background: #fff; border-radius: 10px; border: 1px solid #ffe3f2; }
+      .add-desc textarea, .product-fields textarea {
+        width: 100%;
+        min-height: 84px;
+        resize: vertical;
+      }
+      #addNote { grid-column: 1 / -1; }
+      .product-admin {
+        display: grid;
+        gap: 14px;
+      }
+      .product-admin-row, .offer-row {
+        display: grid;
+        grid-template-columns: 110px 1fr;
+        gap: 16px;
+        background: #fffafd;
+        border: 1px solid #ffd6ec;
+        border-radius: 18px;
+        padding: 14px;
+        align-items: start;
+      }
+      .product-admin-row img, .offer-row img {
+        width: 110px;
+        height: 96px;
+        object-fit: contain;
+        background: #fff;
+        border: 1px solid #ffe3f2;
+        border-radius: 14px;
+      }
+      .code-pill {
+        display: inline-block;
+        background: #ffe6f4;
+        color: #e2187a;
+        font-weight: 800;
+        font-size: 0.82rem;
+        padding: 3px 9px;
+        border-radius: 999px;
+        margin-bottom: 8px;
+      }
       .offer-fields, .product-fields { display: grid; gap: 8px; }
-      .row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-      .save-note { margin: 8px 0 24px; color: #1f8a3c; font-weight: 700; }
+      .row-actions, .panel-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+      .save-note { min-height: 1.2em; color: #187a45; font-weight: 700; }
+      .save-note.is-error { color: #e2187a; }
       .order-table { width: 100%; background: white; }
+      .order-table th, .order-table td { padding: 12px 10px; }
       .code-cell { font-weight: 800; color: #e2187a; }
-      .empty { padding: 28px; text-align: center; color: #7a5a8a; }
-      .add-box { background: #fff; border: 2px dashed #ff4fa3; border-radius: 16px; padding: 16px; display: grid; gap: 10px; margin-bottom: 16px; }
-      .danger { background: #fff; color: #e2187a; border: 1px solid #e2187a; }
+      .empty {
+        padding: 36px 16px;
+        text-align: center;
+        color: var(--muted);
+        background: #fffafd;
+        border-radius: 16px;
+      }
+      .danger {
+        background: #fff;
+        color: #e2187a;
+        border: 1.5px solid #e2187a;
+        box-shadow: none;
+        padding: 10px 16px;
+      }
+      .soft-btn {
+        background: #fff;
+        color: var(--ink);
+        border: 1.5px solid #ffd6ec;
+        box-shadow: none;
+        padding: 10px 16px;
+      }
+      .search-box { max-width: 280px; }
+      .recent-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid #ffd6ec;
+        font-size: 0.92rem;
+      }
+      .recent-item:last-child { border-bottom: 0; }
+      @media (min-width: 980px) {
+        .admin-shell { grid-template-columns: 230px 1fr; align-items: start; }
+        .admin-sidebar {
+          position: sticky;
+          top: 88px;
+          flex-direction: column;
+          overflow: visible;
+          padding: 16px;
+        }
+        .stat-grid { grid-template-columns: repeat(4, 1fr); }
+        .add-grid { grid-template-columns: 1.1fr 1.4fr 120px 90px; align-items: end; }
+        .product-admin { grid-template-columns: 1fr 1fr; }
+        .site-grid { grid-template-columns: 1fr 1fr; }
+      }
     </style>
   </head>
-  <body>
-    <header class="site-header">
+  <body class="admin-app">
+    <header class="site-header admin-top">
       <div class="header-inner">
-        <a class="logo" href="index.html">Jarnaz <em>Gallery</em></a>
-        <nav class="site-nav">
-          <a href="index.html">হোম</a>
-          <button class="nav-cta" type="button" id="logoutBtn">লগআউট</button>
+        <div class="admin-brand">
+          <a class="logo" href="index.html" id="adminBrand">Jarnaz <em>Gallery</em></a>
+          <span class="admin-badge">Admin</span>
+        </div>
+        <nav class="admin-nav-links">
+          <a href="index.html">ওয়েবসাইট দেখুন</a>
+          <button class="btn logout-btn is-hidden" type="button" id="logoutBtn">লগআউট</button>
         </nav>
       </div>
     </header>
 
-    <div class="admin" id="loginView">
-      <form class="login-box" id="loginForm">
-        <p class="eyebrow">Admin</p>
-        <h2>লগইন করুন</h2>
+    <div class="login-screen" id="loginView">
+      <form class="login-card" id="loginForm">
+        <div class="login-mark">JG</div>
+        <p class="eyebrow">Admin Panel</p>
+        <h1>লগইন করুন</h1>
+        <p>প্রোডাক্ট, অফার ও অর্ডার ম্যানেজ করতে পাসওয়ার্ড দিন।</p>
         <label>পাসওয়ার্ড
-          <input type="password" name="password" required placeholder="পাসওয়ার্ড" />
+          <input type="password" name="password" required placeholder="অ্যাডমিন পাসওয়ার্ড" />
         </label>
         <button class="btn btn-dark" type="submit">প্রবেশ করুন</button>
-        <p class="admin-help" id="loginError"></p>
+        <p class="login-error" id="loginError"></p>
       </form>
     </div>
 
-    <div class="admin is-hidden" id="dashView">
-      <div class="section-head">
-        <p class="eyebrow">Admin</p>
-        <h2>ড্যাশবোর্ড</h2>
+    <div class="admin-shell is-hidden" id="dashView">
+      <aside class="admin-sidebar" id="adminNav">
+        <button class="admin-nav-btn is-active" type="button" data-tab="overview">ড্যাশবোর্ড</button>
+        <button class="admin-nav-btn" type="button" data-tab="products">প্রোডাক্ট</button>
+        <button class="admin-nav-btn" type="button" data-tab="offers">কম্বো অফার</button>
+        <button class="admin-nav-btn" type="button" data-tab="orders">অর্ডার</button>
+        <button class="admin-nav-btn" type="button" data-tab="website">ওয়েবসাইট</button>
+        <button class="admin-nav-btn" type="button" data-tab="settings">সেটিংস</button>
+      </aside>
+
+      <div class="admin-main">
+        <section class="admin-page is-active" id="tab-overview">
+          <div class="page-head">
+            <h2>ড্যাশবোর্ড</h2>
+            <p>আজকের কালেকশন ও অর্ডার এক নজরে।</p>
+          </div>
+          <div class="stat-grid">
+            <article class="stat-card"><span>প্রোডাক্ট</span><strong id="statProducts">0</strong></article>
+            <article class="stat-card"><span>অর্ডার</span><strong id="statOrders">0</strong></article>
+            <article class="stat-card"><span>অফার</span><strong id="statOffers">0</strong></article>
+            <article class="stat-card"><span>মোট সেল</span><strong id="statRevenue">৳০</strong></article>
+          </div>
+          <div class="panel">
+            <h3>সাম্প্রতিক অর্ডার</h3>
+            <div id="recentOrders"></div>
+          </div>
+        </section>
+
+        <section class="admin-page" id="tab-products">
+          <div class="page-head">
+            <h2>প্রোডাক্ট</h2>
+            <p>ছবি, নাম, দাম, পিস ও বিবরণ নিজেই যোগ-এডিট-ডিলিট করুন। সেভ করলে ওয়েবসাইটে চলে যাবে।</p>
+          </div>
+          <form class="panel add-form" id="addForm">
+            <div class="add-grid">
+              <label>ছবি <input type="file" name="image" accept="image/*" required /></label>
+              <label>নাম <input type="text" name="name" required placeholder="সেটের নাম" /></label>
+              <label>দাম (৳) <input type="number" name="price" required value="2040" min="1" /></label>
+              <label>পিস <input type="number" name="piece" required value="2" min="1" max="10" /></label>
+            </div>
+            <label class="add-desc">বিবরণ
+              <textarea name="description" rows="3" placeholder="কাপড়, কালার, কী কী আছে সেটের মধ্যে..."></textarea>
+            </label>
+            <button class="btn btn-dark" type="submit">প্রোডাক্ট যোগ করুন</button>
+            <p class="save-note" id="addNote"></p>
+          </form>
+          <div class="product-admin" id="productAdmin"></div>
+        </section>
+
+        <section class="admin-page" id="tab-offers">
+          <div class="page-head">
+            <h2>কম্বো অফার</h2>
+            <p>হোমপেজের উপরের স্লাইডারে ৪ থেকে ৫টা অফার থাকবে।</p>
+          </div>
+          <div class="panel">
+            <div id="offerEditor"></div>
+            <div class="panel-actions" style="margin-top: 16px;">
+              <button class="btn soft-btn" type="button" id="addOffer">আরেকটা অফার</button>
+              <button class="btn btn-dark" type="button" id="saveOffers">অফার সেভ করুন</button>
+            </div>
+            <p class="save-note" id="saveNote"></p>
+          </div>
+        </section>
+
+        <section class="admin-page" id="tab-orders">
+          <div class="page-head">
+            <h2>অর্ডার লিস্ট</h2>
+            <p id="modeNote">ফোন থেকে অর্ডার করলেও এখানে আসবে। প্রোডাক্ট নম্বর দেখে সেট চিনবেন।</p>
+            <span class="mode-pill" id="modePill">সার্ভার মোড</span>
+          </div>
+          <div class="panel">
+            <label>খুঁজুন
+              <input class="search-box" id="orderSearch" type="search" placeholder="নাম, মোবাইল বা SET নম্বর" />
+            </label>
+            <div id="list" style="margin-top: 16px;"></div>
+          </div>
+        </section>
+
+        <section class="admin-page" id="tab-website">
+          <div class="page-head">
+            <h2>ওয়েবসাইট এডিট</h2>
+            <p>হোমপেজের লেখা, লোগো, WhatsApp, রিভিউ — সব এখান থেকে বদলান। সেভ করলে ওয়েবসাইটে দেখাবে।</p>
+          </div>
+          <form class="panel" id="siteForm">
+            <h3>দোকানের তথ্য</h3>
+            <div class="site-grid">
+              <label>ব্র্যান্ড নাম <input name="brand" required /></label>
+              <label>ট্যাগলাইন <input name="tagline" /></label>
+              <label>WhatsApp (8801...) <input name="whatsapp" placeholder="88017XXXXXXXX" /></label>
+              <label>ফোন <input name="phone" placeholder="01XXXXXXXXX" /></label>
+              <label>Facebook লিংক <input name="facebook" placeholder="https://facebook.com/..." /></label>
+              <label>Instagram লিংক <input name="instagram" placeholder="https://instagram.com/..." /></label>
+              <label>লোকেশন <input name="location" /></label>
+              <label>ফুটার লেখা <input name="footerText" /></label>
+            </div>
+            <label>লোগো ছবি
+              <input type="file" name="logo" accept="image/*" />
+            </label>
+            <img class="logo-preview is-hidden" id="logoPreview" alt="লোগো" />
+            <label>সাইটের ছোট বিবরণ <textarea name="metaDescription" rows="2"></textarea></label>
+
+            <h3>হোমপেজ লেখা</h3>
+            <div class="site-grid">
+              <label>উপরের বার <input name="topbar" /></label>
+              <label>হিরো ছোট টাইটেল <input name="heroEyebrow" /></label>
+              <label>হিরো বড় টাইটেল <textarea name="heroTitle" rows="2"></textarea></label>
+              <label>হিরো নোট <input name="heroNote" /></label>
+              <label>মেনু: কালেকশন <input name="navCollection" /></label>
+              <label>মেনু: রিভিউ <input name="navReviews" /></label>
+              <label>মেনু: কিভাবে অর্ডার <input name="navHowto" /></label>
+              <label>মেনু: অর্ডার <input name="navOrder" /></label>
+              <label>কালেকশন টাইটেল <input name="collectionTitle" /></label>
+              <label>কালেকশন সাবটাইটেল <input name="collectionSubtitle" /></label>
+              <label>রিভিউ টাইটেল <input name="reviewsTitle" /></label>
+              <label>হাউ-টু টাইটেল <input name="howtoTitle" /></label>
+              <label>চেকআউট টাইটেল <input name="checkoutTitle" /></label>
+              <label>চেকআউট হিন্ট <input name="checkoutHint" /></label>
+              <label>পেমেন্ট নোট <input name="payNote" /></label>
+              <label>অর্ডার কনফার্ম লেখা <input name="confirmHelp" /></label>
+            </div>
+            <div class="site-grid">
+              <label>কালেকশন ইংরেজি <input name="collectionEyebrow" /></label>
+              <label>রিভিউ ইংরেজি <input name="reviewsEyebrow" /></label>
+              <label>হাউ-টু ইংরেজি <input name="howtoEyebrow" /></label>
+              <label>চেকআউট ইংরেজি <input name="checkoutEyebrow" /></label>
+            </div>
+
+            <h3>ট্রাস্ট বক্স</h3>
+            <div id="trustEditor"></div>
+            <button class="btn soft-btn" type="button" id="addTrust">আরেকটা বক্স</button>
+
+            <h3>কাস্টমার রিভিউ</h3>
+            <div id="reviewEditor"></div>
+            <button class="btn soft-btn" type="button" id="addReview">রিভিউ যোগ</button>
+
+            <h3>কিভাবে অর্ডার</h3>
+            <div id="howtoEditor"></div>
+            <button class="btn soft-btn" type="button" id="addHowto">ধাপ যোগ</button>
+
+            <div class="panel-actions" style="margin-top: 18px;">
+              <button class="btn btn-dark" type="submit">ওয়েবসাইট সেভ করুন</button>
+            </div>
+            <p class="save-note" id="siteNote"></p>
+          </form>
+        </section>
+
+        <section class="admin-page" id="tab-settings">
+          <div class="page-head">
+            <h2>সেটিংস</h2>
+            <p>অ্যাডমিন পাসওয়ার্ড পরিবর্তন করুন।</p>
+          </div>
+          <form class="panel pass-grid" id="passForm" style="max-width: 480px;">
+            <label>নতুন পাসওয়ার্ড <input type="password" name="password" required minlength="6" placeholder="কমপক্ষে ৬ অক্ষর" /></label>
+            <button class="btn btn-dark" type="submit">পাসওয়ার্ড সেভ</button>
+            <p class="save-note" id="passNote"></p>
+          </form>
+        </section>
       </div>
-
-      <h2 class="pink-title">নতুন প্রোডাক্ট</h2>
-      <form class="add-box" id="addForm">
-        <label>ছবি <input type="file" name="image" accept="image/*" required /></label>
-        <label>নাম <input type="text" name="name" required placeholder="সেটের নাম" /></label>
-        <label>দাম (৳) <input type="number" name="price" required value="2040" min="1" /></label>
-        <button class="btn btn-dark" type="submit">প্রোডাক্ট যোগ করুন</button>
-        <p class="save-note" id="addNote"></p>
-      </form>
-
-      <h2 class="pink-title">কালেকশন — নাম ও দাম</h2>
-      <div class="product-admin" id="productAdmin"></div>
-
-      <h2 class="pink-title">কম্বো অফার (৪–৫টা)</h2>
-      <p class="admin-help">হোমপেজের উপরের স্লাইডার।</p>
-      <div id="offerEditor"></div>
-      <button class="confirm-btn" type="button" id="saveOffers">অফার সেভ করুন</button>
-      <p class="save-note" id="saveNote"></p>
-
-      <h2 class="pink-title">অর্ডার লিস্ট</h2>
-      <p class="admin-help">ফোন থেকে অর্ডার করলেও এখানে আসবে। প্রোডাক্ট নম্বর দেখে সেট চিনবেন।</p>
-      <div id="list"></div>
-
-      <h2 class="pink-title">পাসওয়ার্ড বদলান</h2>
-      <form class="add-box" id="passForm">
-        <label>নতুন পাসওয়ার্ড <input type="password" name="password" required minlength="6" /></label>
-        <button class="btn btn-dark" type="submit">পাসওয়ার্ড সেভ</button>
-        <p class="save-note" id="passNote"></p>
-      </form>
     </div>
 
+    <script src="catalog.js?v=20260915d"></script>
     <script>
       const TOKEN_KEY = "jarnaz-admin-token";
-      let PRODUCTS = [];
       let offers = [];
+      let lastOrders = [];
+      let siteDraft = mergeSite();
+
+      function esc(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function fillWebsiteForm(site) {
+        siteDraft = mergeSite(site);
+        const form = document.getElementById("siteForm");
+        [
+          "brand", "tagline", "whatsapp", "phone", "facebook", "instagram", "location", "footerText",
+          "metaDescription", "topbar", "heroEyebrow", "heroTitle", "heroNote",
+          "navCollection", "navReviews", "navHowto", "navOrder",
+          "collectionEyebrow", "collectionTitle", "collectionSubtitle",
+          "reviewsEyebrow", "reviewsTitle", "howtoEyebrow", "howtoTitle",
+          "checkoutEyebrow", "checkoutTitle", "checkoutHint", "payNote", "confirmHelp",
+        ].forEach((key) => {
+          if (form.elements[key]) form.elements[key].value = siteDraft[key] || "";
+        });
+        const preview = document.getElementById("logoPreview");
+        if (siteDraft.logo) {
+          preview.src = siteDraft.logo;
+          preview.classList.remove("is-hidden");
+        } else {
+          preview.classList.add("is-hidden");
+        }
+        renderTrust();
+        renderReviews();
+        renderHowto();
+        applySite(siteDraft);
+      }
+
+      function readRepeat(selector, keys) {
+        return [...document.querySelectorAll(selector)]
+          .map((row) => {
+            const item = {};
+            keys.forEach((key) => {
+              const input = row.querySelector(`[data-k="${key}"]`);
+              item[key] = input ? String(input.value || "").trim() : "";
+            });
+            return item;
+          })
+          .filter((item) => keys.some((key) => item[key]));
+      }
+
+      function renderTrust() {
+        document.getElementById("trustEditor").innerHTML = siteDraft.trust
+          .map(
+            (item, i) => `
+            <div class="repeat-row">
+              <label>টাইটেল <input data-k="title" value="${esc(item.title)}" /></label>
+              <label>লেখা <input data-k="text" value="${esc(item.text)}" /></label>
+              ${siteDraft.trust.length > 2 ? `<button type="button" class="btn soft-btn" data-del-trust="${i}">বাদ</button>` : ""}
+            </div>`
+          )
+          .join("");
+      }
+
+      function renderReviews() {
+        document.getElementById("reviewEditor").innerHTML = siteDraft.reviews
+          .map(
+            (item, i) => `
+            <div class="repeat-row">
+              <label>রিভিউ <textarea data-k="text" rows="2">${esc(item.text)}</textarea></label>
+              <label>নাম <input data-k="name" value="${esc(item.name)}" /></label>
+              ${siteDraft.reviews.length > 1 ? `<button type="button" class="btn soft-btn" data-del-review="${i}">বাদ</button>` : ""}
+            </div>`
+          )
+          .join("");
+      }
+
+      function renderHowto() {
+        document.getElementById("howtoEditor").innerHTML = siteDraft.howto
+          .map(
+            (item, i) => `
+            <div class="repeat-row">
+              <label>ধাপের নাম <input data-k="title" value="${esc(item.title)}" /></label>
+              <label>লেখা <input data-k="text" value="${esc(item.text)}" /></label>
+              ${siteDraft.howto.length > 2 ? `<button type="button" class="btn soft-btn" data-del-howto="${i}">বাদ</button>` : ""}
+            </div>`
+          )
+          .join("");
+      }
 
       function token() {
         return localStorage.getItem(TOKEN_KEY) || "";
@@ -102,26 +536,65 @@
         return h;
       }
 
-      async function api(url, opts) {
-        const res = await fetch(url, opts);
-        const data = await res.json().catch(() => ({}));
-        if (res.status === 401) {
-          localStorage.removeItem(TOKEN_KEY);
-          showLogin();
-          throw new Error(data.error || "লগইন করুন");
+      function setModeNote() {
+        const note = document.getElementById("modeNote");
+        const pill = document.getElementById("modePill");
+        const local = API_MODE === "local";
+        if (note) {
+          note.textContent = local
+            ? "সার্ভার API নেই, এই ফোনে/কম্পিউটারে লোকাল অ্যাডমিন চালু। ফোন-কম্পিউটার একসাথে দেখতে api.php হোস্টিংয়ে আপলোড করুন।"
+            : "অর্ডার ও প্রোডাক্ট সার্ভারে সেভ হচ্ছে। ফোন থেকে অর্ডার করলেও এখানে আসবে।";
         }
-        if (!res.ok) throw new Error(data.error || "কাজ হয়নি");
-        return data;
+        if (pill) {
+          pill.textContent = local ? "লোকাল মোড" : "সার্ভার মোড";
+          pill.classList.toggle("is-local", local);
+        }
+      }
+
+      async function api(route, opts) {
+        const clean = String(route).replace(/^\/+/, "").replace(/^api\//, "");
+        try {
+          const result = await apiCall(clean, opts);
+          if (result.status === 401) {
+            localStorage.removeItem(TOKEN_KEY);
+            showLogin();
+            throw new Error((result.data && result.data.error) || "লগইন করুন");
+          }
+          if (!result.ok) throw new Error((result.data && result.data.error) || "কাজ হয়নি");
+          return result.data;
+        } catch (err) {
+          if (err.code === "NO_API") {
+            if (token() !== "local") {
+              localStorage.removeItem(TOKEN_KEY);
+              showLogin();
+              throw new Error("সার্ভার API পাওয়া যায়নি");
+            }
+            return handleLocalAdmin(clean, opts || {});
+          }
+          throw err;
+        }
       }
 
       function showLogin() {
         document.getElementById("loginView").classList.remove("is-hidden");
         document.getElementById("dashView").classList.add("is-hidden");
+        document.getElementById("logoutBtn").classList.add("is-hidden");
       }
 
       function showDash() {
         document.getElementById("loginView").classList.add("is-hidden");
         document.getElementById("dashView").classList.remove("is-hidden");
+        document.getElementById("logoutBtn").classList.remove("is-hidden");
+        setModeNote();
+      }
+
+      function switchTab(id) {
+        document.querySelectorAll(".admin-page").forEach((page) => {
+          page.classList.toggle("is-active", page.id === "tab-" + id);
+        });
+        document.querySelectorAll(".admin-nav-btn").forEach((btn) => {
+          btn.classList.toggle("is-active", btn.dataset.tab === id);
+        });
       }
 
       function findProduct(code) {
@@ -130,23 +603,54 @@
 
       function productOptions(selected) {
         return PRODUCTS.map(
-          (p) => `<option value="${p.code}" ${p.code === selected ? "selected" : ""}>${p.code} — ${p.name}</option>`
+          (p) => `<option value="${esc(p.code)}" ${p.code === selected ? "selected" : ""}>${esc(p.code)} — ${esc(p.name)}</option>`
         ).join("");
+      }
+
+      function renderStats() {
+        document.getElementById("statProducts").textContent = PRODUCTS.length;
+        document.getElementById("statOrders").textContent = lastOrders.length;
+        document.getElementById("statOffers").textContent = offers.length;
+        const revenue = lastOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+        document.getElementById("statRevenue").textContent = taka(revenue);
+      }
+
+      function renderRecent() {
+        const root = document.getElementById("recentOrders");
+        if (!lastOrders.length) {
+          root.innerHTML = '<p class="empty">এখনো কোনো অর্ডার নেই।</p>';
+          return;
+        }
+        root.innerHTML = lastOrders
+          .slice(0, 5)
+          .map(
+            (o) => `
+              <div class="recent-item">
+                <div>
+                  <strong class="code-cell">${esc(o.productCode)}</strong>
+                  <div>${esc(o.name)} · ${esc(o.phone)}</div>
+                </div>
+                <strong>${taka(o.total)}</strong>
+              </div>`
+          )
+          .join("");
       }
 
       function renderProducts() {
         document.getElementById("productAdmin").innerHTML = PRODUCTS.map(
           (p) => `
-            <div class="product-admin-row" data-code="${p.code}">
-              <img src="${p.image}" alt="${p.code}" />
+            <div class="product-admin-row" data-code="${esc(p.code)}">
+              <img src="${esc(p.image)}" alt="${esc(p.code)}" />
               <div class="product-fields">
-                <strong>${p.code}</strong>
-                <label>নাম <input data-edit="name" value="${p.name}" /></label>
-                <label>দাম <input type="number" data-edit="price" value="${p.price}" /></label>
+                <span class="code-pill">${esc(p.code)}</span>
+                <label>নাম <input data-edit="name" value="${esc(p.name)}" /></label>
+                <label>দাম (৳) <input type="number" data-edit="price" value="${esc(p.price)}" min="1" /></label>
+                <label>পিস <input type="number" data-edit="piece" value="${esc(p.piece || 2)}" min="1" max="10" /></label>
+                <label>বিবরণ <textarea data-edit="description" rows="3">${esc(p.description || "")}</textarea></label>
                 <label>নতুন ছবি <input type="file" data-edit="image" accept="image/*" /></label>
                 <div class="row-actions">
-                  <button class="btn btn-dark" type="button" data-save="${p.code}">সেভ</button>
-                  <button class="btn danger" type="button" data-del-product="${p.code}">ডিলিট</button>
+                  <button class="btn btn-dark" type="button" data-save="${esc(p.code)}">সেভ</button>
+                  <button class="btn danger" type="button" data-del-product="${esc(p.code)}">ডিলিট</button>
                 </div>
               </div>
             </div>
@@ -162,21 +666,19 @@
             if (!product) return "";
             return `
               <div class="offer-row" data-index="${i}">
-                <img src="${product.image}" alt="${offer.code}" />
+                <img src="${esc(product.image)}" alt="${esc(offer.code)}" />
                 <div class="offer-fields">
-                  <strong>অফার ${i + 1}</strong>
+                  <span class="code-pill">অফার ${i + 1}</span>
                   <label>প্রোডাক্ট <select data-field="code">${productOptions(offer.code)}</select></label>
-                  <label>টাইটেল <input data-field="title" value="${offer.title}" /></label>
-                  <label>দাম <input type="number" data-field="price" value="${offer.price}" /></label>
-                  ${offers.length > 4 ? `<button type="button" class="ghost-btn" data-remove="${i}">অফার বাদ</button>` : ""}
+                  <label>টাইটেল <input data-field="title" value="${esc(offer.title)}" /></label>
+                  <label>দাম <input type="number" data-field="price" value="${esc(offer.price)}" /></label>
+                  ${offers.length > 4 ? `<button type="button" class="btn soft-btn" data-remove="${i}">অফার বাদ</button>` : ""}
                 </div>
               </div>
             `;
           })
           .join("");
-        if (offers.length < 5 && PRODUCTS.length) {
-          editor.insertAdjacentHTML("beforeend", `<button type="button" class="ghost-btn" id="addOffer">আরেকটা অফার</button>`);
-        }
+        document.getElementById("addOffer").classList.toggle("is-hidden", offers.length >= 5 || !PRODUCTS.length);
       }
 
       function readOffers() {
@@ -188,9 +690,24 @@
         }));
       }
 
+      function filteredOrders() {
+        const q = (document.getElementById("orderSearch").value || "").trim().toLowerCase();
+        if (!q) return lastOrders;
+        return lastOrders.filter((o) =>
+          [o.productCode, o.name, o.phone, o.address, o.id, o.size]
+            .join(" ")
+            .toLowerCase()
+            .includes(q)
+        );
+      }
+
       function renderOrders(list) {
+        if (Array.isArray(list)) lastOrders = list;
+        renderStats();
+        renderRecent();
+        const rows = filteredOrders();
         const root = document.getElementById("list");
-        if (!list.length) {
+        if (!rows.length) {
           root.innerHTML = '<p class="empty">এখনো কোনো অর্ডার নেই।</p>';
           return;
         }
@@ -204,19 +721,19 @@
                 </tr>
               </thead>
               <tbody>
-                ${list
+                ${rows
                   .map(
                     (o) => `
                   <tr>
-                    <td class="code-cell">${o.productCode}</td>
-                    <td>${o.size}</td>
-                    <td>${o.qty}</td>
-                    <td>৳${Number(o.total).toLocaleString("bn-BD")}</td>
-                    <td>${o.name}</td>
-                    <td>${o.phone}</td>
-                    <td>${o.address}</td>
-                    <td>${o.id}</td>
-                    <td><button class="btn danger" type="button" data-del-order="${o.id}">ডিলিট</button></td>
+                    <td class="code-cell">${esc(o.productCode)}</td>
+                    <td>${esc(o.size)}</td>
+                    <td>${esc(o.qty)}</td>
+                    <td>${taka(o.total)}</td>
+                    <td>${esc(o.name)}</td>
+                    <td>${esc(o.phone)}</td>
+                    <td>${esc(o.address)}</td>
+                    <td>${esc(o.id)}</td>
+                    <td><button class="btn danger" type="button" data-del-order="${esc(o.id)}">ডিলিট</button></td>
                   </tr>`
                   )
                   .join("")}
@@ -227,33 +744,133 @@
       }
 
       async function bootDash() {
-        const catalog = await fetch("/api/catalog").then((r) => r.json());
+        const catalog = await api("catalog");
         PRODUCTS = catalog.products || [];
         offers = catalog.offers || [];
+        fillWebsiteForm(catalog.site || SITE);
         renderProducts();
         renderOffers();
-        const orders = await api("/api/admin/orders", { headers: headers() });
+        const orders = await api("admin/orders", { headers: headers() });
         renderOrders(orders);
+        setModeNote();
       }
+
+      document.getElementById("adminNav").addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-tab]");
+        if (btn) switchTab(btn.dataset.tab);
+      });
+
+      document.getElementById("orderSearch").addEventListener("input", () => renderOrders());
+
+      document.getElementById("addTrust").addEventListener("click", () => {
+        siteDraft.trust = readRepeat("#trustEditor .repeat-row", ["title", "text"]);
+        if (siteDraft.trust.length >= 6) return;
+        siteDraft.trust.push({ title: "নতুন সুবিধা", text: "এখানে লিখুন" });
+        renderTrust();
+      });
+      document.getElementById("trustEditor").addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-del-trust]");
+        if (!btn) return;
+        siteDraft.trust = readRepeat("#trustEditor .repeat-row", ["title", "text"]);
+        if (siteDraft.trust.length <= 2) return;
+        siteDraft.trust.splice(Number(btn.dataset.delTrust), 1);
+        renderTrust();
+      });
+
+      document.getElementById("addReview").addEventListener("click", () => {
+        siteDraft.reviews = readRepeat("#reviewEditor .repeat-row", ["text", "name"]);
+        siteDraft.reviews.push({ text: "নতুন রিভিউ লিখুন", name: "নাম · শহর" });
+        renderReviews();
+      });
+      document.getElementById("reviewEditor").addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-del-review]");
+        if (!btn) return;
+        siteDraft.reviews = readRepeat("#reviewEditor .repeat-row", ["text", "name"]);
+        if (siteDraft.reviews.length <= 1) return;
+        siteDraft.reviews.splice(Number(btn.dataset.delReview), 1);
+        renderReviews();
+      });
+
+      document.getElementById("addHowto").addEventListener("click", () => {
+        siteDraft.howto = readRepeat("#howtoEditor .repeat-row", ["title", "text"]);
+        if (siteDraft.howto.length >= 6) return;
+        siteDraft.howto.push({ title: "নতুন ধাপ", text: "এখানে লিখুন" });
+        renderHowto();
+      });
+      document.getElementById("howtoEditor").addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-del-howto]");
+        if (!btn) return;
+        siteDraft.howto = readRepeat("#howtoEditor .repeat-row", ["title", "text"]);
+        if (siteDraft.howto.length <= 2) return;
+        siteDraft.howto.splice(Number(btn.dataset.delHowto), 1);
+        renderHowto();
+      });
+
+      document.getElementById("siteForm").elements.logo.addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        const preview = document.getElementById("logoPreview");
+        if (!file) return;
+        preview.src = URL.createObjectURL(file);
+        preview.classList.remove("is-hidden");
+      });
+
+      document.getElementById("siteForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const form = event.target;
+        const note = document.getElementById("siteNote");
+        note.classList.remove("is-error");
+        const site = mergeSite(siteDraft);
+        ["brand", "tagline", "whatsapp", "phone", "facebook", "instagram", "location", "footerText",
+          "metaDescription", "topbar", "heroEyebrow", "heroTitle", "heroNote",
+          "navCollection", "navReviews", "navHowto", "navOrder",
+          "collectionEyebrow", "collectionTitle", "collectionSubtitle",
+          "reviewsEyebrow", "reviewsTitle", "howtoEyebrow", "howtoTitle",
+          "checkoutEyebrow", "checkoutTitle", "checkoutHint", "payNote", "confirmHelp",
+        ].forEach((key) => {
+          if (form.elements[key]) site[key] = form.elements[key].value;
+        });
+        site.trust = readRepeat("#trustEditor .repeat-row", ["title", "text"]);
+        site.reviews = readRepeat("#reviewEditor .repeat-row", ["text", "name"]);
+        site.howto = readRepeat("#howtoEditor .repeat-row", ["title", "text"]);
+        if (siteDraft.logo) site.logo = siteDraft.logo;
+        const data = new FormData();
+        data.append("site", JSON.stringify(site));
+        const logo = form.elements.logo.files[0];
+        if (logo) data.append("logo", logo);
+        try {
+          const saved = await api("admin/site", { method: "POST", headers: headers(), body: data });
+          fillWebsiteForm(saved);
+          note.textContent = "ওয়েবসাইট সেভ হয়েছে। হোমপেজ রিফ্রেশ করুন।";
+        } catch (err) {
+          note.classList.add("is-error");
+          note.textContent = err.message;
+        }
+      });
 
       document.getElementById("loginForm").addEventListener("submit", async (event) => {
         event.preventDefault();
         const password = new FormData(event.target).get("password");
+        const errorEl = document.getElementById("loginError");
+        errorEl.textContent = "";
         try {
-          const data = await fetch("/api/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ password }),
-          }).then(async (res) => {
-            const body = await res.json();
-            if (!res.ok) throw new Error(body.error || "লগইন হয়নি");
-            return body;
-          });
+          let data;
+          try {
+            const result = await apiCall("login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ password }),
+            });
+            if (!result.ok) throw new Error((result.data && result.data.error) || "লগইন হয়নি");
+            data = result.data;
+          } catch (err) {
+            if (err.code !== "NO_API") throw err;
+            data = await localLogin(password);
+          }
           localStorage.setItem(TOKEN_KEY, data.token);
           showDash();
           bootDash();
         } catch (err) {
-          document.getElementById("loginError").textContent = err.message;
+          errorEl.textContent = err.message;
         }
       });
 
@@ -265,12 +882,14 @@
       document.getElementById("addForm").addEventListener("submit", async (event) => {
         event.preventDefault();
         const note = document.getElementById("addNote");
+        note.classList.remove("is-error");
         try {
-          await api("/api/admin/products", { method: "POST", headers: headers(), body: new FormData(event.target) });
+          await api("admin/products", { method: "POST", headers: headers(), body: new FormData(event.target) });
           note.textContent = "প্রোডাক্ট যোগ হয়েছে।";
           event.target.reset();
           bootDash();
         } catch (err) {
+          note.classList.add("is-error");
           note.textContent = err.message;
         }
       });
@@ -283,10 +902,12 @@
           const data = new FormData();
           data.append("name", row.querySelector('[data-edit="name"]').value);
           data.append("price", row.querySelector('[data-edit="price"]').value);
+          data.append("piece", row.querySelector('[data-edit="piece"]').value);
+          data.append("description", row.querySelector('[data-edit="description"]').value);
           const file = row.querySelector('[data-edit="image"]').files[0];
           if (file) data.append("image", file);
           try {
-            await api("/api/admin/products/" + save.dataset.save, { method: "PUT", headers: headers(), body: data });
+            await api("admin/products/" + save.dataset.save, { method: "POST", headers: headers(), body: data });
             bootDash();
           } catch (err) {
             alert(err.message);
@@ -294,7 +915,7 @@
         }
         if (del && confirm("এই প্রোডাক্ট ডিলিট করবেন?")) {
           try {
-            await api("/api/admin/products/" + del.dataset.delProduct, { method: "DELETE", headers: headers() });
+            await api("admin/products/" + del.dataset.delProduct, { method: "DELETE", headers: headers() });
             bootDash();
           } catch (err) {
             alert(err.message);
@@ -309,18 +930,19 @@
         }
       });
 
+      document.getElementById("addOffer").addEventListener("click", () => {
+        offers = readOffers();
+        if (offers.length >= 5 || !PRODUCTS.length) return;
+        offers.push({
+          code: PRODUCTS[0].code,
+          title: `কম্বো অফার ${offers.length + 1}`,
+          price: PRODUCTS[0].price,
+          piece: 2,
+        });
+        renderOffers();
+      });
+
       document.getElementById("offerEditor").addEventListener("click", (event) => {
-        if (event.target.id === "addOffer") {
-          offers = readOffers();
-          if (offers.length >= 5 || !PRODUCTS.length) return;
-          offers.push({
-            code: PRODUCTS[0].code,
-            title: `কম্বো অফার ${offers.length + 1}`,
-            price: PRODUCTS[0].price,
-            piece: 2,
-          });
-          renderOffers();
-        }
         const remove = event.target.closest("[data-remove]");
         if (remove) {
           offers = readOffers();
@@ -332,15 +954,19 @@
 
       document.getElementById("saveOffers").addEventListener("click", async () => {
         offers = readOffers();
+        const note = document.getElementById("saveNote");
+        note.classList.remove("is-error");
         try {
-          await api("/api/admin/offers", {
-            method: "PUT",
+          await api("admin/offers", {
+            method: "POST",
             headers: headers(true),
             body: JSON.stringify(offers),
           });
-          document.getElementById("saveNote").textContent = "অফার সেভ হয়েছে। হোম রিফ্রেশ করুন।";
+          note.textContent = "অফার সেভ হয়েছে। হোম রিফ্রেশ করুন।";
+          renderStats();
         } catch (err) {
-          document.getElementById("saveNote").textContent = err.message;
+          note.classList.add("is-error");
+          note.textContent = err.message;
         }
       });
 
@@ -348,7 +974,7 @@
         const btn = event.target.closest("[data-del-order]");
         if (!btn || !confirm("অর্ডার ডিলিট করবেন?")) return;
         try {
-          await api("/api/admin/orders/" + btn.dataset.delOrder, { method: "DELETE", headers: headers() });
+          await api("admin/orders/" + btn.dataset.delOrder, { method: "DELETE", headers: headers() });
           bootDash();
         } catch (err) {
           alert(err.message);
@@ -358,22 +984,25 @@
       document.getElementById("passForm").addEventListener("submit", async (event) => {
         event.preventDefault();
         const password = new FormData(event.target).get("password");
+        const note = document.getElementById("passNote");
+        note.classList.remove("is-error");
         try {
-          await api("/api/admin/password", {
-            method: "PUT",
+          await api("admin/password", {
+            method: "POST",
             headers: headers(true),
             body: JSON.stringify({ password }),
           });
-          document.getElementById("passNote").textContent = "পাসওয়ার্ড বদলেছে। আবার লগইন করুন।";
+          note.textContent = "পাসওয়ার্ড বদলেছে। আবার লগইন করুন।";
           localStorage.removeItem(TOKEN_KEY);
           setTimeout(showLogin, 800);
         } catch (err) {
-          document.getElementById("passNote").textContent = err.message;
+          note.classList.add("is-error");
+          note.textContent = err.message;
         }
       });
 
       if (token()) {
-        api("/api/admin/me", { headers: headers() })
+        api("admin/me", { headers: headers() })
           .then(() => {
             showDash();
             bootDash();

@@ -18,16 +18,16 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="topbar">ক্যাশ অন ডেলিভারি · ঢাকায় ১–২ দিন · সাইজ সিলেক্ট করে অর্ডার</div>
+    <div class="topbar" id="topbar">ক্যাশ অন ডেলিভারি · ঢাকায় ১–২ দিন · সাইজ সিলেক্ট করে অর্ডার</div>
 
     <header class="site-header">
       <div class="header-inner">
-        <a class="logo" href="#top">Jarnaz <em>Gallery</em></a>
+        <a class="logo" href="#top" id="brandLogo">Jarnaz <em>Gallery</em></a>
         <nav class="site-nav">
-          <a href="#collection">কালেকশন</a>
-          <a href="#reviews">রিভিউ</a>
-          <a href="#howto">কিভাবে অর্ডার</a>
-          <a class="nav-cta" href="#order">অর্ডার</a>
+          <a href="#collection" id="navCollection">কালেকশন</a>
+          <a href="#reviews" id="navReviews">রিভিউ</a>
+          <a href="#howto" id="navHowto">কিভাবে অর্ডার</a>
+          <a class="nav-cta" href="#order" id="navOrder">অর্ডার</a>
         </nav>
       </div>
     </header>
@@ -41,17 +41,17 @@
           <div class="offer-dots" id="offerDots"></div>
         </div>
         <div class="hero-copy">
-          <p class="eyebrow">Combo offer</p>
-          <h1>ছোটদের জন্য<br />নির্বাচিত কম্বো</h1>
+          <p class="eyebrow" id="heroEyebrow">Combo offer</p>
+          <h1 id="heroTitle">ছোটদের জন্য<br />নির্বাচিত কম্বো</h1>
           <p class="offer-title" id="offerTitle"></p>
           <p class="offer-price" id="offerPrice"></p>
           <button class="btn btn-dark offer-order" type="button" id="offerOrderNow">Order Now</button>
-          <p class="hero-note">অর্ডারের আগে সাইজ বেছে নিন · প্রোডাক্ট নম্বর অটো যাবে</p>
+          <p class="hero-note" id="heroNote">অর্ডারের আগে সাইজ বেছে নিন · প্রোডাক্ট নম্বর অটো যাবে</p>
         </div>
       </div>
     </section>
 
-    <section class="trust">
+    <section class="trust" id="trustRow">
       <div class="trust-item"><strong>কটন ফ্যাব্রিক</strong><span>ত্বকের জন্য আরামদায়ক</span></div>
       <div class="trust-item"><strong>ক্যাশ অন ডেলিভারি</strong><span>সারা বাংলাদেশে</span></div>
       <div class="trust-item"><strong>দ্রুত ডেলিভারি</strong><span>ঢাকা ১–২ দিন</span></div>
@@ -61,19 +61,19 @@
     <main>
       <section class="collection" id="collection">
         <div class="section-head">
-          <p class="eyebrow">Collection</p>
-          <h2>২ পিসের কম্বো</h2>
-          <p>ছবির নিচের নম্বর ধরে অর্ডার করুন</p>
+          <p class="eyebrow" id="collectionEyebrow">Collection</p>
+          <h2 id="collectionTitle">কালেকশন</h2>
+          <p id="collectionSubtitle">ছবির নিচের নম্বর ধরে অর্ডার করুন</p>
         </div>
         <div class="product-grid" id="productGrid"></div>
       </section>
 
       <section class="reviews" id="reviews">
         <div class="section-head">
-          <p class="eyebrow">Reviews</p>
-          <h2>কাস্টমার রিভিউ</h2>
+          <p class="eyebrow" id="reviewsEyebrow">Reviews</p>
+          <h2 id="reviewsTitle">কাস্টমার রিভিউ</h2>
         </div>
-        <div class="review-row">
+        <div class="review-row" id="reviewRow">
           <article>
             <p>“SET-04 অর্ডার করেছিলাম, ছবি আর কাপড় একই। সাইজ ঠিক থাকায় পারফেক্ট হয়েছে।”</p>
             <span>নাবিলা · ঢাকা</span>
@@ -91,10 +91,10 @@
 
       <section class="howto" id="howto">
         <div class="section-head">
-          <p class="eyebrow">Guide</p>
-          <h2>কিভাবে অর্ডার করবেন</h2>
+          <p class="eyebrow" id="howtoEyebrow">Guide</p>
+          <h2 id="howtoTitle">কিভাবে অর্ডার করবেন</h2>
         </div>
-        <ol class="steps">
+        <ol class="steps" id="howtoList">
           <li><strong>সেট বেছে নিন</strong> নিচের ছবি থেকে পছন্দের কম্বো দেখুন।</li>
           <li><strong>নম্বর দেখুন</strong> SET-07-এর মতো নম্বর অ্যাডমিন বুঝবে।</li>
           <li><strong>Order Now</strong> চাপুন, সাইজ সিলেক্ট করলেই পরের ধাপে যাবে।</li>
@@ -104,17 +104,18 @@
 
       <section class="order" id="order">
         <div class="section-head">
-          <p class="eyebrow">Checkout</p>
-          <h2>অর্ডার করুন</h2>
-          <p class="order-hint">Order Now চাপুন, সাইজ সিলেক্ট করলেই অর্ডার ফর্ম খুলবে।</p>
+          <p class="eyebrow" id="checkoutEyebrow">Checkout</p>
+          <h2 id="checkoutTitle">অর্ডার করুন</h2>
+          <p class="order-hint" id="checkoutHint">Order Now চাপুন, সাইজ সিলেক্ট করলেই অর্ডার ফর্ম খুলবে।</p>
         </div>
       </section>
     </main>
 
     <footer class="site-footer">
       <div>
-        <p class="logo">Jarnaz <em>Gallery</em></p>
-        <p>Kids fashion · ঢাকা, বাংলাদেশ</p>
+        <p class="logo" id="footerBrand">Jarnaz <em>Gallery</em></p>
+        <p id="footerText">Kids fashion · ঢাকা, বাংলাদেশ</p>
+        <div class="footer-links" id="footerLinks"></div>
       </div>
       <a href="admin.html">অ্যাডমিন</a>
     </footer>
@@ -154,7 +155,7 @@
               পরিমাণ
               <input type="number" name="qty" min="1" max="10" value="1" required />
             </label>
-            <p class="pay-note">পেমেন্ট: ক্যাশ অন ডেলিভারি · মোট: <strong id="totalPrice">৳০</strong></p>
+            <p class="pay-note"><span id="payNoteText">পেমেন্ট: ক্যাশ অন ডেলিভারি</span> · মোট: <strong id="totalPrice">৳০</strong></p>
             <button class="btn btn-dark" type="submit">অর্ডার কনফার্ম করুন</button>
           </div>
         </form>
@@ -165,14 +166,14 @@
       <div class="modal-card" role="dialog" aria-labelledby="confirmTitle">
         <h2 id="confirmTitle">অর্ডার কনফার্ম হয়েছে</h2>
         <div class="receipt" id="receipt"></div>
-        <p class="modal-help">অ্যাডমিন এই প্রোডাক্ট নম্বর ও ছবি দেখেই বুঝবে কোন সেট অর্ডার হয়েছে।</p>
+        <p class="modal-help" id="confirmHelp">অ্যাডমিন এই প্রোডাক্ট নম্বর ও ছবি দেখেই বুঝবে কোন সেট অর্ডার হয়েছে।</p>
         <div class="modal-actions">
           <button class="btn btn-dark" type="button" id="waBtn">WhatsApp-এ পাঠান</button>
           <button class="btn btn-ghost" type="button" id="closeModal">বন্ধ করুন</button>
         </div>
       </div>
     </div>
-    <script src="catalog.js"></script>
-    <script src="script.js"></script>
+    <script src="catalog.js?v=20260915d"></script>
+    <script src="script.js?v=20260915d"></script>
   </body>
 </html>

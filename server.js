@@ -28,22 +28,30 @@ function writeJson(file, value) {
 }
 
 function hashPassword(password, salt) {
-  return crypto.scryptSync(password, salt, 32).toString("hex");
+  return crypto.createHash("sha256").update(String(salt) + String(password)).digest("hex");
 }
 
 function loadConfig() {
   const file = path.join(DATA, "config.json");
-  if (!fs.existsSync(file)) {
+  let config = {};
+  if (fs.existsSync(file)) {
+    try {
+      config = JSON.parse(fs.readFileSync(file, "utf8"));
+    } catch (err) {
+      config = {};
+    }
+  }
+  if (config.algo !== "sha256" || !config.passwordHash || !config.salt) {
     const salt = crypto.randomBytes(16).toString("hex");
-    const config = {
+    config = {
+      algo: "sha256",
       salt,
       passwordHash: hashPassword(DEFAULT_PASSWORD, salt),
-      whatsapp: "8801700000000",
+      whatsapp: config.whatsapp || "8801700000000",
     };
     fs.writeFileSync(file, JSON.stringify(config, null, 2));
-    return config;
   }
-  return JSON.parse(fs.readFileSync(file, "utf8"));
+  return config;
 }
 
 function saveConfig(config) {
@@ -85,10 +93,12 @@ const upload = multer({
 
 app.get("/api/catalog", (_req, res) => {
   const config = loadConfig();
+  const site = readJson("site.json", {});
   res.json({
     products: readJson("products.json", []),
     offers: readJson("offers.json", []),
-    whatsapp: config.whatsapp || "8801700000000",
+    site,
+    whatsapp: site.whatsapp || config.whatsapp || "8801700000000",
   });
 });
 
@@ -142,14 +152,17 @@ app.delete("/api/admin/orders/:id", auth, (req, res) => {
   res.json({ ok: true });
 });
 
-app.put("/api/admin/offers", auth, (req, res) => {
+function saveOffers(req, res) {
   const list = Array.isArray(req.body) ? req.body : [];
   if (list.length < 4 || list.length > 5) {
     return res.status(400).json({ error: "৪ থেকে ৫টা অফার রাখুন" });
   }
   writeJson("offers.json", list);
   res.json(list);
-});
+}
+
+app.put("/api/admin/offers", auth, saveOffers);
+app.post("/api/admin/offers", auth, saveOffers);
 
 app.post("/api/admin/products", auth, upload.single("image"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "ছবি দিন" });
@@ -159,6 +172,7 @@ app.post("/api/admin/products", auth, upload.single("image"), (req, res) => {
     name: String(req.body.name || "নতুন সেট").trim(),
     price: Number(req.body.price || 2040),
     piece: Number(req.body.piece || 2),
+    description: String(req.body.description || "").trim(),
     image: `images/${req.file.filename}`,
   };
   products.push(product);
@@ -166,17 +180,21 @@ app.post("/api/admin/products", auth, upload.single("image"), (req, res) => {
   res.json(product);
 });
 
-app.put("/api/admin/products/:code", auth, upload.single("image"), (req, res) => {
+function updateProduct(req, res) {
   const products = readJson("products.json", []);
   const product = products.find((p) => p.code === req.params.code);
   if (!product) return res.status(404).json({ error: "প্রোডাক্ট নেই" });
   if (req.body.name) product.name = String(req.body.name).trim();
   if (req.body.price) product.price = Number(req.body.price);
   if (req.body.piece) product.piece = Number(req.body.piece);
+  if (req.body.description != null) product.description = String(req.body.description).trim();
   if (req.file) product.image = `images/${req.file.filename}`;
   writeJson("products.json", products);
   res.json(product);
-});
+}
+
+app.put("/api/admin/products/:code", auth, upload.single("image"), updateProduct);
+app.post("/api/admin/products/:code", auth, upload.single("image"), updateProduct);
 
 app.delete("/api/admin/products/:code", auth, (req, res) => {
   const products = readJson("products.json", []).filter((p) => p.code !== req.params.code);
@@ -186,16 +204,41 @@ app.delete("/api/admin/products/:code", auth, (req, res) => {
   res.json({ ok: true });
 });
 
-app.put("/api/admin/password", auth, (req, res) => {
+function changePassword(req, res) {
   const password = String(req.body.password || "");
   if (password.length < 6) return res.status(400).json({ error: "কমপক্ষে ৬ অক্ষর" });
   const config = loadConfig();
+  config.algo = "sha256";
   config.salt = crypto.randomBytes(16).toString("hex");
   config.passwordHash = hashPassword(password, config.salt);
   saveConfig(config);
   tokens.clear();
   res.json({ ok: true });
-});
+}
+
+function saveSite(req, res) {
+  let site = {};
+  try {
+    site = JSON.parse(req.body.site || "{}");
+  } catch (err) {
+    return res.status(400).json({ error: "সাইট ডাটা ভুল" });
+  }
+  if (req.file) site.logo = `images/${req.file.filename}`;
+  else {
+    const prev = readJson("site.json", {});
+    if (!site.logo && prev.logo) site.logo = prev.logo;
+  }
+  writeJson("site.json", site);
+  if (site.whatsapp) {
+    const config = loadConfig();
+    config.whatsapp = String(site.whatsapp).replace(/\D/g, "");
+    saveConfig(config);
+  }
+  res.json(site);
+}
+
+app.put("/api/admin/site", auth, upload.single("logo"), saveSite);
+app.post("/api/admin/site", auth, upload.single("logo"), saveSite);
 
 app.use("/data", (_req, res) => res.status(404).end());
 app.get("/admin", (_req, res) => {

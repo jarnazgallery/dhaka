@@ -12,14 +12,18 @@ function visualHTML(product) {
 }
 
 function cardHTML(product) {
+  const desc = product.description
+    ? `<p class="product-desc">${htmlEsc(product.description)}</p>`
+    : "";
   return `
-    <article class="product-card" data-code="${product.code}" id="card-${product.code}">
+    <article class="product-card" data-code="${htmlEsc(product.code)}" id="card-${htmlEsc(product.code)}">
       ${visualHTML(product)}
       <div class="product-body">
-        <p class="product-code">${product.code}</p>
-        <p class="product-name">${product.name}</p>
+        <p class="product-code">${htmlEsc(product.code)}</p>
+        <p class="product-name">${htmlEsc(product.name)}</p>
+        ${desc}
         <p class="product-price">${taka(product.price)}</p>
-        <button class="order-now" type="button" data-order="${product.code}">Order Now</button>
+        <button class="order-now" type="button" data-order="${htmlEsc(product.code)}">Order Now</button>
       </div>
     </article>
   `;
@@ -63,7 +67,9 @@ function openSizeModal(code, offerPrice) {
   selectedOfferPrice = offerPrice || null;
   selectedSize = "";
   const product = findProduct(code);
-  document.getElementById("sizeModalMeta").textContent = `${product.code} · ${product.name}`;
+  document.getElementById("sizeModalMeta").textContent = product.description
+    ? `${product.code} · ${product.name} · ${product.description}`
+    : `${product.code} · ${product.name}`;
   document.getElementById("checkoutPreview").innerHTML =
     `${visualHTML(product)}<p class="selected-code">${product.code}</p>`;
   document.getElementById("productCode").value = product.code;
@@ -132,16 +138,21 @@ function orderId() {
 }
 
 async function saveOrder(order) {
-  const res = await fetch("/api/orders", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(order),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || "অর্ডার সেভ হয়নি");
+  try {
+    const result = await apiCall("orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(order),
+    });
+    if (!result.ok) throw new Error((result.data && result.data.error) || "অর্ডার সেভ হয়নি");
+    return result.data;
+  } catch (err) {
+    if (err.code !== "NO_API") throw err;
+    const orders = readLocal(LOCAL_KEYS.orders, []);
+    orders.unshift(order);
+    writeLocal(LOCAL_KEYS.orders, orders);
+    return order;
   }
-  return res.json();
 }
 
 function waLink(order) {
