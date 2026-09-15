@@ -56,7 +56,7 @@ function load_config() {
       "algo" => "sha256",
       "salt" => $salt,
       "passwordHash" => hash_password("jarnaz123", $salt),
-      "whatsapp" => isset($config["whatsapp"]) ? $config["whatsapp"] : "8801700000000",
+      "whatsapp" => isset($config["whatsapp"]) ? $config["whatsapp"] : "8801735943156",
     );
     write_json("config.json", $config);
   }
@@ -94,7 +94,7 @@ function save_upload($key) {
   $name = isset($_FILES[$key]["name"]) ? $_FILES[$key]["name"] : "image.png";
   $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
   if ($ext === "") $ext = "png";
-  if (!in_array($ext, array("png", "jpg", "jpeg", "webp", "gif"), true)) fail(400, "শুধু ছবি আপলোড করুন");
+  if (!in_array($ext, array("png", "jpg", "jpeg", "webp", "gif", "heic", "heif", "bmp"), true)) fail(400, "শুধু ছবি আপলোড করুন");
   $filename = "set-" . round(microtime(true) * 1000) . "." . $ext;
   if (!move_uploaded_file($_FILES[$key]["tmp_name"], "$IMAGES/$filename")) fail(400, "ছবি সেভ হয়নি");
   return "images/$filename";
@@ -125,7 +125,8 @@ if ($route === "catalog" && $method === "GET") {
     "products" => read_json("products.json", array()),
     "offers" => read_json("offers.json", array()),
     "site" => $site,
-    "whatsapp" => !empty($site["whatsapp"]) ? $site["whatsapp"] : (isset($config["whatsapp"]) ? $config["whatsapp"] : "8801700000000"),
+    "whatsapp" => !empty($site["whatsapp"]) ? $site["whatsapp"] : (isset($config["whatsapp"]) ? $config["whatsapp"] : "8801735943156"),
+    "reviews" => read_json("reviews.json", array()),
   ));
 }
 
@@ -148,6 +149,8 @@ if ($route === "orders" && $method === "POST") {
     "combo" => intval(isset($body["combo"]) ? $body["combo"] : (isset($product["piece"]) ? $product["piece"] : 2)),
     "qty" => intval(isset($body["qty"]) ? $body["qty"] : 1),
     "total" => intval(isset($body["total"]) ? $body["total"] : (isset($product["price"]) ? $product["price"] : 0)),
+    "status" => "new",
+    "source" => "web",
     "createdAt" => date("c"),
   );
   if ($order["name"] === "" || $order["phone"] === "" || $order["address"] === "" || $order["size"] === "") {
@@ -181,6 +184,60 @@ if ($route === "admin/orders" && $method === "GET") {
   ok(read_json("orders.json", array()));
 }
 
+if ($route === "admin/orders" && $method === "POST") {
+  require_auth();
+  $body = json_input();
+  $products = read_json("products.json", array());
+  $code = isset($body["productCode"]) ? $body["productCode"] : "";
+  $product = null;
+  foreach ($products as $p) {
+    if ((isset($p["code"]) ? $p["code"] : "") === $code) $product = $p;
+  }
+  if (!$product) fail(400, "প্রোডাক্ট পাওয়া যায়নি");
+  $status = (isset($body["status"]) && $body["status"] === "new") ? "new" : "confirmed";
+  $qty = max(1, intval(isset($body["qty"]) ? $body["qty"] : 1));
+  $order = array(
+    "id" => "JZ-" . substr((string)round(microtime(true) * 1000), -8),
+    "productCode" => $product["code"],
+    "name" => trim((string)(isset($body["name"]) ? $body["name"] : "")),
+    "phone" => trim((string)(isset($body["phone"]) ? $body["phone"] : "")),
+    "address" => trim((string)(isset($body["address"]) ? $body["address"] : "")),
+    "size" => trim((string)(isset($body["size"]) ? $body["size"] : "")),
+    "combo" => intval(isset($product["piece"]) ? $product["piece"] : 2),
+    "qty" => $qty,
+    "total" => intval(isset($body["total"]) ? $body["total"] : ($product["price"] * $qty)),
+    "status" => $status,
+    "source" => "admin",
+    "createdAt" => date("c"),
+  );
+  if ($order["name"] === "" || $order["phone"] === "" || $order["address"] === "" || $order["size"] === "") {
+    fail(400, "সব তথ্য দিন");
+  }
+  $orders = read_json("orders.json", array());
+  array_unshift($orders, $order);
+  write_json("orders.json", $orders);
+  ok($order);
+}
+
+if (preg_match("#^admin/orders/(.+)$#", $route, $m) && ($method === "POST" || $method === "PUT")) {
+  require_auth();
+  $id = $m[1];
+  $body = json_input();
+  $status = isset($body["status"]) ? $body["status"] : "";
+  if ($status !== "new" && $status !== "confirmed") fail(400, "স্ট্যাটাস ভুল");
+  $orders = read_json("orders.json", array());
+  $saved = null;
+  for ($i = 0; $i < count($orders); $i++) {
+    if ((isset($orders[$i]["id"]) ? $orders[$i]["id"] : "") !== $id) continue;
+    $orders[$i]["status"] = $status;
+    $saved = $orders[$i];
+    break;
+  }
+  if (!$saved) fail(404, "অর্ডার নেই");
+  write_json("orders.json", $orders);
+  ok($saved);
+}
+
 if (preg_match("#^admin/orders/(.+)$#", $route, $m) && $method === "DELETE") {
   require_auth();
   write_json("orders.json", without_code(read_json("orders.json", array()), "id", $m[1]));
@@ -208,7 +265,7 @@ if ($route === "admin/products" && $method === "POST") {
     "description" => trim((string)(isset($_POST["description"]) ? $_POST["description"] : "")),
     "image" => $image,
   );
-  $products[] = $product;
+  array_unshift($products, $product);
   write_json("products.json", $products);
   ok($product);
 }
@@ -273,6 +330,31 @@ if ($route === "admin/site" && ($method === "PUT" || $method === "POST")) {
     write_json("config.json", $config);
   }
   ok($site);
+}
+
+if ($route === "reviews" && $method === "POST") {
+  $name = trim((string)(isset($_POST["name"]) ? $_POST["name"] : ""));
+  $text = trim((string)(isset($_POST["text"]) ? $_POST["text"] : ""));
+  if ($name === "" || $text === "") fail(400, "নাম ও কমেন্ট দিন");
+  $image = save_upload("image");
+  $review = array(
+    "id" => "RV-" . substr((string)round(microtime(true) * 1000), -8),
+    "name" => $name,
+    "text" => $text,
+    "image" => $image ? $image : "",
+    "status" => "confirmed",
+    "createdAt" => date("c"),
+  );
+  $reviews = read_json("reviews.json", array());
+  array_unshift($reviews, $review);
+  write_json("reviews.json", $reviews);
+  ok($review);
+}
+
+if (preg_match("#^admin/reviews/(.+)$#", $route, $m) && $method === "DELETE") {
+  require_auth();
+  write_json("reviews.json", without_code(read_json("reviews.json", array()), "id", $m[1]));
+  ok(array("ok" => true));
 }
 
 fail(404, "API পাওয়া যায়নি");

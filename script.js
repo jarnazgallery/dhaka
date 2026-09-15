@@ -6,6 +6,9 @@ let selectedOfferPrice = null;
 let offers = [];
 let offerIndex = 0;
 let offerTimer = null;
+let userReviews = [];
+let reviewIndex = 0;
+let reviewTimer = null;
 
 function visualHTML(product) {
   return `<div class="set-visual"><img src="${product.image}" alt="${product.code} ${product.name}" /></div>`;
@@ -31,6 +34,8 @@ function cardHTML(product) {
 
 function renderProducts() {
   document.getElementById("productGrid").innerHTML = PRODUCTS.map(cardHTML).join("");
+  const count = document.getElementById("productCount");
+  if (count) count.textContent = PRODUCTS.length ? `মোট ${PRODUCTS.length} টা সেট` : "এখনো প্রোডাক্ট নেই";
 }
 
 function renderSizes() {
@@ -240,6 +245,8 @@ document.getElementById("orderForm").addEventListener("submit", (event) => {
     combo,
     qty,
     total: unit * qty,
+    status: "new",
+    source: "web",
     createdAt: new Date().toISOString(),
   };
 
@@ -359,11 +366,118 @@ function bindOfferSlider() {
   }, { passive: true });
 }
 
+function reviewList() {
+  if (userReviews.length) return userReviews;
+  return (SITE.reviews || []).map((item, i) => ({
+    id: "site-" + i,
+    name: item.name,
+    text: item.text,
+    image: "",
+  }));
+}
+
+function renderReviewSlider() {
+  const items = reviewList();
+  const track = document.getElementById("reviewTrack");
+  const dots = document.getElementById("reviewDots");
+  if (!track || !dots || !items.length) return;
+  track.innerHTML = items
+    .map(
+      (item) => `
+        <article class="review-slide">
+          ${item.image ? `<img src="${htmlEsc(item.image)}" alt="${htmlEsc(item.name)}" />` : ""}
+          <p>“${htmlEsc(item.text)}”</p>
+          <span>${htmlEsc(item.name)}</span>
+        </article>`
+    )
+    .join("");
+  dots.innerHTML = items
+    .map((_, i) => `<button type="button" class="dot" data-review-dot="${i}" aria-label="রিভিউ ${i + 1}"></button>`)
+    .join("");
+  showReview(0);
+}
+
+function showReview(index) {
+  const items = reviewList();
+  if (!items.length) return;
+  reviewIndex = (index + items.length) % items.length;
+  document.getElementById("reviewTrack").style.transform = `translateX(-${reviewIndex * 100}%)`;
+  document.querySelectorAll("#reviewDots .dot").forEach((dot, i) => {
+    dot.classList.toggle("is-active", i === reviewIndex);
+  });
+}
+
+function startReviewTimer() {
+  clearInterval(reviewTimer);
+  const items = reviewList();
+  if (items.length < 2) return;
+  reviewTimer = setInterval(() => showReview(reviewIndex + 1), 4000);
+}
+
+function bindReviewSlider() {
+  renderReviewSlider();
+  startReviewTimer();
+  document.getElementById("reviewPrev").addEventListener("click", () => {
+    showReview(reviewIndex - 1);
+    startReviewTimer();
+  });
+  document.getElementById("reviewNext").addEventListener("click", () => {
+    showReview(reviewIndex + 1);
+    startReviewTimer();
+  });
+  document.getElementById("reviewDots").addEventListener("click", (event) => {
+    const dot = event.target.closest("[data-review-dot]");
+    if (!dot) return;
+    showReview(Number(dot.dataset.reviewDot));
+    startReviewTimer();
+  });
+  const slider = document.getElementById("reviewSlider");
+  let startX = 0;
+  slider.addEventListener("touchstart", (event) => {
+    startX = event.changedTouches[0].clientX;
+    clearInterval(reviewTimer);
+  }, { passive: true });
+  slider.addEventListener("touchend", (event) => {
+    const diff = event.changedTouches[0].clientX - startX;
+    if (Math.abs(diff) > 40) showReview(reviewIndex + (diff < 0 ? 1 : -1));
+    startReviewTimer();
+  }, { passive: true });
+}
+
+async function saveReview(formData) {
+  try {
+    const result = await apiCall("reviews", { method: "POST", body: formData });
+    if (!result.ok) throw new Error((result.data && result.data.error) || "রিভিউ সেভ হয়নি");
+    return result.data;
+  } catch (err) {
+    if (err.code !== "NO_API") throw err;
+    return handleLocalAdmin("reviews", { method: "POST", body: formData });
+  }
+}
+
+document.getElementById("reviewForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const note = document.getElementById("reviewNote");
+  note.textContent = "";
+  try {
+    const saved = await saveReview(new FormData(event.target));
+    userReviews.unshift(saved);
+    event.target.reset();
+    renderReviewSlider();
+    startReviewTimer();
+    note.textContent = "রিভিউ যোগ হয়েছে। নিচে স্লাইডে দেখুন।";
+  } catch (err) {
+    note.textContent = err.message;
+  }
+});
+
 renderSizes();
 
 loadCatalog().then((data) => {
   offers = data.offers || [];
+  userReviews = data.reviews || [];
   renderProducts();
   bindOfferSlider();
+  bindReviewSlider();
   updateTotal();
 });

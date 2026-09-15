@@ -64,6 +64,7 @@
           <p class="eyebrow" id="collectionEyebrow">Collection</p>
           <h2 id="collectionTitle">কালেকশন</h2>
           <p id="collectionSubtitle">ছবির নিচের নম্বর ধরে অর্ডার করুন</p>
+          <p class="product-count" id="productCount"></p>
         </div>
         <div class="product-grid" id="productGrid"></div>
       </section>
@@ -73,20 +74,21 @@
           <p class="eyebrow" id="reviewsEyebrow">Reviews</p>
           <h2 id="reviewsTitle">কাস্টমার রিভিউ</h2>
         </div>
-        <div class="review-row" id="reviewRow">
-          <article>
-            <p>“SET-04 অর্ডার করেছিলাম, ছবি আর কাপড় একই। সাইজ ঠিক থাকায় পারফেক্ট হয়েছে।”</p>
-            <span>নাবিলা · ঢাকা</span>
-          </article>
-          <article>
-            <p>“নম্বর দিয়ে অর্ডার করা খুব সহজ। হোয়াটসঅ্যাপে SET নম্বর চলে যায়, ভুল হয় না।”</p>
-            <span>সাদিয়া · চট্টগ্রাম</span>
-          </article>
-          <article>
-            <p>“৩ পিস কম্বো নিয়েছি দুই বোনের জন্য। কাপড় নরম, কালার উজ্জ্বল।”</p>
-            <span>ফারজানা · সিলেট</span>
-          </article>
+        <div class="review-slider" id="reviewSlider">
+          <div class="review-track" id="reviewTrack"></div>
+          <button class="offer-arrow prev" type="button" id="reviewPrev" aria-label="আগের রিভিউ">‹</button>
+          <button class="offer-arrow next" type="button" id="reviewNext" aria-label="পরের রিভিউ">›</button>
+          <div class="offer-dots" id="reviewDots"></div>
         </div>
+        <form class="review-form" id="reviewForm">
+          <h3>আপনার রিভিউ দিন</h3>
+          <p class="modal-help">ছবি ও কমেন্ট যোগ করুন, নিচে স্লাইডারে দেখাবে।</p>
+          <label>আপনার নাম <input name="name" required placeholder="নাম · শহর" /></label>
+          <label>কমেন্ট <textarea name="text" rows="3" required placeholder="আপনার মতামত লিখুন"></textarea></label>
+          <label>ছবি <input type="file" name="image" accept="image/*" required /></label>
+          <button class="btn btn-dark" type="submit">রিভিউ পাঠান</button>
+          <p class="save-note" id="reviewNote"></p>
+        </form>
       </section>
 
       <section class="howto" id="howto">
@@ -114,7 +116,7 @@
     <footer class="site-footer">
       <div>
         <p class="logo" id="footerBrand">Jarnaz <em>Gallery</em></p>
-        <p id="footerText">Kids fashion · ঢাকা, বাংলাদেশ</p>
+        <p id="footerText">Kids fashion · Pallabi, Mirpur 11</p>
         <div class="footer-links" id="footerLinks"></div>
       </div>
       <a href="admin.html">অ্যাডমিন</a>
@@ -173,7 +175,7 @@
         </div>
       </div>
     </div>
-    <script src="catalog.js?v=20260915d"></script>
-    <script src="script.js?v=20260915d"></script>
+    <script src="catalog.js?v=20260915g"></script>
+    <script src="script.js?v=20260915g"></script>
   </body>
 </html>

@@ -337,9 +337,14 @@ h1 {
 .section-head p,
 .order-hint,
 .pay-note,
-.modal-help,
-.review-row span {
+.modal-help {
   color: var(--muted);
+}
+
+.product-count {
+  margin-top: 8px;
+  font-weight: 800;
+  color: #e2187a;
 }
 
 .product-grid {
@@ -407,35 +412,73 @@ h1 {
   margin-bottom: 12px;
 }
 
-.review-row,
-.steps {
+.review-slider {
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+  border: 2px solid #ffd6ec;
+  border-radius: 24px;
+  margin-bottom: 22px;
+}
+
+.review-track {
+  display: flex;
+  transition: transform 0.5s ease;
+}
+
+.review-slide {
+  min-width: 100%;
+  padding: 22px 48px 42px;
   display: grid;
+  justify-items: center;
+  text-align: center;
   gap: 12px;
 }
 
-.review-row article,
-.steps li {
+.review-slide img {
+  width: min(100%, 420px);
+  height: 240px;
+  object-fit: cover;
+  border-radius: 18px;
+  background: #fff6fb;
+}
+
+.review-slide p {
+  font-family: "Fredoka", "Noto Sans Bengali", sans-serif;
+  font-size: 1.1rem;
+  max-width: 520px;
+}
+
+.review-slide span {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.review-form {
+  display: grid;
+  gap: 12px;
   background: #fff;
   border: 2px solid #ffd6ec;
-  border-radius: 18px;
+  border-radius: 22px;
   padding: 20px;
 }
 
-.review-row article p {
-  font-family: "Fredoka", "Noto Sans Bengali", sans-serif;
-  font-size: 1.15rem;
-  margin-bottom: 12px;
-}
+.review-form .save-note { color: #187a45; font-weight: 700; }
 
 .steps {
   list-style: none;
   counter-reset: step;
+  display: grid;
+  gap: 12px;
 }
 
 .steps li {
   counter-increment: step;
-  padding-left: 64px;
+  padding: 20px 20px 20px 64px;
   position: relative;
+  background: #fff;
+  border: 2px solid #ffd6ec;
+  border-radius: 18px;
 }
 
 .steps li::before {

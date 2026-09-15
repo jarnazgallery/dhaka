@@ -47,7 +47,7 @@ function loadConfig() {
       algo: "sha256",
       salt,
       passwordHash: hashPassword(DEFAULT_PASSWORD, salt),
-      whatsapp: config.whatsapp || "8801700000000",
+      whatsapp: config.whatsapp || "8801735943156",
     };
     fs.writeFileSync(file, JSON.stringify(config, null, 2));
   }
@@ -85,10 +85,10 @@ const upload = multer({
     },
   }),
   fileFilter: (_req, file, cb) => {
-    const ok = /image\/(png|jpe?g|webp|gif)/i.test(file.mimetype);
+    const ok = /^image\//i.test(file.mimetype || "") || /\.(png|jpe?g|webp|gif|heic|heif|bmp)$/i.test(file.originalname || "");
     cb(ok ? null : new Error("শুধু ছবি আপলোড করুন"), ok);
   },
-  limits: { fileSize: 8 * 1024 * 1024 },
+  limits: { fileSize: 15 * 1024 * 1024 },
 });
 
 app.get("/api/catalog", (_req, res) => {
@@ -98,15 +98,14 @@ app.get("/api/catalog", (_req, res) => {
     products: readJson("products.json", []),
     offers: readJson("offers.json", []),
     site,
-    whatsapp: site.whatsapp || config.whatsapp || "8801700000000",
+    whatsapp: site.whatsapp || config.whatsapp || "8801735943156",
+    reviews: readJson("reviews.json", []),
   });
 });
 
-app.post("/api/orders", (req, res) => {
-  const body = req.body || {};
-  const products = readJson("products.json", []);
-  const product = products.find((p) => p.code === body.productCode);
-  if (!product) return res.status(400).json({ error: "প্রোডাক্ট পাওয়া যায়নি" });
+function makeOrder(body, product, extra) {
+  extra = extra || {};
+  const qty = Math.max(1, Number(body.qty || 1));
   const order = {
     id: body.id || `JZ-${Date.now().toString().slice(-8)}`,
     productCode: product.code,
@@ -115,19 +114,54 @@ app.post("/api/orders", (req, res) => {
     address: String(body.address || "").trim(),
     size: String(body.size || "").trim(),
     combo: Number(body.combo || product.piece || 2),
-    qty: Number(body.qty || 1),
-    total: Number(body.total || product.price),
+    qty,
+    total: Number(body.total || product.price * qty),
+    status: extra.status || (body.status === "confirmed" ? "confirmed" : "new"),
+    source: extra.source || "web",
     createdAt: new Date().toISOString(),
   };
   if (!order.name || !order.phone || !order.address || !order.size) {
-    return res.status(400).json({ error: "সব তথ্য দিন" });
+    return { error: "সব তথ্য দিন" };
   }
-  const orders = readJson("orders.json", []);
-  orders.unshift(order);
-  writeJson("orders.json", orders);
-  res.json(order);
+  return { order };
+}
+
+app.post("/api/reviews", upload.single("image"), (req, res) => {
+  const name = String(req.body.name || "").trim();
+  const text = String(req.body.text || "").trim();
+  if (!name || !text) return res.status(400).json({ error: "নাম ও কমেন্ট দিন" });
+  const review = {
+    id: `RV-${Date.now().toString().slice(-8)}`,
+    name,
+    text,
+    image: req.file ? `images/${req.file.filename}` : "",
+    status: "confirmed",
+    createdAt: new Date().toISOString(),
+  };
+  const reviews = readJson("reviews.json", []);
+  reviews.unshift(review);
+  writeJson("reviews.json", reviews);
+  res.json(review);
 });
 
+app.delete("/api/admin/reviews/:id", auth, (req, res) => {
+  const reviews = readJson("reviews.json", []).filter((r) => r.id !== req.params.id);
+  writeJson("reviews.json", reviews);
+  res.json({ ok: true });
+});
+
+app.post("/api/orders", (req, res) => {
+  const body = req.body || {};
+  const products = readJson("products.json", []);
+  const product = products.find((p) => p.code === body.productCode);
+  if (!product) return res.status(400).json({ error: "প্রোডাক্ট পাওয়া যায়নি" });
+  const made = makeOrder(body, product, { status: "new", source: "web" });
+  if (made.error) return res.status(400).json({ error: made.error });
+  const orders = readJson("orders.json", []);
+  orders.unshift(made.order);
+  writeJson("orders.json", orders);
+  res.json(made.order);
+});
 app.post("/api/login", (req, res) => {
   const config = loadConfig();
   const password = String(req.body.password || "");
@@ -144,6 +178,35 @@ app.get("/api/admin/me", auth, (_req, res) => res.json({ ok: true }));
 
 app.get("/api/admin/orders", auth, (_req, res) => {
   res.json(readJson("orders.json", []));
+});
+
+app.post("/api/admin/orders", auth, (req, res) => {
+  const body = req.body || {};
+  const products = readJson("products.json", []);
+  const product = products.find((p) => p.code === body.productCode);
+  if (!product) return res.status(400).json({ error: "প্রোডাক্ট পাওয়া যায়নি" });
+  const made = makeOrder(body, product, {
+    status: body.status === "new" ? "new" : "confirmed",
+    source: "admin",
+  });
+  if (made.error) return res.status(400).json({ error: made.error });
+  const orders = readJson("orders.json", []);
+  orders.unshift(made.order);
+  writeJson("orders.json", orders);
+  res.json(made.order);
+});
+
+app.post("/api/admin/orders/:id", auth, (req, res) => {
+  const orders = readJson("orders.json", []);
+  const order = orders.find((o) => o.id === req.params.id);
+  if (!order) return res.status(404).json({ error: "অর্ডার নেই" });
+  const status = String((req.body && req.body.status) || "");
+  if (status !== "new" && status !== "confirmed") {
+    return res.status(400).json({ error: "স্ট্যাটাস ভুল" });
+  }
+  order.status = status;
+  writeJson("orders.json", orders);
+  res.json(order);
 });
 
 app.delete("/api/admin/orders/:id", auth, (req, res) => {
@@ -175,7 +238,7 @@ app.post("/api/admin/products", auth, upload.single("image"), (req, res) => {
     description: String(req.body.description || "").trim(),
     image: `images/${req.file.filename}`,
   };
-  products.push(product);
+  products.unshift(product);
   writeJson("products.json", products);
   res.json(product);
 });

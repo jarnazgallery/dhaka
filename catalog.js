@@ -36,12 +36,12 @@ const FALLBACK_OFFERS = [
 const FALLBACK_SITE = {
   brand: "Jarnaz Gallery",
   tagline: "Kids Combo Sets",
-  whatsapp: "8801700000000",
+  whatsapp: "8801735943156",
   phone: "",
   facebook: "",
   instagram: "",
-  location: "ঢাকা, বাংলাদেশ",
-  footerText: "Kids fashion · ঢাকা, বাংলাদেশ",
+  location: "Pallabi, Mirpur 11",
+  footerText: "Kids fashion · Pallabi, Mirpur 11",
   metaDescription: "Jarnaz Gallery বেবি-কিডস কম্বো সেট। প্রতিটি ছবির নিচে নম্বর আছে। Order Now ক্লিক করে সাইজ সিলেক্ট করুন।",
   topbar: "ক্যাশ অন ডেলিভারি · ঢাকায় ১–২ দিন · সাইজ সিলেক্ট করে অর্ডার",
   heroEyebrow: "Combo offer",
@@ -84,7 +84,7 @@ const FALLBACK_SITE = {
 };
 
 let PRODUCTS = FALLBACK_PRODUCTS.slice();
-let WHATSAPP = "8801700000000";
+let WHATSAPP = "8801735943156";
 let API_MODE = "unknown";
 
 const LOCAL_KEYS = {
@@ -93,6 +93,7 @@ const LOCAL_KEYS = {
   orders: "jarnaz-local-orders",
   pass: "jarnaz-local-pass",
   site: "jarnaz-local-site",
+  reviews: "jarnaz-local-reviews",
 };
 const DEFAULT_ADMIN_PASSWORD = "jarnaz123";
 
@@ -176,13 +177,6 @@ function applySite(raw) {
   if (trust) {
     trust.innerHTML = SITE.trust
       .map((item) => `<div class="trust-item"><strong>${htmlEsc(item.title)}</strong><span>${htmlEsc(item.text)}</span></div>`)
-      .join("");
-  }
-
-  const reviews = document.getElementById("reviewRow");
-  if (reviews) {
-    reviews.innerHTML = SITE.reviews
-      .map((item) => `<article><p>“${htmlEsc(item.text)}”</p><span>${htmlEsc(item.name)}</span></article>`)
       .join("");
   }
 
@@ -276,6 +270,7 @@ function localCatalog() {
     offers: readLocal(LOCAL_KEYS.offers, FALLBACK_OFFERS.slice()),
     site,
     whatsapp: site.whatsapp || WHATSAPP,
+    reviews: readLocal(LOCAL_KEYS.reviews, []),
   };
 }
 
@@ -331,6 +326,30 @@ async function handleLocalAdmin(route, options) {
   let orders = readLocal(LOCAL_KEYS.orders, []);
 
   if (route === "admin/me" && method === "GET") return { ok: true };
+  if (route === "reviews" && method === "POST") {
+    const form = options.body;
+    const imageFile = form.get("image");
+    const review = {
+      id: "RV-" + String(Date.now()).slice(-8),
+      name: String(form.get("name") || "").trim(),
+      text: String(form.get("text") || "").trim(),
+      image: imageFile && imageFile.size ? await fileToDataUrl(imageFile) : "",
+      status: "confirmed",
+      createdAt: new Date().toISOString(),
+    };
+    if (!review.name || !review.text) throw new Error("নাম ও কমেন্ট দিন");
+    const list = readLocal(LOCAL_KEYS.reviews, []);
+    list.unshift(review);
+    writeLocal(LOCAL_KEYS.reviews, list);
+    return review;
+  }
+
+  const reviewMatch = route.match(/^admin\/reviews\/(.+)$/);
+  if (reviewMatch && method === "DELETE") {
+    const id = decodeURIComponent(reviewMatch[1]);
+    writeLocal(LOCAL_KEYS.reviews, readLocal(LOCAL_KEYS.reviews, []).filter((r) => r.id !== id));
+    return { ok: true };
+  }
   if (route === "catalog" && method === "GET") return catalog;
   if (route === "admin/orders" && method === "GET") return orders;
 
@@ -351,7 +370,35 @@ async function handleLocalAdmin(route, options) {
   }
 
   if (route === "orders" && method === "POST") {
-    const order = JSON.parse(options.body);
+    const body = JSON.parse(options.body);
+    body.status = "new";
+    body.source = "web";
+    if (!body.id) body.id = "JZ-" + String(Date.now()).slice(-8);
+    orders.unshift(body);
+    writeLocal(LOCAL_KEYS.orders, orders);
+    return body;
+  }
+
+  if (route === "admin/orders" && method === "POST") {
+    const body = JSON.parse(options.body);
+    const product = products.find((p) => p.code === body.productCode) || PRODUCTS[0];
+    if (!product) throw new Error("প্রোডাক্ট পাওয়া যায়নি");
+    const qty = Math.max(1, Number(body.qty || 1));
+    const order = {
+      id: "JZ-" + String(Date.now()).slice(-8),
+      productCode: product.code,
+      name: String(body.name || "").trim(),
+      phone: String(body.phone || "").trim(),
+      address: String(body.address || "").trim(),
+      size: String(body.size || "").trim(),
+      combo: Number(product.piece || 2),
+      qty,
+      total: Number(body.total || product.price * qty),
+      status: body.status === "new" ? "new" : "confirmed",
+      source: "admin",
+      createdAt: new Date().toISOString(),
+    };
+    if (!order.name || !order.phone || !order.address || !order.size) throw new Error("সব তথ্য দিন");
     orders.unshift(order);
     writeLocal(LOCAL_KEYS.orders, orders);
     return order;
@@ -374,7 +421,7 @@ async function handleLocalAdmin(route, options) {
       description: String(form.get("description") || "").trim(),
       image: imageFile ? await fileToDataUrl(imageFile) : "images/set-01.png",
     };
-    products.push(product);
+    products.unshift(product);
     writeLocal(LOCAL_KEYS.products, products);
     return product;
   }
@@ -408,6 +455,16 @@ async function handleLocalAdmin(route, options) {
   }
 
   const orderMatch = route.match(/^admin\/orders\/(.+)$/);
+  if (orderMatch && (method === "POST" || method === "PUT")) {
+    const id = decodeURIComponent(orderMatch[1]);
+    const body = JSON.parse(options.body || "{}");
+    const order = orders.find((o) => o.id === id);
+    if (!order) throw new Error("অর্ডার নেই");
+    if (body.status !== "new" && body.status !== "confirmed") throw new Error("স্ট্যাটাস ভুল");
+    order.status = body.status;
+    writeLocal(LOCAL_KEYS.orders, orders);
+    return order;
+  }
   if (orderMatch && method === "DELETE") {
     const id = decodeURIComponent(orderMatch[1]);
     writeLocal(LOCAL_KEYS.orders, orders.filter((o) => o.id !== id));

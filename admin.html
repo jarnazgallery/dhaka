@@ -152,7 +152,33 @@
         margin-bottom: 10px;
       }
       .site-grid { display: grid; gap: 12px; }
-      .logo-preview { width: 72px; height: 48px; object-fit: contain; background: #fff; border-radius: 10px; border: 1px solid #ffe3f2; }
+      .nav-badge {
+        background: #fff;
+        color: #e2187a;
+        border-radius: 999px;
+        padding: 1px 7px;
+        font-size: 0.72rem;
+        margin-left: 4px;
+      }
+      .admin-nav-btn.is-active .nav-badge { background: #fff; color: #e2187a; }
+      .status-pill {
+        display: inline-block;
+        font-size: 0.78rem;
+        font-weight: 800;
+        padding: 4px 10px;
+        border-radius: 999px;
+      }
+      .status-pill.is-new { background: #fff4e5; color: #b86a00; }
+      .status-pill.is-confirmed { background: #e8fff4; color: #187a45; }
+      .filter-pills { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+      .check-row {
+        display: flex !important;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+      }
+      .check-row input { width: auto; }
+      .product-admin-row.is-new { outline: 2px solid #ff4fa3; box-shadow: 0 8px 24px rgba(255, 79, 163, 0.18); }
       .add-desc textarea, .product-fields textarea {
         width: 100%;
         min-height: 84px;
@@ -278,7 +304,8 @@
         <button class="admin-nav-btn is-active" type="button" data-tab="overview">ড্যাশবোর্ড</button>
         <button class="admin-nav-btn" type="button" data-tab="products">প্রোডাক্ট</button>
         <button class="admin-nav-btn" type="button" data-tab="offers">কম্বো অফার</button>
-        <button class="admin-nav-btn" type="button" data-tab="orders">অর্ডার</button>
+        <button class="admin-nav-btn" type="button" data-tab="orders">অর্ডার <span class="nav-badge is-hidden" id="newOrderBadge">0</span></button>
+        <button class="admin-nav-btn" type="button" data-tab="comments">রিভিউ</button>
         <button class="admin-nav-btn" type="button" data-tab="website">ওয়েবসাইট</button>
         <button class="admin-nav-btn" type="button" data-tab="settings">সেটিংস</button>
       </aside>
@@ -304,9 +331,10 @@
         <section class="admin-page" id="tab-products">
           <div class="page-head">
             <h2>প্রোডাক্ট</h2>
-            <p>ছবি, নাম, দাম, পিস ও বিবরণ নিজেই যোগ-এডিট-ডিলিট করুন। সেভ করলে ওয়েবসাইটে চলে যাবে।</p>
+            <p>নতুন সেট যোগ করলে লিস্ট বাড়বে। এখন মোট <strong id="adminProductCount">0</strong> টা প্রোডাক্ট আছে।</p>
           </div>
           <form class="panel add-form" id="addForm">
+            <h3>নতুন প্রোডাক্ট যোগ করুন</h3>
             <div class="add-grid">
               <label>ছবি <input type="file" name="image" accept="image/*" required /></label>
               <label>নাম <input type="text" name="name" required placeholder="সেটের নাম" /></label>
@@ -316,9 +344,10 @@
             <label class="add-desc">বিবরণ
               <textarea name="description" rows="3" placeholder="কাপড়, কালার, কী কী আছে সেটের মধ্যে..."></textarea>
             </label>
-            <button class="btn btn-dark" type="submit">প্রোডাক্ট যোগ করুন</button>
+            <button class="btn btn-dark" type="submit">লিস্টে যোগ করুন</button>
             <p class="save-note" id="addNote"></p>
           </form>
+          <h3 class="list-heading">প্রোডাক্ট লিস্ট</h3>
           <div class="product-admin" id="productAdmin"></div>
         </section>
 
@@ -340,15 +369,47 @@
         <section class="admin-page" id="tab-orders">
           <div class="page-head">
             <h2>অর্ডার লিস্ট</h2>
-            <p id="modeNote">ফোন থেকে অর্ডার করলেও এখানে আসবে। প্রোডাক্ট নম্বর দেখে সেট চিনবেন।</p>
+            <p id="modeNote">ফোন থেকে অর্ডার করলেও এখানে আসবে। নতুন অর্ডার কনফার্ম বা ডিলিট করুন।</p>
             <span class="mode-pill" id="modePill">সার্ভার মোড</span>
           </div>
+          <form class="panel add-form" id="manualOrderForm">
+            <h3>ম্যানুয়াল অর্ডার যোগ</h3>
+            <div class="site-grid">
+              <label>প্রোডাক্ট
+                <select id="manualProduct" name="productCode" required></select>
+              </label>
+              <label>সাইজ
+                <select id="manualSize" name="size" required></select>
+              </label>
+              <label>পরিমাণ <input id="manualQty" type="number" name="qty" min="1" max="10" value="1" required /></label>
+              <label>মোট <strong id="manualTotal">৳০</strong></label>
+              <label>কাস্টমার নাম <input name="name" required placeholder="নাম" /></label>
+              <label>মোবাইল <input name="phone" required placeholder="01XXXXXXXXX" /></label>
+            </div>
+            <label>ঠিকানা <textarea name="address" rows="2" required placeholder="বাসা, রোড, থানা, জেলা"></textarea></label>
+            <label class="check-row"><input type="checkbox" name="confirmNow" checked /> সাথে সাথে কনফার্ম করুন</label>
+            <button class="btn btn-dark" type="submit">অর্ডার যোগ করুন</button>
+            <p class="save-note" id="manualOrderNote"></p>
+          </form>
           <div class="panel">
             <label>খুঁজুন
               <input class="search-box" id="orderSearch" type="search" placeholder="নাম, মোবাইল বা SET নম্বর" />
             </label>
-            <div id="list" style="margin-top: 16px;"></div>
+            <div class="filter-pills" id="orderFilters">
+              <button class="admin-nav-btn is-active" type="button" data-filter="all">সব</button>
+              <button class="admin-nav-btn" type="button" data-filter="new">নতুন</button>
+              <button class="admin-nav-btn" type="button" data-filter="confirmed">কনফার্ম</button>
+            </div>
+            <div id="list"></div>
           </div>
+        </section>
+
+        <section class="admin-page" id="tab-comments">
+          <div class="page-head">
+            <h2>কাস্টমার রিভিউ</h2>
+            <p>ইউজার ছবিসহ কমেন্ট দিলে এখানে আসবে। খারাপ রিভিউ ডিলিট করতে পারবেন।</p>
+          </div>
+          <div class="panel" id="commentList"></div>
         </section>
 
         <section class="admin-page" id="tab-website">
@@ -433,12 +494,14 @@
       </div>
     </div>
 
-    <script src="catalog.js?v=20260915d"></script>
+    <script src="catalog.js?v=20260915g"></script>
     <script>
       const TOKEN_KEY = "jarnaz-admin-token";
       let offers = [];
       let lastOrders = [];
       let siteDraft = mergeSite();
+      let orderFilter = "all";
+      let lastReviews = [];
 
       function esc(value) {
         return String(value ?? "")
@@ -592,7 +655,7 @@
         document.querySelectorAll(".admin-page").forEach((page) => {
           page.classList.toggle("is-active", page.id === "tab-" + id);
         });
-        document.querySelectorAll(".admin-nav-btn").forEach((btn) => {
+        document.querySelectorAll("#adminNav .admin-nav-btn").forEach((btn) => {
           btn.classList.toggle("is-active", btn.dataset.tab === id);
         });
       }
@@ -607,12 +670,63 @@
         ).join("");
       }
 
+      function orderStatus(order) {
+        return order && order.status === "confirmed" ? "confirmed" : "new";
+      }
+
+      function renderComments() {
+        const root = document.getElementById("commentList");
+        if (!root) return;
+        if (!lastReviews.length) {
+          root.innerHTML = '<p class="empty">এখনো ইউজার রিভিউ নেই।</p>';
+          return;
+        }
+        root.innerHTML = lastReviews
+          .map(
+            (r) => `
+            <div class="product-admin-row">
+              ${r.image ? `<img src="${esc(r.image)}" alt="${esc(r.name)}" />` : "<div></div>"}
+              <div class="product-fields">
+                <strong>${esc(r.name)}</strong>
+                <p>${esc(r.text)}</p>
+                <button class="btn danger" type="button" data-del-review-id="${esc(r.id)}">ডিলিট</button>
+              </div>
+            </div>`
+          )
+          .join("");
+      }
+
+      function fillManualOrderForm() {
+        const productSel = document.getElementById("manualProduct");
+        const sizeSel = document.getElementById("manualSize");
+        if (!productSel || !sizeSel) return;
+        productSel.innerHTML = PRODUCTS.map(
+          (p) => `<option value="${esc(p.code)}">${esc(p.code)} — ${esc(p.name)} (${taka(p.price)})</option>`
+        ).join("");
+        sizeSel.innerHTML = SIZES.map((s) => `<option value="${esc(s.value)}">${esc(s.label)}</option>`).join("");
+        updateManualTotal();
+      }
+
+      function updateManualTotal() {
+        const product = findProduct(document.getElementById("manualProduct").value);
+        const qty = Number(document.getElementById("manualQty").value) || 1;
+        document.getElementById("manualTotal").textContent = taka((product ? product.price : 0) * qty);
+      }
+
       function renderStats() {
         document.getElementById("statProducts").textContent = PRODUCTS.length;
         document.getElementById("statOrders").textContent = lastOrders.length;
         document.getElementById("statOffers").textContent = offers.length;
         const revenue = lastOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
         document.getElementById("statRevenue").textContent = taka(revenue);
+        const count = document.getElementById("adminProductCount");
+        if (count) count.textContent = PRODUCTS.length;
+        const news = lastOrders.filter((o) => orderStatus(o) === "new").length;
+        const badge = document.getElementById("newOrderBadge");
+        if (badge) {
+          badge.textContent = news;
+          badge.classList.toggle("is-hidden", news === 0);
+        }
       }
 
       function renderRecent() {
@@ -629,6 +743,7 @@
                 <div>
                   <strong class="code-cell">${esc(o.productCode)}</strong>
                   <div>${esc(o.name)} · ${esc(o.phone)}</div>
+                  <span class="status-pill ${orderStatus(o) === "confirmed" ? "is-confirmed" : "is-new"}">${orderStatus(o) === "confirmed" ? "কনফার্ম" : "নতুন"}</span>
                 </div>
                 <strong>${taka(o.total)}</strong>
               </div>`
@@ -636,10 +751,10 @@
           .join("");
       }
 
-      function renderProducts() {
+      function renderProducts(highlightCode) {
         document.getElementById("productAdmin").innerHTML = PRODUCTS.map(
           (p) => `
-            <div class="product-admin-row" data-code="${esc(p.code)}">
+            <div class="product-admin-row${p.code === highlightCode ? " is-new" : ""}" data-code="${esc(p.code)}">
               <img src="${esc(p.image)}" alt="${esc(p.code)}" />
               <div class="product-fields">
                 <span class="code-pill">${esc(p.code)}</span>
@@ -656,6 +771,7 @@
             </div>
           `
         ).join("");
+        renderStats();
       }
 
       function renderOffers() {
@@ -692,13 +808,15 @@
 
       function filteredOrders() {
         const q = (document.getElementById("orderSearch").value || "").trim().toLowerCase();
-        if (!q) return lastOrders;
-        return lastOrders.filter((o) =>
-          [o.productCode, o.name, o.phone, o.address, o.id, o.size]
+        return lastOrders.filter((o) => {
+          const statusOk = orderFilter === "all" || orderStatus(o) === orderFilter;
+          if (!statusOk) return false;
+          if (!q) return true;
+          return [o.productCode, o.name, o.phone, o.address, o.id, o.size, orderStatus(o)]
             .join(" ")
             .toLowerCase()
-            .includes(q)
-        );
+            .includes(q);
+        });
       }
 
       function renderOrders(list) {
@@ -708,7 +826,7 @@
         const rows = filteredOrders();
         const root = document.getElementById("list");
         if (!rows.length) {
-          root.innerHTML = '<p class="empty">এখনো কোনো অর্ডার নেই।</p>';
+          root.innerHTML = '<p class="empty">এই ফিল্টারে কোনো অর্ডার নেই।</p>';
           return;
         }
         root.innerHTML = `
@@ -716,15 +834,17 @@
             <table class="order-table">
               <thead>
                 <tr>
-                  <th>প্রোডাক্ট</th><th>সাইজ</th><th>পরিমাণ</th><th>মোট</th>
+                  <th>স্ট্যাটাস</th><th>প্রোডাক্ট</th><th>সাইজ</th><th>পরিমাণ</th><th>মোট</th>
                   <th>নাম</th><th>মোবাইল</th><th>ঠিকানা</th><th>আইডি</th><th></th>
                 </tr>
               </thead>
               <tbody>
                 ${rows
-                  .map(
-                    (o) => `
+                  .map((o) => {
+                    const status = orderStatus(o);
+                    return `
                   <tr>
+                    <td><span class="status-pill ${status === "confirmed" ? "is-confirmed" : "is-new"}">${status === "confirmed" ? "কনফার্ম" : "নতুন"}</span></td>
                     <td class="code-cell">${esc(o.productCode)}</td>
                     <td>${esc(o.size)}</td>
                     <td>${esc(o.qty)}</td>
@@ -733,9 +853,12 @@
                     <td>${esc(o.phone)}</td>
                     <td>${esc(o.address)}</td>
                     <td>${esc(o.id)}</td>
-                    <td><button class="btn danger" type="button" data-del-order="${esc(o.id)}">ডিলিট</button></td>
-                  </tr>`
-                  )
+                    <td class="row-actions">
+                      ${status === "new" ? `<button class="btn ok-btn" type="button" data-confirm-order="${esc(o.id)}">কনফার্ম</button>` : ""}
+                      <button class="btn danger" type="button" data-del-order="${esc(o.id)}">ডিলিট</button>
+                    </td>
+                  </tr>`;
+                  })
                   .join("")}
               </tbody>
             </table>
@@ -748,6 +871,9 @@
         PRODUCTS = catalog.products || [];
         offers = catalog.offers || [];
         fillWebsiteForm(catalog.site || SITE);
+        fillManualOrderForm();
+        lastReviews = catalog.reviews || [];
+        renderComments();
         renderProducts();
         renderOffers();
         const orders = await api("admin/orders", { headers: headers() });
@@ -761,6 +887,50 @@
       });
 
       document.getElementById("orderSearch").addEventListener("input", () => renderOrders());
+      document.getElementById("orderFilters").addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-filter]");
+        if (!btn) return;
+        orderFilter = btn.dataset.filter;
+        document.querySelectorAll("#orderFilters .admin-nav-btn").forEach((el) => {
+          el.classList.toggle("is-active", el === btn);
+        });
+        renderOrders();
+      });
+      document.getElementById("manualProduct").addEventListener("change", updateManualTotal);
+      document.getElementById("manualQty").addEventListener("input", updateManualTotal);
+      document.getElementById("manualOrderForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const form = event.target;
+        const note = document.getElementById("manualOrderNote");
+        note.classList.remove("is-error");
+        const product = findProduct(form.productCode.value);
+        const qty = Number(form.qty.value) || 1;
+        try {
+          await api("admin/orders", {
+            method: "POST",
+            headers: headers(true),
+            body: JSON.stringify({
+              productCode: form.productCode.value,
+              size: form.size.value,
+              qty,
+              name: form.name.value.trim(),
+              phone: form.phone.value.trim(),
+              address: form.address.value.trim(),
+              total: (product ? product.price : 0) * qty,
+              status: form.confirmNow.checked ? "confirmed" : "new",
+            }),
+          });
+          form.reset();
+          form.qty.value = 1;
+          if (form.confirmNow) form.confirmNow.checked = true;
+          updateManualTotal();
+          note.textContent = "অর্ডার যোগ হয়েছে।";
+          bootDash();
+        } catch (err) {
+          note.classList.add("is-error");
+          note.textContent = err.message;
+        }
+      });
 
       document.getElementById("addTrust").addEventListener("click", () => {
         siteDraft.trust = readRepeat("#trustEditor .repeat-row", ["title", "text"]);
@@ -882,15 +1052,23 @@
       document.getElementById("addForm").addEventListener("submit", async (event) => {
         event.preventDefault();
         const note = document.getElementById("addNote");
+        const btn = event.target.querySelector('button[type="submit"]');
         note.classList.remove("is-error");
+        btn.disabled = true;
         try {
-          await api("admin/products", { method: "POST", headers: headers(), body: new FormData(event.target) });
-          note.textContent = "প্রোডাক্ট যোগ হয়েছে।";
+          const product = await api("admin/products", { method: "POST", headers: headers(), body: new FormData(event.target) });
           event.target.reset();
-          bootDash();
+          switchTab("products");
+          await bootDash();
+          renderProducts(product.code);
+          const row = document.querySelector(`[data-code="${product.code}"]`);
+          if (row) row.scrollIntoView({ behavior: "smooth", block: "center" });
+          note.textContent = `${product.code} লিস্টে যোগ হয়েছে। এখন মোট ${PRODUCTS.length} টা প্রোডাক্ট। হোমপেজ রিফ্রেশ করুন।`;
         } catch (err) {
           note.classList.add("is-error");
           note.textContent = err.message;
+        } finally {
+          btn.disabled = false;
         }
       });
 
@@ -971,10 +1149,35 @@
       });
 
       document.getElementById("list").addEventListener("click", async (event) => {
-        const btn = event.target.closest("[data-del-order]");
-        if (!btn || !confirm("অর্ডার ডিলিট করবেন?")) return;
+        const confirmBtn = event.target.closest("[data-confirm-order]");
+        const del = event.target.closest("[data-del-order]");
+        if (confirmBtn) {
+          try {
+            await api("admin/orders/" + confirmBtn.dataset.confirmOrder, {
+              method: "POST",
+              headers: headers(true),
+              body: JSON.stringify({ status: "confirmed" }),
+            });
+            bootDash();
+          } catch (err) {
+            alert(err.message);
+          }
+          return;
+        }
+        if (!del || !confirm("অর্ডার ডিলিট করবেন?")) return;
         try {
-          await api("admin/orders/" + btn.dataset.delOrder, { method: "DELETE", headers: headers() });
+          await api("admin/orders/" + del.dataset.delOrder, { method: "DELETE", headers: headers() });
+          bootDash();
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+
+      document.getElementById("commentList").addEventListener("click", async (event) => {
+        const btn = event.target.closest("[data-del-review-id]");
+        if (!btn || !confirm("রিভিউ ডিলিট করবেন?")) return;
+        try {
+          await api("admin/reviews/" + btn.dataset.delReviewId, { method: "DELETE", headers: headers() });
           bootDash();
         } catch (err) {
           alert(err.message);
