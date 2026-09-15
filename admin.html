@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jarnaz Gallery অ্যাডমিন</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Nunito:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .admin { width: min(1100px, calc(100% - 24px)); margin: 24px auto 48px; }
+      .admin-help { color: #7a5a8a; margin-bottom: 16px; }
+      .login-box { max-width: 420px; margin: 48px auto; background: #fff; border: 2px solid #ffd6ec; border-radius: 22px; padding: 24px; display: grid; gap: 12px; }
+      .product-admin { display: grid; gap: 12px; margin-bottom: 28px; }
+      .product-admin-row, .offer-row { display: grid; grid-template-columns: 84px 1fr; gap: 12px; background: #fff; border: 1px solid #ffd6ec; border-radius: 14px; padding: 10px; align-items: start; }
+      .product-admin-row img, .offer-row img { width: 84px; height: 72px; object-fit: contain; background: #fff6fb; border-radius: 8px; }
+      .offer-fields, .product-fields { display: grid; gap: 8px; }
+      .row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+      .save-note { margin: 8px 0 24px; color: #1f8a3c; font-weight: 700; }
+      .order-table { width: 100%; background: white; }
+      .code-cell { font-weight: 800; color: #e2187a; }
+      .empty { padding: 28px; text-align: center; color: #7a5a8a; }
+      .add-box { background: #fff; border: 2px dashed #ff4fa3; border-radius: 16px; padding: 16px; display: grid; gap: 10px; margin-bottom: 16px; }
+      .danger { background: #fff; color: #e2187a; border: 1px solid #e2187a; }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="logo" href="index.html">Jarnaz <em>Gallery</em></a>
+        <nav class="site-nav">
+          <a href="index.html">হোম</a>
+          <button class="nav-cta" type="button" id="logoutBtn">লগআউট</button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="admin" id="loginView">
+      <form class="login-box" id="loginForm">
+        <p class="eyebrow">Admin</p>
+        <h2>লগইন করুন</h2>
+        <label>পাসওয়ার্ড
+          <input type="password" name="password" required placeholder="পাসওয়ার্ড" />
+        </label>
+        <button class="btn btn-dark" type="submit">প্রবেশ করুন</button>
+        <p class="admin-help" id="loginError"></p>
+      </form>
+    </div>
+
+    <div class="admin is-hidden" id="dashView">
+      <div class="section-head">
+        <p class="eyebrow">Admin</p>
+        <h2>ড্যাশবোর্ড</h2>
+      </div>
+
+      <h2 class="pink-title">নতুন প্রোডাক্ট</h2>
+      <form class="add-box" id="addForm">
+        <label>ছবি <input type="file" name="image" accept="image/*" required /></label>
+        <label>নাম <input type="text" name="name" required placeholder="সেটের নাম" /></label>
+        <label>দাম (৳) <input type="number" name="price" required value="2040" min="1" /></label>
+        <button class="btn btn-dark" type="submit">প্রোডাক্ট যোগ করুন</button>
+        <p class="save-note" id="addNote"></p>
+      </form>
+
+      <h2 class="pink-title">কালেকশন — নাম ও দাম</h2>
+      <div class="product-admin" id="productAdmin"></div>
+
+      <h2 class="pink-title">কম্বো অফার (৪–৫টা)</h2>
+      <p class="admin-help">হোমপেজের উপরের স্লাইডার।</p>
+      <div id="offerEditor"></div>
+      <button class="confirm-btn" type="button" id="saveOffers">অফার সেভ করুন</button>
+      <p class="save-note" id="saveNote"></p>
+
+      <h2 class="pink-title">অর্ডার লিস্ট</h2>
+      <p class="admin-help">ফোন থেকে অর্ডার করলেও এখানে আসবে। প্রোডাক্ট নম্বর দেখে সেট চিনবেন।</p>
+      <div id="list"></div>
+
+      <h2 class="pink-title">পাসওয়ার্ড বদলান</h2>
+      <form class="add-box" id="passForm">
+        <label>নতুন পাসওয়ার্ড <input type="password" name="password" required minlength="6" /></label>
+        <button class="btn btn-dark" type="submit">পাসওয়ার্ড সেভ</button>
+        <p class="save-note" id="passNote"></p>
+      </form>
+    </div>
+
+    <script>
+      const TOKEN_KEY = "jarnaz-admin-token";
+      let PRODUCTS = [];
+      let offers = [];
+
+      function token() {
+        return localStorage.getItem(TOKEN_KEY) || "";
+      }
+
+      function headers(json) {
+        const h = { Authorization: "Bearer " + token() };
+        if (json) h["Content-Type"] = "application/json";
+        return h;
+      }
+
+      async function api(url, opts) {
+        const res = await fetch(url, opts);
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          localStorage.removeItem(TOKEN_KEY);
+          showLogin();
+          throw new Error(data.error || "লগইন করুন");
+        }
+        if (!res.ok) throw new Error(data.error || "কাজ হয়নি");
+        return data;
+      }
+
+      function showLogin() {
+        document.getElementById("loginView").classList.remove("is-hidden");
+        document.getElementById("dashView").classList.add("is-hidden");
+      }
+
+      function showDash() {
+        document.getElementById("loginView").classList.add("is-hidden");
+        document.getElementById("dashView").classList.remove("is-hidden");
+      }
+
+      function findProduct(code) {
+        return PRODUCTS.find((p) => p.code === code);
+      }
+
+      function productOptions(selected) {
+        return PRODUCTS.map(
+          (p) => `<option value="${p.code}" ${p.code === selected ? "selected" : ""}>${p.code} — ${p.name}</option>`
+        ).join("");
+      }
+
+      function renderProducts() {
+        document.getElementById("productAdmin").innerHTML = PRODUCTS.map(
+          (p) => `
+            <div class="product-admin-row" data-code="${p.code}">
+              <img src="${p.image}" alt="${p.code}" />
+              <div class="product-fields">
+                <strong>${p.code}</strong>
+                <label>নাম <input data-edit="name" value="${p.name}" /></label>
+                <label>দাম <input type="number" data-edit="price" value="${p.price}" /></label>
+                <label>নতুন ছবি <input type="file" data-edit="image" accept="image/*" /></label>
+                <div class="row-actions">
+                  <button class="btn btn-dark" type="button" data-save="${p.code}">সেভ</button>
+                  <button class="btn danger" type="button" data-del-product="${p.code}">ডিলিট</button>
+                </div>
+              </div>
+            </div>
+          `
+        ).join("");
+      }
+
+      function renderOffers() {
+        const editor = document.getElementById("offerEditor");
+        editor.innerHTML = offers
+          .map((offer, i) => {
+            const product = findProduct(offer.code) || PRODUCTS[0];
+            if (!product) return "";
+            return `
+              <div class="offer-row" data-index="${i}">
+                <img src="${product.image}" alt="${offer.code}" />
+                <div class="offer-fields">
+                  <strong>অফার ${i + 1}</strong>
+                  <label>প্রোডাক্ট <select data-field="code">${productOptions(offer.code)}</select></label>
+                  <label>টাইটেল <input data-field="title" value="${offer.title}" /></label>
+                  <label>দাম <input type="number" data-field="price" value="${offer.price}" /></label>
+                  ${offers.length > 4 ? `<button type="button" class="ghost-btn" data-remove="${i}">অফার বাদ</button>` : ""}
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+        if (offers.length < 5 && PRODUCTS.length) {
+          editor.insertAdjacentHTML("beforeend", `<button type="button" class="ghost-btn" id="addOffer">আরেকটা অফার</button>`);
+        }
+      }
+
+      function readOffers() {
+        return [...document.querySelectorAll("#offerEditor .offer-row")].map((row) => ({
+          code: row.querySelector('[data-field="code"]').value,
+          title: row.querySelector('[data-field="title"]').value.trim() || "কম্বো অফার",
+          price: Number(row.querySelector('[data-field="price"]').value) || 2040,
+          piece: 2,
+        }));
+      }
+
+      function renderOrders(list) {
+        const root = document.getElementById("list");
+        if (!list.length) {
+          root.innerHTML = '<p class="empty">এখনো কোনো অর্ডার নেই।</p>';
+          return;
+        }
+        root.innerHTML = `
+          <div class="table-scroll">
+            <table class="order-table">
+              <thead>
+                <tr>
+                  <th>প্রোডাক্ট</th><th>সাইজ</th><th>পরিমাণ</th><th>মোট</th>
+                  <th>নাম</th><th>মোবাইল</th><th>ঠিকানা</th><th>আইডি</th><th></th>
+                </tr>
+              </thead>
+              <tbody>
+                ${list
+                  .map(
+                    (o) => `
+                  <tr>
+                    <td class="code-cell">${o.productCode}</td>
+                    <td>${o.size}</td>
+                    <td>${o.qty}</td>
+                    <td>৳${Number(o.total).toLocaleString("bn-BD")}</td>
+                    <td>${o.name}</td>
+                    <td>${o.phone}</td>
+                    <td>${o.address}</td>
+                    <td>${o.id}</td>
+                    <td><button class="btn danger" type="button" data-del-order="${o.id}">ডিলিট</button></td>
+                  </tr>`
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      async function bootDash() {
+        const catalog = await fetch("/api/catalog").then((r) => r.json());
+        PRODUCTS = catalog.products || [];
+        offers = catalog.offers || [];
+        renderProducts();
+        renderOffers();
+        const orders = await api("/api/admin/orders", { headers: headers() });
+        renderOrders(orders);
+      }
+
+      document.getElementById("loginForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const password = new FormData(event.target).get("password");
+        try {
+          const data = await fetch("/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password }),
+          }).then(async (res) => {
+            const body = await res.json();
+            if (!res.ok) throw new Error(body.error || "লগইন হয়নি");
+            return body;
+          });
+          localStorage.setItem(TOKEN_KEY, data.token);
+          showDash();
+          bootDash();
+        } catch (err) {
+          document.getElementById("loginError").textContent = err.message;
+        }
+      });
+
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        localStorage.removeItem(TOKEN_KEY);
+        showLogin();
+      });
+
+      document.getElementById("addForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const note = document.getElementById("addNote");
+        try {
+          await api("/api/admin/products", { method: "POST", headers: headers(), body: new FormData(event.target) });
+          note.textContent = "প্রোডাক্ট যোগ হয়েছে।";
+          event.target.reset();
+          bootDash();
+        } catch (err) {
+          note.textContent = err.message;
+        }
+      });
+
+      document.getElementById("productAdmin").addEventListener("click", async (event) => {
+        const save = event.target.closest("[data-save]");
+        const del = event.target.closest("[data-del-product]");
+        if (save) {
+          const row = save.closest(".product-admin-row");
+          const data = new FormData();
+          data.append("name", row.querySelector('[data-edit="name"]').value);
+          data.append("price", row.querySelector('[data-edit="price"]').value);
+          const file = row.querySelector('[data-edit="image"]').files[0];
+          if (file) data.append("image", file);
+          try {
+            await api("/api/admin/products/" + save.dataset.save, { method: "PUT", headers: headers(), body: data });
+            bootDash();
+          } catch (err) {
+            alert(err.message);
+          }
+        }
+        if (del && confirm("এই প্রোডাক্ট ডিলিট করবেন?")) {
+          try {
+            await api("/api/admin/products/" + del.dataset.delProduct, { method: "DELETE", headers: headers() });
+            bootDash();
+          } catch (err) {
+            alert(err.message);
+          }
+        }
+      });
+
+      document.getElementById("offerEditor").addEventListener("change", (event) => {
+        if (event.target.dataset.field === "code") {
+          const product = findProduct(event.target.value);
+          event.target.closest(".offer-row").querySelector("img").src = product.image;
+        }
+      });
+
+      document.getElementById("offerEditor").addEventListener("click", (event) => {
+        if (event.target.id === "addOffer") {
+          offers = readOffers();
+          if (offers.length >= 5 || !PRODUCTS.length) return;
+          offers.push({
+            code: PRODUCTS[0].code,
+            title: `কম্বো অফার ${offers.length + 1}`,
+            price: PRODUCTS[0].price,
+            piece: 2,
+          });
+          renderOffers();
+        }
+        const remove = event.target.closest("[data-remove]");
+        if (remove) {
+          offers = readOffers();
+          if (offers.length <= 4) return;
+          offers.splice(Number(remove.dataset.remove), 1);
+          renderOffers();
+        }
+      });
+
+      document.getElementById("saveOffers").addEventListener("click", async () => {
+        offers = readOffers();
+        try {
+          await api("/api/admin/offers", {
+            method: "PUT",
+            headers: headers(true),
+            body: JSON.stringify(offers),
+          });
+          document.getElementById("saveNote").textContent = "অফার সেভ হয়েছে। হোম রিফ্রেশ করুন।";
+        } catch (err) {
+          document.getElementById("saveNote").textContent = err.message;
+        }
+      });
+
+      document.getElementById("list").addEventListener("click", async (event) => {
+        const btn = event.target.closest("[data-del-order]");
+        if (!btn || !confirm("অর্ডার ডিলিট করবেন?")) return;
+        try {
+          await api("/api/admin/orders/" + btn.dataset.delOrder, { method: "DELETE", headers: headers() });
+          bootDash();
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+
+      document.getElementById("passForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const password = new FormData(event.target).get("password");
+        try {
+          await api("/api/admin/password", {
+            method: "PUT",
+            headers: headers(true),
+            body: JSON.stringify({ password }),
+          });
+          document.getElementById("passNote").textContent = "পাসওয়ার্ড বদলেছে। আবার লগইন করুন।";
+          localStorage.removeItem(TOKEN_KEY);
+          setTimeout(showLogin, 800);
+        } catch (err) {
+          document.getElementById("passNote").textContent = err.message;
+        }
+      });
+
+      if (token()) {
+        api("/api/admin/me", { headers: headers() })
+          .then(() => {
+            showDash();
+            bootDash();
+          })
+          .catch(showLogin);
+      } else {
+        showLogin();
+      }
+    </script>
+  </body>
+</html>

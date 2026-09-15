@@ -1,0 +1,7 @@
+[
+  { "code": "SET-01", "title": "কম্বো অফার ১", "price": 2040, "piece": 2 },
+  { "code": "SET-02", "title": "কম্বো অফার ২", "price": 2040, "piece": 2 },
+  { "code": "SET-04", "title": "কম্বো অফার ৩", "price": 2040, "piece": 2 },
+  { "code": "SET-07", "title": "কম্বো অফার ৪", "price": 2040, "piece": 2 },
+  { "code": "SET-10", "title": "কম্বো অফার ৫", "price": 2690, "piece": 3 }
+]

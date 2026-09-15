@@ -1,0 +1,14 @@
+[
+  { "code": "SET-01", "piece": 2, "name": "Floral Top + Daisy Shorts", "price": 2040, "image": "images/set-01.png" },
+  { "code": "SET-02", "piece": 2, "name": "Navy Polka + Pearl Shorts", "price": 2040, "image": "images/set-02.png" },
+  { "code": "SET-03", "piece": 2, "name": "Blue Floral + Pearl Shorts", "price": 2040, "image": "images/set-03.png" },
+  { "code": "SET-04", "piece": 2, "name": "Strawberry Top + Daisy Shorts", "price": 2040, "image": "images/set-04.png" },
+  { "code": "SET-05", "piece": 2, "name": "Navy Floral + Pearl Shorts", "price": 2040, "image": "images/set-05.png" },
+  { "code": "SET-06", "piece": 2, "name": "Pink Bow Top + Pearl Shorts", "price": 2040, "image": "images/set-06.png" },
+  { "code": "SET-07", "piece": 2, "name": "Pink Check + Daisy Shorts", "price": 2040, "image": "images/set-07.png" },
+  { "code": "SET-08", "piece": 2, "name": "Red Check + Daisy Shorts", "price": 2040, "image": "images/set-08.png" },
+  { "code": "SET-09", "piece": 2, "name": "Lilac Check + Pearl Shorts", "price": 2040, "image": "images/set-09.png" },
+  { "code": "SET-10", "piece": 2, "name": "Heart Top + Daisy Shorts", "price": 2040, "image": "images/set-10.png" },
+  { "code": "SET-11", "piece": 2, "name": "Black Check + Daisy Shorts", "price": 2040, "image": "images/set-11.png" },
+  { "code": "SET-12", "piece": 2, "name": "White Bow Top + Pearl Shorts", "price": 2040, "image": "images/set-12.png" }
+]
