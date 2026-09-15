@@ -350,14 +350,9 @@ function bindOfferSlider() {
 
 renderSizes();
 
-loadCatalog()
-  .then((data) => {
-    offers = data.offers || [];
-    renderProducts();
-    bindOfferSlider();
-    updateTotal();
-  })
-  .catch(() => {
-    document.getElementById("productGrid").innerHTML =
-      "<p class='empty-pick'>প্রোডাক্ট লোড হয়নি। সার্ভার চালু আছে কিনা দেখুন।</p>";
-  });
+loadCatalog().then((data) => {
+  offers = data.offers || [];
+  renderProducts();
+  bindOfferSlider();
+  updateTotal();
+});

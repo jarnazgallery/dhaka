@@ -206,6 +206,6 @@ app.use((err, _req, res, _next) => {
 });
 app.use(express.static(ROOT));
 
-app.listen(PORT, "0.0.0.0", () => {
+app.listen(PORT, () => {
   console.log(`Jarnaz Gallery running at http://localhost:${PORT}`);
 });
