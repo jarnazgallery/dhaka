@@ -6,8 +6,19 @@
     <title>Jarnaz Gallery — Kids Combo Sets</title>
     <meta
       name="description"
-      content="Jarnaz Gallery বেবি-কিডস কম্বো সেট। প্রতিটি ছবির নিচে নম্বর আছে। Order Now ক্লিক করে সাইজ সিলেক্ট করুন।"
+      content="Jarnaz Gallery বেবি-কিডস কম্বো সেট। Pallabi, Mirpur 11। Order Now চাপুন, সাইজ বেছে অর্ডার করুন। ক্যাশ অন ডেলিভারি।"
     />
+    <meta name="theme-color" content="#e2187a" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="bn_BD" />
+    <meta property="og:site_name" content="Jarnaz Gallery" />
+    <meta property="og:title" content="Jarnaz Gallery — Kids Combo Sets" />
+    <meta property="og:description" content="বেবি-কিডস কম্বো সেট। সাইজ সিলেক্ট করে সহজে অর্ডার। ক্যাশ অন ডেলিভারি।" />
+    <meta property="og:url" content="https://jarnazgallery.com/" />
+    <meta property="og:image" content="https://jarnazgallery.com/images/set-01.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="canonical" href="https://jarnazgallery.com/" />
+    <link rel="manifest" href="manifest.json" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -15,19 +26,32 @@
       rel="stylesheet"
     />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎀</text></svg>" />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=20260920e" />
+    <script type="application/ld+json" id="businessJson">
+      {
+        "@context": "https://schema.org",
+        "@type": "Store",
+        "name": "Jarnaz Gallery",
+        "description": "Kids combo sets",
+        "address": { "@type": "PostalAddress", "addressLocality": "Pallabi, Mirpur 11", "addressCountry": "BD" },
+        "telephone": "+8801735943156",
+        "url": "https://jarnazgallery.com/"
+      }
+    </script>
   </head>
   <body>
+    <a class="skip-link" href="#collection">কালেকশনে যান</a>
     <div class="topbar" id="topbar">ক্যাশ অন ডেলিভারি · ঢাকায় ১–২ দিন · সাইজ সিলেক্ট করে অর্ডার</div>
 
     <header class="site-header">
       <div class="header-inner">
         <a class="logo" href="#top" id="brandLogo">Jarnaz <em>Gallery</em></a>
-        <nav class="site-nav">
+        <button class="nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="siteNav">মেনু</button>
+        <nav class="site-nav" id="siteNav">
           <a href="#collection" id="navCollection">কালেকশন</a>
           <a href="#reviews" id="navReviews">রিভিউ</a>
           <a href="#howto" id="navHowto">কিভাবে অর্ডার</a>
-          <a class="nav-cta" href="#order" id="navOrder">অর্ডার</a>
+          <a class="nav-cta" href="#collection" id="navOrder">অর্ডার</a>
         </nav>
       </div>
     </header>
@@ -66,7 +90,11 @@
           <p id="collectionSubtitle">ছবির নিচের নম্বর ধরে অর্ডার করুন</p>
           <p class="product-count" id="productCount"></p>
         </div>
-        <div class="product-grid" id="productGrid"></div>
+        <div class="product-grid" id="productGrid">
+          <article class="product-card skeleton" aria-hidden="true"></article>
+          <article class="product-card skeleton" aria-hidden="true"></article>
+          <article class="product-card skeleton" aria-hidden="true"></article>
+        </div>
       </section>
 
       <section class="reviews" id="reviews">
@@ -85,7 +113,7 @@
           <p class="modal-help">ছবি ও কমেন্ট যোগ করুন, নিচে স্লাইডারে দেখাবে।</p>
           <label>আপনার নাম <input name="name" required placeholder="নাম · শহর" /></label>
           <label>কমেন্ট <textarea name="text" rows="3" required placeholder="আপনার মতামত লিখুন"></textarea></label>
-          <label>ছবি <input type="file" name="image" accept="image/*" required /></label>
+          <label>ছবি (ঐচ্ছিক) <input type="file" name="image" accept="image/*" /></label>
           <button class="btn btn-dark" type="submit">রিভিউ পাঠান</button>
           <p class="save-note" id="reviewNote"></p>
         </form>
@@ -104,11 +132,20 @@
         </ol>
       </section>
 
-      <section class="order" id="order">
-        <div class="section-head">
-          <p class="eyebrow" id="checkoutEyebrow">Checkout</p>
-          <h2 id="checkoutTitle">অর্ডার করুন</h2>
-          <p class="order-hint" id="checkoutHint">Order Now চাপুন, সাইজ সিলেক্ট করলেই অর্ডার ফর্ম খুলবে।</p>
+      <section class="policy" id="policy">
+        <div class="policy-grid">
+          <article>
+            <strong>ক্যাশ অন ডেলিভারি</strong>
+            <p>সারা বাংলাদেশে হাতে পেয়ে টাকা দিলেই হবে।</p>
+          </article>
+          <article>
+            <strong>ডেলিভারি সময়</strong>
+            <p>ঢাকায় সাধারণত ১–২ দিন। ঢাকার বাইরে ২–৪ দিন।</p>
+          </article>
+          <article>
+            <strong>সাইজ হেল্প</strong>
+            <p>অর্ডারের আগে সাইজ বেছে নিন। দ্বিধা থাকলে WhatsApp-এ জিজ্ঞেস করুন।</p>
+          </article>
         </div>
       </section>
     </main>
@@ -117,14 +154,23 @@
       <div>
         <p class="logo" id="footerBrand">Jarnaz <em>Gallery</em></p>
         <p id="footerText">Kids fashion · Pallabi, Mirpur 11</p>
+        <p id="footerLocation">Pallabi, Mirpur 11</p>
         <div class="footer-links" id="footerLinks"></div>
       </div>
-      <a href="admin.html">অ্যাডমিন</a>
+      <div class="footer-aside">
+        <a id="footerWhatsapp" href="https://wa.me/8801735943156" target="_blank" rel="noopener">WhatsApp: 01735943156</a>
+        <a class="admin-quiet" href="admin.html">অ্যাডমিন</a>
+      </div>
     </footer>
+    <a class="wa-float" id="waFloat" href="https://wa.me/8801735943156" target="_blank" rel="noopener" aria-label="WhatsApp-এ মেসেজ করুন">WhatsApp</a>
 
     <div class="modal checkout-modal" id="sizeModal" aria-hidden="true">
       <div class="checkout-card" role="dialog" aria-labelledby="sizeTitle">
         <form id="orderForm">
+          <div class="checkout-toolbar">
+            <button class="linkish" type="button" id="checkoutBack">← ফিরে যান</button>
+            <button class="checkout-close" type="button" id="checkoutClose" aria-label="বন্ধ করুন">✕</button>
+          </div>
           <input type="hidden" name="productCode" id="productCode" required />
           <input type="hidden" name="size" id="sizeInput" required />
           <input type="hidden" name="combo" id="comboSelect" value="2" />
@@ -158,7 +204,8 @@
               <input type="number" name="qty" min="1" max="10" value="1" required />
             </label>
             <p class="pay-note"><span id="payNoteText">পেমেন্ট: ক্যাশ অন ডেলিভারি</span> · মোট: <strong id="totalPrice">৳০</strong></p>
-            <button class="btn btn-dark" type="submit">অর্ডার কনফার্ম করুন</button>
+            <p class="form-error" id="orderFormError"></p>
+            <button class="btn btn-dark" type="submit" id="orderSubmit">অর্ডার কনফার্ম করুন</button>
           </div>
         </form>
       </div>
@@ -175,7 +222,7 @@
         </div>
       </div>
     </div>
-    <script src="catalog.js?v=20260915g"></script>
-    <script src="script.js?v=20260915g"></script>
+    <script src="catalog.js?v=20260920e"></script>
+    <script src="script.js?v=20260920e"></script>
   </body>
 </html>

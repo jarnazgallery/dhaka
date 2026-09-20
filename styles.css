@@ -25,6 +25,7 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 84px;
 }
 
 body {
@@ -46,6 +47,23 @@ img {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -40px;
+  background: #fff;
+  color: var(--ink);
+  padding: 8px 12px;
+  border-radius: 8px;
+  z-index: 80;
+}
+.skip-link:focus { top: 12px; }
+
+:focus-visible {
+  outline: 3px solid #ff4fa3;
+  outline-offset: 2px;
 }
 
 h1,
@@ -78,6 +96,7 @@ h2,
 }
 
 .header-inner {
+  position: relative;
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
   min-height: 68px;
@@ -85,6 +104,18 @@ h2,
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+}
+
+.nav-toggle {
+  display: none;
+  border: 1.5px solid #ffd6ec;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
 }
 
 .logo {
@@ -131,6 +162,10 @@ h2,
   border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 800;
+}
+
+body.offers-off .hero {
+  display: none;
 }
 
 .hero {
@@ -264,6 +299,12 @@ h1 {
   font-weight: 600;
 }
 
+.btn:disabled,
+.order-now:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
 .btn-dark,
 .order-now,
 .confirm-btn {
@@ -353,6 +394,17 @@ h1 {
   gap: 18px;
 }
 
+.product-card.skeleton {
+  min-height: 360px;
+  background: linear-gradient(90deg, #fff, #ffe6f4, #fff);
+  background-size: 200% 100%;
+  animation: shine 1.2s linear infinite;
+}
+
+@keyframes shine {
+  to { background-position: -200% 0; }
+}
+
 .product-card {
   background: var(--paper);
   border: 2px solid #ffd6ec;
@@ -406,10 +458,24 @@ h1 {
   min-height: 2.4em;
 }
 
+.price-age {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  margin: 0 0 4px;
+}
+
+.price-alt {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+
 .product-price {
   font-weight: 800;
   color: #e2187a;
-  margin-bottom: 12px;
+  margin-bottom: 2px;
 }
 
 .review-slider {
@@ -639,15 +705,86 @@ body.modal-open {
   color: #e2187a;
 }
 
+.policy {
+  width: min(1120px, calc(100% - 32px));
+  margin: 8px auto 28px;
+}
+
+.policy-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.policy-grid article {
+  background: #fff;
+  border: 2px solid #ffd6ec;
+  border-radius: 18px;
+  padding: 16px 18px;
+}
+
+.policy-grid p {
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.form-error {
+  color: #e2187a;
+  font-weight: 800;
+  min-height: 1.2em;
+}
+
+.checkout-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.checkout-close {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: #ffe6f4;
+  color: #e2187a;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.wa-float {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 40;
+  background: #25d366;
+  color: #fff;
+  font-weight: 800;
+  padding: 12px 16px;
+  border-radius: 999px;
+  box-shadow: 0 10px 24px rgba(18, 140, 70, 0.35);
+}
+
 .site-footer {
   background: linear-gradient(90deg, #12c5c0, #b57bff, #ff4fa3);
   color: #fff;
   margin-top: 24px;
-  padding: 28px 20px;
+  padding: 32px 20px;
   display: flex;
   justify-content: space-between;
-  gap: 12px;
-  align-items: center;
+  gap: 18px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.footer-aside {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+
+.admin-quiet {
+  opacity: 0.45;
+  font-size: 0.78rem;
 }
 
 .site-footer .logo {
@@ -791,9 +928,30 @@ thead {
 }
 
 @media (max-width: 760px) {
-  .site-nav a:not(.nav-cta) {
+  .nav-toggle { display: inline-flex; }
+  .site-nav {
     display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: auto;
+    width: min(280px, calc(100vw - 32px));
+    background: #fff;
+    border: 2px solid #ffd6ec;
+    border-radius: 18px;
+    padding: 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    box-shadow: var(--shadow);
   }
+  .site-nav.is-open { display: flex; }
+  .site-nav a {
+    display: block;
+    padding: 10px 12px;
+    border-radius: 12px;
+  }
+  .site-footer, .footer-aside { justify-items: start; }
 }
 
 @media (min-width: 860px) {
@@ -813,6 +971,10 @@ thead {
 
   .trust {
     grid-template-columns: repeat(4, 1fr);
+  }
+
+  .policy-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .product-grid {

@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /data/
+Disallow: /api.php
+Disallow: /server.js
+
+Sitemap: https://jarnazgallery.com/sitemap.xml

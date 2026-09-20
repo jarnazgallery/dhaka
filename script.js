@@ -11,13 +11,16 @@ let reviewIndex = 0;
 let reviewTimer = null;
 
 function visualHTML(product) {
-  return `<div class="set-visual"><img src="${product.image}" alt="${product.code} ${product.name}" /></div>`;
+  return `<div class="set-visual"><img src="${htmlEsc(product.image)}" alt="${htmlEsc(product.code)} ${htmlEsc(product.name)}" loading="lazy" decoding="async" /></div>`;
 }
 
 function cardHTML(product) {
   const desc = product.description
     ? `<p class="product-desc">${htmlEsc(product.description)}</p>`
     : "";
+  const older = product.price36 && Number(product.price36) !== Number(product.price)
+    ? `<p class="price-alt">৩–৬ বছর ${taka(product.price36)}</p>`
+    : `<p class="price-alt">৩–৬ বছর ${taka(product.price36 || product.price)}</p>`;
   return `
     <article class="product-card" data-code="${htmlEsc(product.code)}" id="card-${htmlEsc(product.code)}">
       ${visualHTML(product)}
@@ -26,6 +29,8 @@ function cardHTML(product) {
         <p class="product-name">${htmlEsc(product.name)}</p>
         ${desc}
         <p class="product-price">${taka(product.price)}</p>
+        <p class="price-age">০–৩ বছর</p>
+        ${older}
         <button class="order-now" type="button" data-order="${htmlEsc(product.code)}">Order Now</button>
       </div>
     </article>
@@ -33,14 +38,21 @@ function cardHTML(product) {
 }
 
 function renderProducts() {
-  document.getElementById("productGrid").innerHTML = PRODUCTS.map(cardHTML).join("");
+  const grid = document.getElementById("productGrid");
+  if (!PRODUCTS.length) {
+    grid.innerHTML = '<p class="empty-pick">এখনো প্রোডাক্ট নেই। একটু পরে আবার দেখুন।</p>';
+  } else {
+    grid.innerHTML = PRODUCTS.map(cardHTML).join("");
+  }
   const count = document.getElementById("productCount");
   if (count) count.textContent = PRODUCTS.length ? `মোট ${PRODUCTS.length} টা সেট` : "এখনো প্রোডাক্ট নেই";
 }
 
-function renderSizes() {
-  const months = SIZES.filter((size) => size.value.includes("m"));
-  const years = SIZES.filter((size) => size.value.includes("year"));
+function renderSizes(product) {
+  const young = SIZES.filter((size) => !isOlderSize(size.value));
+  const older = SIZES.filter((size) => isOlderSize(size.value));
+  const youngPrice = product ? taka(priceForSize(product, "0-3 m")) : "";
+  const olderPrice = product ? taka(priceForSize(product, "3-4 year")) : "";
   const group = (title, items) => `
     <div class="size-group">
       <p class="size-group-title">${title}</p>
@@ -58,7 +70,8 @@ function renderSizes() {
     </div>
   `;
   document.getElementById("sizeGrid").innerHTML =
-    group("মাস অনুযায়ী", months) + group("বছর অনুযায়ী", years);
+    group(`০–৩ বছর${youngPrice ? " · " + youngPrice : ""}`, young) +
+    group(`৩–৬ বছর${olderPrice ? " · " + olderPrice : ""}`, older);
 }
 
 function showStep(step) {
@@ -79,6 +92,7 @@ function openSizeModal(code, offerPrice) {
     `${visualHTML(product)}<p class="selected-code">${product.code}</p>`;
   document.getElementById("productCode").value = product.code;
   document.getElementById("comboSelect").value = String(product.piece);
+  renderSizes(product);
   document.querySelectorAll(".size-btn").forEach((btn) => btn.classList.remove("is-active"));
   showStep(1);
   document.body.classList.add("modal-open");
@@ -109,16 +123,22 @@ function goToDetails() {
   if (!document.getElementById("sizeModal").classList.contains("is-open")) return;
   const size = SIZES.find((item) => item.value === selectedSize);
   selectProduct(pendingCode);
+  const unit = unitPrice(selected || findProduct(pendingCode), selectedSize);
   document.getElementById("sizePicked").innerHTML =
-    `সাইজ: <strong>${size.label}</strong>`;
+    `সাইজ: <strong>${size.label}</strong> · ${taka(unit)}`;
   showStep(2);
   updateTotal();
+}
+
+function unitPrice(product, sizeValue) {
+  if (isOlderSize(sizeValue)) return priceForSize(product, sizeValue);
+  return Number(selectedOfferPrice || priceForSize(product, sizeValue));
 }
 
 function updateTotal() {
   const qty = Number(document.querySelector('[name="qty"]').value || 1);
   const product = selected || findProduct(pendingCode);
-  const unit = selectedOfferPrice || product?.price || 2040;
+  const unit = unitPrice(product, selectedSize || document.getElementById("sizeInput").value);
   document.getElementById("totalPrice").textContent = taka(unit * qty);
 }
 
@@ -160,6 +180,15 @@ async function saveOrder(order) {
   }
 }
 
+function validBdPhone(phone) {
+  return /^01[0-9]{9}$/.test(String(phone || "").replace(/\s/g, ""));
+}
+
+function setOrderError(message) {
+  const el = document.getElementById("orderFormError");
+  if (el) el.textContent = message || "";
+}
+
 function waLink(order) {
   const text = [
     "নতুন অর্ডার — Jarnaz Gallery",
@@ -184,7 +213,8 @@ function showConfirm(order) {
     <p>সাইজ: <strong>${order.size}</strong> · ${order.qty} সেট</p>
     <p>মোট: <strong>${taka(order.total)}</strong></p>
     <p>অর্ডার আইডি: ${order.id}</p>
-    <p>${order.name} · ${order.phone}</p>
+    <p>${htmlEsc(order.name)} · ${htmlEsc(order.phone)}</p>
+    <p>${htmlEsc(order.address)}</p>
   `;
   document.getElementById("confirmModal").classList.add("is-open");
   document.getElementById("confirmModal").setAttribute("aria-hidden", "false");
@@ -205,7 +235,7 @@ document.addEventListener("click", (event) => {
 
   const checkout = document.getElementById("sizeModal");
   if (!checkout.classList.contains("is-open")) return;
-  if (event.target.closest("input, textarea, select, button, label, .size-picked")) return;
+  if (event.target.closest("input, textarea, select, button, label, .size-picked, .checkout-toolbar")) return;
 
   const onDetails = !document.getElementById("stepDetails").classList.contains("is-hidden");
   if (onDetails) {
@@ -220,27 +250,41 @@ document.querySelector('[name="qty"]').addEventListener("input", updateTotal);
 document.getElementById("orderForm").addEventListener("submit", (event) => {
   event.preventDefault();
   const form = new FormData(event.target);
+  const submit = document.getElementById("orderSubmit");
+  setOrderError("");
 
   if (!form.get("productCode") || !selected) {
-    alert("আগে একটি সেটে Order Now চাপুন।");
+    setOrderError("আগে একটি সেটে Order Now চাপুন।");
     return;
   }
 
   if (!form.get("size")) {
-    alert("আগে সাইজ সিলেক্ট করুন।");
+    setOrderError("আগে সাইজ সিলেক্ট করুন।");
     if (selected) openSizeModal(selected.code);
+    return;
+  }
+
+  const name = form.get("name").trim();
+  const phone = form.get("phone").trim();
+  const address = form.get("address").trim();
+  if (!name || !address) {
+    setOrderError("নাম ও সম্পূর্ণ ঠিকানা দিন।");
+    return;
+  }
+  if (!validBdPhone(phone)) {
+    setOrderError("সঠিক মোবাইল দিন, যেমন 017XXXXXXXX");
     return;
   }
 
   const combo = Number(form.get("combo"));
   const qty = Number(form.get("qty"));
-  const unit = selectedOfferPrice || selected.price || 2040;
+  const unit = unitPrice(selected, form.get("size"));
   const order = {
     id: orderId(),
     productCode: form.get("productCode"),
-    name: form.get("name").trim(),
-    phone: form.get("phone").trim(),
-    address: form.get("address").trim(),
+    name,
+    phone,
+    address,
     size: form.get("size"),
     combo,
     qty,
@@ -250,6 +294,10 @@ document.getElementById("orderForm").addEventListener("submit", (event) => {
     createdAt: new Date().toISOString(),
   };
 
+  if (submit) {
+    submit.disabled = true;
+    submit.textContent = "অর্ডার যাচ্ছে...";
+  }
   saveOrder(order)
     .then((saved) => {
       closeSizeModal();
@@ -261,7 +309,45 @@ document.getElementById("orderForm").addEventListener("submit", (event) => {
       showStep(1);
       updateTotal();
     })
-    .catch((err) => alert(err.message));
+    .catch((err) => setOrderError(err.message))
+    .finally(() => {
+      if (submit) {
+        submit.disabled = false;
+        submit.textContent = "অর্ডার কনফার্ম করুন";
+      }
+    });
+});
+
+document.getElementById("checkoutClose").addEventListener("click", closeSizeModal);
+document.getElementById("checkoutBack").addEventListener("click", () => {
+  const onDetails = !document.getElementById("stepDetails").classList.contains("is-hidden");
+  if (onDetails) showStep(1);
+  else closeSizeModal();
+});
+
+const navToggle = document.getElementById("navToggle");
+const siteNav = document.getElementById("siteNav");
+if (navToggle && siteNav) {
+  navToggle.addEventListener("click", () => {
+    const open = siteNav.classList.toggle("is-open");
+    navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+  siteNav.addEventListener("click", (event) => {
+    if (event.target.closest("a")) {
+      siteNav.classList.remove("is-open");
+      navToggle.setAttribute("aria-expanded", "false");
+    }
+  });
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  if (document.getElementById("sizeModal").classList.contains("is-open")) closeSizeModal();
+  document.getElementById("confirmModal").classList.remove("is-open");
+  if (siteNav) {
+    siteNav.classList.remove("is-open");
+    if (navToggle) navToggle.setAttribute("aria-expanded", "false");
+  }
 });
 
 document.getElementById("closeModal").addEventListener("click", () => {
@@ -299,7 +385,7 @@ function renderOfferSlider() {
       const product = findProduct(offer.code);
       return `
         <div class="offer-slide">
-          <img src="${product.image}" alt="${offer.title} ${offer.code}" />
+          <img src="${htmlEsc(product.image)}" alt="${htmlEsc(offer.title)} ${htmlEsc(offer.code)}" />
         </div>
       `;
     })
@@ -319,15 +405,20 @@ function showOffer(index) {
   });
   const offer = currentOffer();
   document.getElementById("offerTitle").textContent = `${offer.title} · ${offer.code}`;
-  document.getElementById("offerPrice").textContent = `মাত্র ${taka(offer.price)}`;
+  document.getElementById("offerPrice").textContent = `মাত্র ${taka(offer.price)} · ০–৩ বছর`;
 }
 
 function startOfferTimer() {
   clearInterval(offerTimer);
+  if (SITE.offersEnabled === false) return;
   offerTimer = setInterval(() => showOffer(offerIndex + 1), 4000);
 }
 
 function bindOfferSlider() {
+  if (SITE.offersEnabled === false) {
+    clearInterval(offerTimer);
+    return;
+  }
   renderOfferSlider();
   startOfferTimer();
 

@@ -11,18 +11,18 @@ const SIZES = [
 ];
 
 const FALLBACK_PRODUCTS = [
-  { code: "SET-01", piece: 2, name: "Floral Top + Daisy Shorts", price: 2040, description: "২ পিস কম্বো। ফ্লোরাল টপ ও ডেইজি শর্টস। নরম কটন।", image: "images/set-01.png" },
-  { code: "SET-02", piece: 2, name: "Navy Polka + Pearl Shorts", price: 2040, description: "২ পিস কম্বো। নেভি পোলকা টপ ও পার্ল শর্টস।", image: "images/set-02.png" },
-  { code: "SET-03", piece: 2, name: "Blue Floral + Pearl Shorts", price: 2040, description: "২ পিস কম্বো। ব্লু ফ্লোরাল টপ ও পার্ল শর্টস।", image: "images/set-03.png" },
-  { code: "SET-04", piece: 2, name: "Strawberry Top + Daisy Shorts", price: 2040, description: "২ পিস কম্বো। স্ট্রবেরি টপ ও ডেইজি শর্টস।", image: "images/set-04.png" },
-  { code: "SET-05", piece: 2, name: "Navy Floral + Pearl Shorts", price: 2040, description: "২ পিস কম্বো। নেভি ফ্লোরাল টপ ও পার্ল শর্টস।", image: "images/set-05.png" },
-  { code: "SET-06", piece: 2, name: "Pink Bow Top + Pearl Shorts", price: 2040, description: "২ পিস কম্বো। পিঙ্ক বো টপ ও পার্ল শর্টস।", image: "images/set-06.png" },
-  { code: "SET-07", piece: 2, name: "Pink Check + Daisy Shorts", price: 2040, description: "২ পিস কম্বো। পিঙ্ক চেক টপ ও ডেইজি শর্টস।", image: "images/set-07.png" },
-  { code: "SET-08", piece: 2, name: "Red Check + Daisy Shorts", price: 2040, description: "২ পিস কম্বো। রেড চেক টপ ও ডেইজি শর্টস।", image: "images/set-08.png" },
-  { code: "SET-09", piece: 2, name: "Lilac Check + Pearl Shorts", price: 2040, description: "২ পিস কম্বো। লাইলাক চেক টপ ও পার্ল শর্টস।", image: "images/set-09.png" },
-  { code: "SET-10", piece: 2, name: "Heart Top + Daisy Shorts", price: 2040, description: "২ পিস কম্বো। হার্ট টপ ও ডেইজি শর্টস।", image: "images/set-10.png" },
-  { code: "SET-11", piece: 2, name: "Black Check + Daisy Shorts", price: 2040, description: "২ পিস কম্বো। ব্ল্যাক চেক টপ ও ডেইজি শর্টস।", image: "images/set-11.png" },
-  { code: "SET-12", piece: 2, name: "White Bow Top + Pearl Shorts", price: 2040, description: "২ পিস কম্বো। হোয়াইট বো টপ ও পার্ল শর্টস।", image: "images/set-12.png" },
+  { code: "SET-01", piece: 2, name: "Floral Top + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। ফ্লোরাল টপ ও ডেইজি শর্টস। নরম কটন।", image: "images/set-01.png" },
+  { code: "SET-02", piece: 2, name: "Navy Polka + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। নেভি পোলকা টপ ও পার্ল শর্টস।", image: "images/set-02.png" },
+  { code: "SET-03", piece: 2, name: "Blue Floral + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। ব্লু ফ্লোরাল টপ ও পার্ল শর্টস।", image: "images/set-03.png" },
+  { code: "SET-04", piece: 2, name: "Strawberry Top + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। স্ট্রবেরি টপ ও ডেইজি শর্টস।", image: "images/set-04.png" },
+  { code: "SET-05", piece: 2, name: "Navy Floral + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। নেভি ফ্লোরাল টপ ও পার্ল শর্টস।", image: "images/set-05.png" },
+  { code: "SET-06", piece: 2, name: "Pink Bow Top + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। পিঙ্ক বো টপ ও পার্ল শর্টস।", image: "images/set-06.png" },
+  { code: "SET-07", piece: 2, name: "Pink Check + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। পিঙ্ক চেক টপ ও ডেইজি শর্টস।", image: "images/set-07.png" },
+  { code: "SET-08", piece: 2, name: "Red Check + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। রেড চেক টপ ও ডেইজি শর্টস।", image: "images/set-08.png" },
+  { code: "SET-09", piece: 2, name: "Lilac Check + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। লাইলাক চেক টপ ও পার্ল শর্টস।", image: "images/set-09.png" },
+  { code: "SET-10", piece: 2, name: "Heart Top + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। হার্ট টপ ও ডেইজি শর্টস।", image: "images/set-10.png" },
+  { code: "SET-11", piece: 2, name: "Black Check + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। ব্ল্যাক চেক টপ ও ডেইজি শর্টস।", image: "images/set-11.png" },
+  { code: "SET-12", piece: 2, name: "White Bow Top + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। হোয়াইট বো টপ ও পার্ল শর্টস।", image: "images/set-12.png" },
 ];
 
 const FALLBACK_OFFERS = [
@@ -46,6 +46,7 @@ const FALLBACK_SITE = {
   topbar: "ক্যাশ অন ডেলিভারি · ঢাকায় ১–২ দিন · সাইজ সিলেক্ট করে অর্ডার",
   heroEyebrow: "Combo offer",
   heroTitle: "ছোটদের জন্য\nনির্বাচিত কম্বো",
+  offersEnabled: true,
   heroNote: "অর্ডারের আগে সাইজ বেছে নিন · প্রোডাক্ট নম্বর অটো যাবে",
   navCollection: "কালেকশন",
   navReviews: "রিভিউ",
@@ -101,6 +102,16 @@ function taka(n) {
   return `৳${Number(n).toLocaleString("bn-BD")}`;
 }
 
+function isOlderSize(sizeValue) {
+  return ["3-4 year", "4-5 year", "5-6 year"].includes(String(sizeValue || ""));
+}
+
+function priceForSize(product, sizeValue) {
+  if (!product) return 2040;
+  if (isOlderSize(sizeValue)) return Number(product.price36 || product.price || 2040);
+  return Number(product.price || 2040);
+}
+
 function htmlEsc(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -114,6 +125,7 @@ function mergeSite(extra) {
   merged.trust = extra && extra.trust && extra.trust.length ? extra.trust : FALLBACK_SITE.trust.slice();
   merged.reviews = extra && extra.reviews && extra.reviews.length ? extra.reviews : FALLBACK_SITE.reviews.slice();
   merged.howto = extra && extra.howto && extra.howto.length ? extra.howto : FALLBACK_SITE.howto.slice();
+  merged.offersEnabled = extra && extra.offersEnabled === false ? false : true;
   return merged;
 }
 
@@ -131,6 +143,13 @@ function fillBrand(el, site) {
   } else {
     el.innerHTML = brandHTML(site.brand);
   }
+}
+
+function displayPhone(digits) {
+  const n = String(digits || "").replace(/\D/g, "");
+  if (n.startsWith("880")) return "0" + n.slice(3);
+  if (n.startsWith("88")) return "0" + n.slice(2);
+  return n;
 }
 
 function applySite(raw) {
@@ -196,9 +215,43 @@ function applySite(raw) {
     links.innerHTML = items.join("");
   }
 
+  const shownPhone = displayPhone(WHATSAPP);
+  const waHref = WHATSAPP ? `https://wa.me/${WHATSAPP}` : "#";
+  const waFloat = document.getElementById("waFloat");
+  if (waFloat) {
+    waFloat.href = waHref;
+    waFloat.textContent = "WhatsApp";
+  }
+  const footerWa = document.getElementById("footerWhatsapp");
+  if (footerWa) {
+    footerWa.href = waHref;
+    footerWa.textContent = shownPhone ? `WhatsApp: ${shownPhone}` : "WhatsApp";
+  }
+  const footerLoc = document.getElementById("footerLocation");
+  if (footerLoc) footerLoc.textContent = SITE.location || "";
+
   if (SITE.brand) document.title = `${SITE.brand} — ${SITE.tagline || "Kids Combo Sets"}`;
   const meta = document.querySelector('meta[name="description"]');
   if (meta && SITE.metaDescription) meta.setAttribute("content", SITE.metaDescription);
+  const ogTitle = document.querySelector('meta[property="og:title"]');
+  if (ogTitle && SITE.brand) ogTitle.setAttribute("content", `${SITE.brand} — ${SITE.tagline || "Kids Combo Sets"}`);
+  const ogDesc = document.querySelector('meta[property="og:description"]');
+  if (ogDesc && SITE.metaDescription) ogDesc.setAttribute("content", SITE.metaDescription);
+
+  const json = document.getElementById("businessJson");
+  if (json) {
+    json.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Store",
+      name: SITE.brand || "Jarnaz Gallery",
+      description: SITE.metaDescription || SITE.tagline || "",
+      address: { "@type": "PostalAddress", addressLocality: SITE.location || "Pallabi, Mirpur 11", addressCountry: "BD" },
+      telephone: WHATSAPP ? "+" + WHATSAPP : "",
+      url: "https://jarnazgallery.com/",
+    });
+  }
+
+  document.body.classList.toggle("offers-off", SITE.offersEnabled === false);
 }
 
 let SITE = mergeSite();
@@ -220,14 +273,24 @@ function parseJsonSafe(text) {
 async function apiCall(route, options = {}) {
   const clean = String(route).replace(/^\/+/, "").replace(/^api\//, "");
   const method = String((options && options.method) || "GET").toUpperCase();
+  const opts = Object.assign({}, options || {});
+  opts.headers = Object.assign({}, opts.headers || {});
+  const adminToken = opts.headers.Authorization || opts.headers.authorization || "";
+  if (adminToken && !opts.headers["X-Admin-Token"]) {
+    opts.headers["X-Admin-Token"] = String(adminToken).replace(/^Bearer\s+/i, "");
+  }
+  const bust = clean === "catalog" && method === "GET" ? "t=" + Date.now() : "";
   const attempts = [
-    { url: "/api/" + clean, options },
-    { url: "api.php?route=" + encodeURIComponent(clean), options },
+    { url: "/api/" + clean + (bust ? "?" + bust : ""), options: opts },
+    { url: "api.php?route=" + encodeURIComponent(clean) + (bust ? "&" + bust : ""), options: opts },
   ];
+  if (clean === "catalog" && method === "GET") {
+    attempts.push({ url: "catalog-data.json?" + bust, options: { method: "GET" } });
+  }
   if (method !== "GET" && method !== "POST") {
     attempts.push({
       url: "api.php?route=" + encodeURIComponent(clean) + "&_method=" + method,
-      options: Object.assign({}, options, { method: "POST" }),
+      options: Object.assign({}, opts, { method: "POST" }),
     });
   }
 
@@ -237,7 +300,8 @@ async function apiCall(route, options = {}) {
       const res = await fetch(attempt.url, attempt.options);
       const text = await res.text();
       const data = parseJsonSafe(text);
-      API_MODE = attempt.url.indexOf("api.php") === 0 ? "php" : "server";
+      if (attempt.url.indexOf("catalog-data.json") === 0) API_MODE = "file";
+      else API_MODE = attempt.url.indexOf("api.php") === 0 ? "php" : "server";
       return { ok: res.ok, status: res.status, data };
     } catch (err) {
       if (err.code === "NOT_JSON") sawHtml = true;
@@ -277,7 +341,7 @@ function localCatalog() {
 async function loadCatalog() {
   try {
     const result = await apiCall("catalog");
-    if (!result.ok || !result.data.products || !result.data.products.length) throw new Error("empty");
+    if (!result.ok || !result.data || !Array.isArray(result.data.products)) throw new Error("empty");
     PRODUCTS = result.data.products;
     SITE = mergeSite(result.data.site);
     WHATSAPP = SITE.whatsapp || result.data.whatsapp || WHATSAPP;
@@ -393,7 +457,7 @@ async function handleLocalAdmin(route, options) {
       size: String(body.size || "").trim(),
       combo: Number(product.piece || 2),
       qty,
-      total: Number(body.total || product.price * qty),
+      total: Number(body.total || priceForSize(product, body.size) * qty),
       status: body.status === "new" ? "new" : "confirmed",
       source: "admin",
       createdAt: new Date().toISOString(),
@@ -417,6 +481,7 @@ async function handleLocalAdmin(route, options) {
       code: localNextCode(products),
       name: String(form.get("name") || "নতুন সেট").trim(),
       price: Number(form.get("price") || 2040),
+      price36: Number(form.get("price36") || form.get("price") || 2040),
       piece: Number(form.get("piece") || 2),
       description: String(form.get("description") || "").trim(),
       image: imageFile ? await fileToDataUrl(imageFile) : "images/set-01.png",
@@ -434,10 +499,12 @@ async function handleLocalAdmin(route, options) {
     const form = options.body;
     const name = form.get("name");
     const price = form.get("price");
+    const price36 = form.get("price36");
     const piece = form.get("piece");
     const imageFile = form.get("image");
     if (name) product.name = String(name).trim();
     if (price) product.price = Number(price);
+    if (price36) product.price36 = Number(price36);
     if (piece) product.piece = Number(piece);
     if (form.has("description")) product.description = String(form.get("description") || "").trim();
     if (imageFile && imageFile.size) product.image = await fileToDataUrl(imageFile);
@@ -460,8 +527,24 @@ async function handleLocalAdmin(route, options) {
     const body = JSON.parse(options.body || "{}");
     const order = orders.find((o) => o.id === id);
     if (!order) throw new Error("অর্ডার নেই");
-    if (body.status !== "new" && body.status !== "confirmed") throw new Error("স্ট্যাটাস ভুল");
-    order.status = body.status;
+    const allowed = ["new", "confirmed", "cancelled", "delivered"];
+    if (body.status && !allowed.includes(body.status)) throw new Error("স্ট্যাটাস ভুল");
+    ["name", "phone", "address", "size", "note"].forEach((key) => {
+      if (body[key] != null) order[key] = String(body[key]).trim();
+    });
+    if (body.qty != null) order.qty = Math.max(1, Number(body.qty) || 1);
+    if (body.productCode) {
+      const product = products.find((p) => p.code === body.productCode);
+      if (product) {
+        order.productCode = product.code;
+        order.combo = Number(product.piece || order.combo || 2);
+        if (body.total == null) order.total = priceForSize(product, order.size) * order.qty;
+      }
+    }
+    if (body.total != null && body.total !== "") order.total = Number(body.total);
+    if (body.status) order.status = body.status;
+    if (!order.name || !order.phone || !order.address || !order.size) throw new Error("নাম, মোবাইল, ঠিকানা ও সাইজ দিন");
+    order.updatedAt = new Date().toISOString();
     writeLocal(LOCAL_KEYS.orders, orders);
     return order;
   }

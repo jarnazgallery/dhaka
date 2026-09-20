@@ -1,30 +1,53 @@
 <?php
+error_reporting(0);
 header("Content-Type: application/json; charset=utf-8");
+header("Cache-Control: no-store, no-cache, must-revalidate");
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Admin-Token");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
   http_response_code(204);
   exit;
 }
 
+if (!function_exists("random_bytes")) {
+  function random_bytes($n) {
+    if (function_exists("openssl_random_pseudo_bytes")) return openssl_random_pseudo_bytes($n);
+    $s = "";
+    for ($i = 0; $i < $n; $i++) $s .= chr(mt_rand(0, 255));
+    return $s;
+  }
+}
+if (!function_exists("hash_equals")) {
+  function hash_equals($a, $b) {
+    return $a === $b;
+  }
+}
+
 $ROOT = __DIR__;
 $DATA = $ROOT . "/data";
 $IMAGES = $ROOT . "/images";
-if (!is_dir($DATA)) mkdir($DATA, 0775, true);
-if (!is_dir($IMAGES)) mkdir($IMAGES, 0775, true);
+if (!is_dir($DATA)) @mkdir($DATA, 0775, true);
+if (!is_dir($IMAGES)) @mkdir($IMAGES, 0775, true);
 
 function read_json($file, $fallback) {
   global $DATA;
   $path = "$DATA/$file";
   if (!is_file($path)) return $fallback;
-  $data = json_decode(file_get_contents($path), true);
+  $raw = @file_get_contents($path);
+  if ($raw === false) return $fallback;
+  $data = json_decode($raw, true);
   return is_array($data) ? $data : $fallback;
 }
 
-function write_json($file, $value) {
+function write_json($file, $value, $strict = true) {
   global $DATA;
-  file_put_contents("$DATA/$file", json_encode($value, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+  if (!is_dir($DATA)) @mkdir($DATA, 0775, true);
+  $path = "$DATA/$file";
+  $json = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+  $ok = @file_put_contents($path, $json);
+  if ($ok === false && $strict) fail(500, "data/$file সেভ হয়নি। হোস্টিংয়ে data ফোল্ডার writable করুন (৭৭৫)।");
+  return $ok !== false;
 }
 
 function json_input() {
@@ -44,6 +67,12 @@ function ok($value) {
   exit;
 }
 
+function price_for_age($product, $size) {
+  $older = in_array((string)$size, array("3-4 year", "4-5 year", "5-6 year"), true);
+  if ($older) return intval(isset($product["price36"]) ? $product["price36"] : (isset($product["price"]) ? $product["price"] : 2040));
+  return intval(isset($product["price"]) ? $product["price"] : 2040);
+}
+
 function hash_password($password, $salt) {
   return hash("sha256", $salt . $password);
 }
@@ -58,18 +87,39 @@ function load_config() {
       "passwordHash" => hash_password("jarnaz123", $salt),
       "whatsapp" => isset($config["whatsapp"]) ? $config["whatsapp"] : "8801735943156",
     );
-    write_json("config.json", $config);
+    write_json("config.json", $config, false);
   }
   return $config;
 }
 
+function catalog_payload() {
+  $site = read_json("site.json", array());
+  $config = read_json("config.json", array());
+  return array(
+    "products" => read_json("products.json", array()),
+    "offers" => read_json("offers.json", array()),
+    "site" => $site,
+    "whatsapp" => !empty($site["whatsapp"]) ? $site["whatsapp"] : (isset($config["whatsapp"]) ? $config["whatsapp"] : "8801735943156"),
+    "reviews" => read_json("reviews.json", array()),
+  );
+}
+
+function publish_catalog() {
+  global $ROOT;
+  @file_put_contents($ROOT . "/catalog-data.json", json_encode(catalog_payload(), JSON_UNESCAPED_UNICODE));
+}
+
 function bearer_token() {
   $header = isset($_SERVER["HTTP_AUTHORIZATION"]) ? $_SERVER["HTTP_AUTHORIZATION"] : "";
+  if ($header === "" && !empty($_SERVER["HTTP_X_ADMIN_TOKEN"])) $header = $_SERVER["HTTP_X_ADMIN_TOKEN"];
   if ($header === "" && function_exists("apache_request_headers")) {
     $headers = apache_request_headers();
     if (isset($headers["Authorization"])) $header = $headers["Authorization"];
     elseif (isset($headers["authorization"])) $header = $headers["authorization"];
+    elseif (isset($headers["X-Admin-Token"])) $header = $headers["X-Admin-Token"];
   }
+  if ($header === "" && !empty($_POST["token"])) $header = $_POST["token"];
+  if ($header === "" && !empty($_GET["token"])) $header = $_GET["token"];
   return trim(preg_replace("/^Bearer\\s+/i", "", $header));
 }
 
@@ -117,18 +167,11 @@ $route = trim($route, "/");
 $method = $_SERVER["REQUEST_METHOD"];
 if (!empty($_GET["_method"])) $method = strtoupper($_GET["_method"]);
 
-$config = load_config();
-
 if ($route === "catalog" && $method === "GET") {
-  $site = read_json("site.json", array());
-  ok(array(
-    "products" => read_json("products.json", array()),
-    "offers" => read_json("offers.json", array()),
-    "site" => $site,
-    "whatsapp" => !empty($site["whatsapp"]) ? $site["whatsapp"] : (isset($config["whatsapp"]) ? $config["whatsapp"] : "8801735943156"),
-    "reviews" => read_json("reviews.json", array()),
-  ));
+  ok(catalog_payload());
 }
+
+$config = load_config();
 
 if ($route === "orders" && $method === "POST") {
   $body = json_input();
@@ -148,7 +191,7 @@ if ($route === "orders" && $method === "POST") {
     "size" => trim((string)(isset($body["size"]) ? $body["size"] : "")),
     "combo" => intval(isset($body["combo"]) ? $body["combo"] : (isset($product["piece"]) ? $product["piece"] : 2)),
     "qty" => intval(isset($body["qty"]) ? $body["qty"] : 1),
-    "total" => intval(isset($body["total"]) ? $body["total"] : (isset($product["price"]) ? $product["price"] : 0)),
+    "total" => intval(isset($body["total"]) ? $body["total"] : (price_for_age($product, isset($body["size"]) ? $body["size"] : "") * intval(isset($body["qty"]) ? $body["qty"] : 1))),
     "status" => "new",
     "source" => "web",
     "createdAt" => date("c"),
@@ -205,7 +248,7 @@ if ($route === "admin/orders" && $method === "POST") {
     "size" => trim((string)(isset($body["size"]) ? $body["size"] : "")),
     "combo" => intval(isset($product["piece"]) ? $product["piece"] : 2),
     "qty" => $qty,
-    "total" => intval(isset($body["total"]) ? $body["total"] : ($product["price"] * $qty)),
+    "total" => intval(isset($body["total"]) ? $body["total"] : (price_for_age($product, isset($body["size"]) ? $body["size"] : "") * $qty)),
     "status" => $status,
     "source" => "admin",
     "createdAt" => date("c"),
@@ -223,13 +266,39 @@ if (preg_match("#^admin/orders/(.+)$#", $route, $m) && ($method === "POST" || $m
   require_auth();
   $id = $m[1];
   $body = json_input();
-  $status = isset($body["status"]) ? $body["status"] : "";
-  if ($status !== "new" && $status !== "confirmed") fail(400, "স্ট্যাটাস ভুল");
+  $allowed = array("new", "confirmed", "cancelled", "delivered");
+  if (isset($body["status"]) && $body["status"] !== "" && !in_array($body["status"], $allowed, true)) {
+    fail(400, "স্ট্যাটাস ভুল");
+  }
   $orders = read_json("orders.json", array());
   $saved = null;
+  $products = read_json("products.json", array());
   for ($i = 0; $i < count($orders); $i++) {
     if ((isset($orders[$i]["id"]) ? $orders[$i]["id"] : "") !== $id) continue;
-    $orders[$i]["status"] = $status;
+    foreach (array("name", "phone", "address", "size", "note") as $key) {
+      if (isset($body[$key])) $orders[$i][$key] = trim((string)$body[$key]);
+    }
+    if (isset($body["qty"])) $orders[$i]["qty"] = max(1, intval($body["qty"]));
+    if (!empty($body["productCode"])) {
+      foreach ($products as $p) {
+        if ((isset($p["code"]) ? $p["code"] : "") !== $body["productCode"]) continue;
+        $orders[$i]["productCode"] = $p["code"];
+        $orders[$i]["combo"] = intval(isset($p["piece"]) ? $p["piece"] : 2);
+        if (!isset($body["total"])) {
+          $orders[$i]["total"] = price_for_age($p, isset($orders[$i]["size"]) ? $orders[$i]["size"] : "") * intval($orders[$i]["qty"]);
+        }
+        break;
+      }
+    }
+    if (isset($body["total"]) && $body["total"] !== "") $orders[$i]["total"] = intval($body["total"]);
+    if (!empty($body["status"])) $orders[$i]["status"] = $body["status"];
+    if (trim((string)(isset($orders[$i]["name"]) ? $orders[$i]["name"] : "")) === "" ||
+        trim((string)(isset($orders[$i]["phone"]) ? $orders[$i]["phone"] : "")) === "" ||
+        trim((string)(isset($orders[$i]["address"]) ? $orders[$i]["address"] : "")) === "" ||
+        trim((string)(isset($orders[$i]["size"]) ? $orders[$i]["size"] : "")) === "") {
+      fail(400, "নাম, মোবাইল, ঠিকানা ও সাইজ দিন");
+    }
+    $orders[$i]["updatedAt"] = date("c");
     $saved = $orders[$i];
     break;
   }
@@ -249,6 +318,7 @@ if ($route === "admin/offers" && ($method === "PUT" || $method === "POST")) {
   $list = json_input();
   if (count($list) < 4 || count($list) > 5) fail(400, "৪ থেকে ৫টা অফার রাখুন");
   write_json("offers.json", $list);
+  publish_catalog();
   ok($list);
 }
 
@@ -261,12 +331,14 @@ if ($route === "admin/products" && $method === "POST") {
     "code" => next_code($products),
     "name" => trim((string)(isset($_POST["name"]) ? $_POST["name"] : "নতুন সেট")),
     "price" => intval(isset($_POST["price"]) ? $_POST["price"] : 2040),
+    "price36" => intval(isset($_POST["price36"]) ? $_POST["price36"] : (isset($_POST["price"]) ? $_POST["price"] : 2040)),
     "piece" => intval(isset($_POST["piece"]) ? $_POST["piece"] : 2),
     "description" => trim((string)(isset($_POST["description"]) ? $_POST["description"] : "")),
     "image" => $image,
   );
   array_unshift($products, $product);
   write_json("products.json", $products);
+  publish_catalog();
   ok($product);
 }
 
@@ -281,6 +353,7 @@ if (preg_match("#^admin/products/(.+)$#", $route, $m) && ($method === "PUT" || $
     $found = true;
     if (!empty($_POST["name"])) $products[$i]["name"] = trim((string)$_POST["name"]);
     if (!empty($_POST["price"])) $products[$i]["price"] = intval($_POST["price"]);
+    if (!empty($_POST["price36"])) $products[$i]["price36"] = intval($_POST["price36"]);
     if (!empty($_POST["piece"])) $products[$i]["piece"] = intval($_POST["piece"]);
     if (isset($_POST["description"])) $products[$i]["description"] = trim((string)$_POST["description"]);
     $image = save_upload("image");
@@ -290,6 +363,7 @@ if (preg_match("#^admin/products/(.+)$#", $route, $m) && ($method === "PUT" || $
   }
   if (!$found) fail(404, "প্রোডাক্ট নেই");
   write_json("products.json", $products);
+  publish_catalog();
   ok($saved);
 }
 
@@ -298,6 +372,7 @@ if (preg_match("#^admin/products/(.+)$#", $route, $m) && $method === "DELETE") {
   $code = $m[1];
   write_json("products.json", without_code(read_json("products.json", array()), "code", $code));
   write_json("offers.json", without_code(read_json("offers.json", array()), "code", $code));
+  publish_catalog();
   ok(array("ok" => true));
 }
 
@@ -325,6 +400,7 @@ if ($route === "admin/site" && ($method === "PUT" || $method === "POST")) {
     if (!empty($prev["logo"])) $site["logo"] = $prev["logo"];
   }
   write_json("site.json", $site);
+  publish_catalog();
   if (!empty($site["whatsapp"])) {
     $config["whatsapp"] = preg_replace("/\\D/", "", $site["whatsapp"]);
     write_json("config.json", $config);
@@ -348,6 +424,7 @@ if ($route === "reviews" && $method === "POST") {
   $reviews = read_json("reviews.json", array());
   array_unshift($reviews, $review);
   write_json("reviews.json", $reviews);
+  publish_catalog();
   ok($review);
 }
 

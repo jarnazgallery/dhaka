@@ -1,0 +1,10 @@
+{
+  "name": "Jarnaz Gallery",
+  "short_name": "Jarnaz",
+  "description": "Kids combo sets",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff6fb",
+  "theme_color": "#e2187a",
+  "lang": "bn"
+}

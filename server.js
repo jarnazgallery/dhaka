@@ -25,6 +25,9 @@ function readJson(file, fallback) {
 
 function writeJson(file, value) {
   fs.writeFileSync(path.join(DATA, file), JSON.stringify(value, null, 2));
+  if (["products.json", "offers.json", "site.json", "reviews.json"].includes(file)) {
+    try { publishCatalog(); } catch (_err) {}
+  }
 }
 
 function hashPassword(password, salt) {
@@ -91,17 +94,32 @@ const upload = multer({
   limits: { fileSize: 15 * 1024 * 1024 },
 });
 
-app.get("/api/catalog", (_req, res) => {
+function catalogPayload() {
   const config = loadConfig();
   const site = readJson("site.json", {});
-  res.json({
+  return {
     products: readJson("products.json", []),
     offers: readJson("offers.json", []),
     site,
     whatsapp: site.whatsapp || config.whatsapp || "8801735943156",
     reviews: readJson("reviews.json", []),
-  });
+  };
+}
+
+function publishCatalog() {
+  fs.writeFileSync(path.join(ROOT, "catalog-data.json"), JSON.stringify(catalogPayload()));
+}
+
+app.get("/api/catalog", (_req, res) => {
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.json(catalogPayload());
 });
+
+function priceForAge(product, size) {
+  const older = ["3-4 year", "4-5 year", "5-6 year"].includes(String(size || ""));
+  if (older) return Number(product.price36 || product.price || 2040);
+  return Number(product.price || 2040);
+}
 
 function makeOrder(body, product, extra) {
   extra = extra || {};
@@ -115,7 +133,7 @@ function makeOrder(body, product, extra) {
     size: String(body.size || "").trim(),
     combo: Number(body.combo || product.piece || 2),
     qty,
-    total: Number(body.total || product.price * qty),
+    total: Number(body.total || priceForAge(product, body.size) * qty),
     status: extra.status || (body.status === "confirmed" ? "confirmed" : "new"),
     source: extra.source || "web",
     createdAt: new Date().toISOString(),
@@ -200,11 +218,29 @@ app.post("/api/admin/orders/:id", auth, (req, res) => {
   const orders = readJson("orders.json", []);
   const order = orders.find((o) => o.id === req.params.id);
   if (!order) return res.status(404).json({ error: "অর্ডার নেই" });
-  const status = String((req.body && req.body.status) || "");
-  if (status !== "new" && status !== "confirmed") {
+  const body = req.body || {};
+  const allowed = ["new", "confirmed", "cancelled", "delivered"];
+  if (body.status && !allowed.includes(String(body.status))) {
     return res.status(400).json({ error: "স্ট্যাটাস ভুল" });
   }
-  order.status = status;
+  ["name", "phone", "address", "size", "note"].forEach((key) => {
+    if (body[key] != null) order[key] = String(body[key]).trim();
+  });
+  if (body.qty != null) order.qty = Math.max(1, Number(body.qty) || 1);
+  if (body.productCode) {
+    const product = readJson("products.json", []).find((p) => p.code === body.productCode);
+    if (product) {
+      order.productCode = product.code;
+      order.combo = Number(product.piece || order.combo || 2);
+      if (body.total == null) order.total = priceForAge(product, order.size) * order.qty;
+    }
+  }
+  if (body.total != null && body.total !== "") order.total = Number(body.total);
+  if (body.status) order.status = String(body.status);
+  if (!order.name || !order.phone || !order.address || !order.size) {
+    return res.status(400).json({ error: "নাম, মোবাইল, ঠিকানা ও সাইজ দিন" });
+  }
+  order.updatedAt = new Date().toISOString();
   writeJson("orders.json", orders);
   res.json(order);
 });
@@ -234,6 +270,7 @@ app.post("/api/admin/products", auth, upload.single("image"), (req, res) => {
     code: nextCode(products),
     name: String(req.body.name || "নতুন সেট").trim(),
     price: Number(req.body.price || 2040),
+    price36: Number(req.body.price36 || req.body.price || 2040),
     piece: Number(req.body.piece || 2),
     description: String(req.body.description || "").trim(),
     image: `images/${req.file.filename}`,
@@ -249,6 +286,7 @@ function updateProduct(req, res) {
   if (!product) return res.status(404).json({ error: "প্রোডাক্ট নেই" });
   if (req.body.name) product.name = String(req.body.name).trim();
   if (req.body.price) product.price = Number(req.body.price);
+  if (req.body.price36) product.price36 = Number(req.body.price36);
   if (req.body.piece) product.piece = Number(req.body.piece);
   if (req.body.description != null) product.description = String(req.body.description).trim();
   if (req.file) product.image = `images/${req.file.filename}`;
