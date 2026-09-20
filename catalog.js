@@ -11,18 +11,18 @@ const SIZES = [
 ];
 
 const FALLBACK_PRODUCTS = [
-  { code: "SET-01", piece: 2, name: "Floral Top + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। ফ্লোরাল টপ ও ডেইজি শর্টস। নরম কটন।", image: "images/set-01.png" },
-  { code: "SET-02", piece: 2, name: "Navy Polka + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। নেভি পোলকা টপ ও পার্ল শর্টস।", image: "images/set-02.png" },
-  { code: "SET-03", piece: 2, name: "Blue Floral + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। ব্লু ফ্লোরাল টপ ও পার্ল শর্টস।", image: "images/set-03.png" },
-  { code: "SET-04", piece: 2, name: "Strawberry Top + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। স্ট্রবেরি টপ ও ডেইজি শর্টস।", image: "images/set-04.png" },
-  { code: "SET-05", piece: 2, name: "Navy Floral + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। নেভি ফ্লোরাল টপ ও পার্ল শর্টস।", image: "images/set-05.png" },
-  { code: "SET-06", piece: 2, name: "Pink Bow Top + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। পিঙ্ক বো টপ ও পার্ল শর্টস।", image: "images/set-06.png" },
-  { code: "SET-07", piece: 2, name: "Pink Check + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। পিঙ্ক চেক টপ ও ডেইজি শর্টস।", image: "images/set-07.png" },
-  { code: "SET-08", piece: 2, name: "Red Check + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। রেড চেক টপ ও ডেইজি শর্টস।", image: "images/set-08.png" },
-  { code: "SET-09", piece: 2, name: "Lilac Check + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। লাইলাক চেক টপ ও পার্ল শর্টস।", image: "images/set-09.png" },
-  { code: "SET-10", piece: 2, name: "Heart Top + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। হার্ট টপ ও ডেইজি শর্টস।", image: "images/set-10.png" },
-  { code: "SET-11", piece: 2, name: "Black Check + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। ব্ল্যাক চেক টপ ও ডেইজি শর্টস।", image: "images/set-11.png" },
-  { code: "SET-12", piece: 2, name: "White Bow Top + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। হোয়াইট বো টপ ও পার্ল শর্টস।", image: "images/set-12.png" },
+  { code: "SET-01", priority: 1, piece: 2, name: "Floral Top + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। ফ্লোরাল টপ ও ডেইজি শর্টস। নরম কটন।", image: "images/set-01.png" },
+  { code: "SET-02", priority: 2, piece: 2, name: "Navy Polka + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। নেভি পোলকা টপ ও পার্ল শর্টস।", image: "images/set-02.png" },
+  { code: "SET-03", priority: 3, piece: 2, name: "Blue Floral + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। ব্লু ফ্লোরাল টপ ও পার্ল শর্টস।", image: "images/set-03.png" },
+  { code: "SET-04", priority: 4, piece: 2, name: "Strawberry Top + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। স্ট্রবেরি টপ ও ডেইজি শর্টস।", image: "images/set-04.png" },
+  { code: "SET-05", priority: 5, piece: 2, name: "Navy Floral + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। নেভি ফ্লোরাল টপ ও পার্ল শর্টস।", image: "images/set-05.png" },
+  { code: "SET-06", priority: 6, piece: 2, name: "Pink Bow Top + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। পিঙ্ক বো টপ ও পার্ল শর্টস।", image: "images/set-06.png" },
+  { code: "SET-07", priority: 7, piece: 2, name: "Pink Check + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। পিঙ্ক চেক টপ ও ডেইজি শর্টস।", image: "images/set-07.png" },
+  { code: "SET-08", priority: 8, piece: 2, name: "Red Check + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। রেড চেক টপ ও ডেইজি শর্টস।", image: "images/set-08.png" },
+  { code: "SET-09", priority: 9, piece: 2, name: "Lilac Check + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। লাইলাক চেক টপ ও পার্ল শর্টস।", image: "images/set-09.png" },
+  { code: "SET-10", priority: 10, piece: 2, name: "Heart Top + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। হার্ট টপ ও ডেইজি শর্টস।", image: "images/set-10.png" },
+  { code: "SET-11", priority: 11, piece: 2, name: "Black Check + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। ব্ল্যাক চেক টপ ও ডেইজি শর্টস।", image: "images/set-11.png" },
+  { code: "SET-12", priority: 12, piece: 2, name: "White Bow Top + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। হোয়াইট বো টপ ও পার্ল শর্টস।", image: "images/set-12.png" },
 ];
 
 const FALLBACK_OFFERS = [
@@ -260,6 +260,40 @@ function findProduct(code) {
   return PRODUCTS.find((p) => p.code === code);
 }
 
+function normalizeSetCode(raw) {
+  const digits = String(raw || "").replace(/\D/g, "");
+  const n = Number(digits);
+  if (!n || n < 1 || n > 999) return "";
+  return `SET-${String(n).padStart(2, "0")}`;
+}
+
+function firstFreeCode(products) {
+  const used = new Set((products || []).map((p) => String(p.code || "").toUpperCase()));
+  for (let n = 1; n <= 999; n += 1) {
+    const code = `SET-${String(n).padStart(2, "0")}`;
+    if (!used.has(code)) return code;
+  }
+  throw new Error("ফাঁকা সেট নম্বর নেই");
+}
+
+function productPriority(product) {
+  const n = Number(product && product.priority);
+  if (Number.isFinite(n) && n > 0) return n;
+  return Number(String((product && product.code) || "").replace(/\D/g, "")) || 9999;
+}
+
+function sortProducts(list) {
+  return (list || []).slice().sort((a, b) => {
+    const pa = productPriority(a);
+    const pb = productPriority(b);
+    if (pa !== pb) return pa - pb;
+    const na = Number(String(a.code || "").replace(/\D/g, "")) || 0;
+    const nb = Number(String(b.code || "").replace(/\D/g, "")) || 0;
+    if (na !== nb) return na - nb;
+    return String(a.code || "").localeCompare(String(b.code || ""));
+  });
+}
+
 function parseJsonSafe(text) {
   const trimmed = String(text || "").trim();
   if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
@@ -339,10 +373,24 @@ function writeLocal(key, value) {
   }
 }
 
+function officialProductCodes() {
+  return new Set(FALLBACK_PRODUCTS.map((p) => p.code));
+}
+
+function purgeExtraLocalProducts() {
+  const current = readLocal(LOCAL_KEYS.products, null);
+  if (!Array.isArray(current) || !current.length) return FALLBACK_PRODUCTS.slice();
+  const keep = officialProductCodes();
+  const cleaned = current.filter((p) => keep.has(p.code));
+  const next = cleaned.length ? sortProducts(cleaned) : FALLBACK_PRODUCTS.slice();
+  if (cleaned.length !== current.length) writeLocal(LOCAL_KEYS.products, next);
+  return next;
+}
+
 function localCatalog() {
   const site = mergeSite(readLocal(LOCAL_KEYS.site, null));
   return {
-    products: readLocal(LOCAL_KEYS.products, FALLBACK_PRODUCTS.slice()),
+    products: sortProducts(purgeExtraLocalProducts()),
     offers: readLocal(LOCAL_KEYS.offers, FALLBACK_OFFERS.slice()),
     site,
     whatsapp: site.whatsapp || WHATSAPP,
@@ -354,14 +402,14 @@ async function loadCatalog() {
   try {
     const result = await apiCall("catalog");
     if (!result.ok || !result.data || !Array.isArray(result.data.products)) throw new Error("empty");
-    PRODUCTS = result.data.products;
+    PRODUCTS = sortProducts(result.data.products);
     SITE = mergeSite(result.data.site);
     WHATSAPP = SITE.whatsapp || result.data.whatsapp || WHATSAPP;
     applySite(SITE);
     return Object.assign({}, result.data, { site: SITE, whatsapp: WHATSAPP });
   } catch (err) {
     const local = localCatalog();
-    PRODUCTS = local.products;
+    PRODUCTS = sortProducts(local.products);
     SITE = local.site;
     WHATSAPP = local.whatsapp || WHATSAPP;
     API_MODE = "local";
@@ -371,9 +419,7 @@ async function loadCatalog() {
 }
 
 function localNextCode(products) {
-  const nums = products.map((p) => Number(String(p.code).replace(/\D/g, "")) || 0);
-  const next = (Math.max(0, ...nums) || 0) + 1;
-  return `SET-${String(next).padStart(2, "0")}`;
+  return firstFreeCode(products);
 }
 
 async function compressImage(file) {
@@ -504,12 +550,47 @@ async function handleLocalAdmin(route, options) {
     return offers;
   }
 
+  if (route === "admin/products-delete" && method === "POST") {
+    const body = typeof options.body === "string" ? JSON.parse(options.body || "{}") : options.body || {};
+    const code = String(body.code || "").trim();
+    if (!code) throw new Error("প্রোডাক্ট নম্বর দিন");
+    products = products.filter((p) => p.code !== code);
+    offers = offers.filter((o) => o.code !== code);
+    writeLocal(LOCAL_KEYS.products, products);
+    writeLocal(LOCAL_KEYS.offers, offers);
+    return { ok: true };
+  }
+
+  if (route === "admin/products-order" && (method === "POST" || method === "PUT")) {
+    const body = JSON.parse(options.body || "{}");
+    const codes = Array.isArray(body.codes) ? body.codes : [];
+    if (!codes.length) throw new Error("অর্ডার লিস্ট দিন");
+    const rank = {};
+    codes.forEach((code, i) => {
+      rank[String(code)] = i + 1;
+    });
+    products.forEach((product) => {
+      if (rank[product.code]) product.priority = rank[product.code];
+    });
+    products = sortProducts(products);
+    writeLocal(LOCAL_KEYS.products, products);
+    return products;
+  }
+
   if (route === "admin/products" && method === "POST") {
     const form = options.body;
     const imageFile = form.get("image");
     const compact = imageFile ? await compressImage(imageFile) : null;
+    const requested = String(form.get("code") || "").trim();
+    const code = requested ? normalizeSetCode(requested) : firstFreeCode(products);
+    if (!code) throw new Error("সেট নম্বর ১ থেকে ৯৯৯ দিন, যেমন 13 বা SET-13");
+    if (products.some((p) => p.code === code)) throw new Error(code + " আগে থেকে আছে");
+    const priorityRaw = form.get("priority");
     const product = {
-      code: localNextCode(products),
+      code,
+      priority: priorityRaw !== null && String(priorityRaw).trim() !== ""
+        ? Math.max(1, Number(priorityRaw) || 1)
+        : Number(code.replace(/\D/g, "")) || products.length + 1,
       name: String(form.get("name") || "নতুন সেট").trim(),
       price: Number(form.get("price") || 2040),
       price36: Number(form.get("price36") || form.get("price") || 2040),
@@ -519,7 +600,7 @@ async function handleLocalAdmin(route, options) {
     };
     if (products.length >= 200) throw new Error("২০০টার বেশি প্রোডাক্ট রাখা যাবে না");
     products.unshift(product);
-    writeLocal(LOCAL_KEYS.products, products);
+    writeLocal(LOCAL_KEYS.products, sortProducts(products));
     API_MODE = "local";
     return product;
   }
@@ -540,8 +621,23 @@ async function handleLocalAdmin(route, options) {
     if (price36) product.price36 = Number(price36);
     if (piece) product.piece = Number(piece);
     if (form.has("description")) product.description = String(form.get("description") || "").trim();
+    if (form.has("priority") && String(form.get("priority") || "").trim() !== "") {
+      product.priority = Math.max(1, Number(form.get("priority")) || 1);
+    }
+    if (form.has("code") && String(form.get("code") || "").trim() !== "") {
+      const next = normalizeSetCode(form.get("code"));
+      if (!next) throw new Error("সেট নম্বর ১ থেকে ৯৯৯ দিন, যেমন 13 বা SET-13");
+      if (next !== code && products.some((p) => p.code === next)) throw new Error(next + " আগে থেকে আছে");
+      if (next !== code) {
+        product.code = next;
+        offers.forEach((offer) => {
+          if (offer.code === code) offer.code = next;
+        });
+        writeLocal(LOCAL_KEYS.offers, offers);
+      }
+    }
     if (imageFile && imageFile.size) product.image = await fileToDataUrl(await compressImage(imageFile));
-    writeLocal(LOCAL_KEYS.products, products);
+    writeLocal(LOCAL_KEYS.products, sortProducts(products));
     return product;
   }
 

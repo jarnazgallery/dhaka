@@ -38,6 +38,7 @@ function cardHTML(product) {
 }
 
 function renderProducts() {
+  PRODUCTS = sortProducts(PRODUCTS);
   const grid = document.getElementById("productGrid");
   if (!PRODUCTS.length) {
     grid.innerHTML = '<p class="empty-pick">এখনো প্রোডাক্ট নেই। একটু পরে আবার দেখুন।</p>';

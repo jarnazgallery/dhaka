@@ -25,8 +25,15 @@ if ($earlyRoute === "catalog") {
   };
   $site = $read("site.json", array());
   $config = $read("config.json", array());
+  $products = $read("products.json", array());
+  usort($products, function ($a, $b) {
+    $pa = (isset($a["priority"]) && intval($a["priority"]) > 0) ? intval($a["priority"]) : intval(preg_replace("/\\D/", "", isset($a["code"]) ? $a["code"] : "0"));
+    $pb = (isset($b["priority"]) && intval($b["priority"]) > 0) ? intval($b["priority"]) : intval(preg_replace("/\\D/", "", isset($b["code"]) ? $b["code"] : "0"));
+    if ($pa !== $pb) return $pa - $pb;
+    return strcmp(isset($a["code"]) ? $a["code"] : "", isset($b["code"]) ? $b["code"] : "");
+  });
   echo json_encode(array(
-    "products" => $read("products.json", array()),
+    "products" => $products,
     "offers" => $read("offers.json", array()),
     "site" => $site,
     "whatsapp" => !empty($site["whatsapp"]) ? $site["whatsapp"] : (isset($config["whatsapp"]) ? $config["whatsapp"] : "8801735943156"),
@@ -121,7 +128,7 @@ function catalog_payload() {
   $site = read_json("site.json", array());
   $config = read_json("config.json", array());
   return array(
-    "products" => read_json("products.json", array()),
+    "products" => sort_products(read_json("products.json", array())),
     "offers" => read_json("offers.json", array()),
     "site" => $site,
     "whatsapp" => !empty($site["whatsapp"]) ? $site["whatsapp"] : (isset($config["whatsapp"]) ? $config["whatsapp"] : "8801735943156"),
@@ -155,13 +162,64 @@ function require_auth() {
   if ($token === "" || empty($tokens[$token])) fail(401, "লগইন করুন");
 }
 
-function next_code($products) {
-  $max = 0;
+function normalize_code($raw) {
+  $n = intval(preg_replace("/\\D/", "", (string)$raw));
+  if ($n < 1 || $n > 999) return "";
+  return "SET-" . str_pad((string)$n, 2, "0", STR_PAD_LEFT);
+}
+
+function first_free_code($products) {
+  $used = array();
   foreach ($products as $p) {
-    $n = intval(preg_replace("/\\D/", "", isset($p["code"]) ? $p["code"] : "0"));
-    if ($n > $max) $max = $n;
+    $used[strtoupper(isset($p["code"]) ? $p["code"] : "")] = true;
   }
-  return "SET-" . str_pad((string)($max + 1), 2, "0", STR_PAD_LEFT);
+  for ($n = 1; $n <= 999; $n++) {
+    $code = "SET-" . str_pad((string)$n, 2, "0", STR_PAD_LEFT);
+    if (empty($used[$code])) return $code;
+  }
+  return "";
+}
+
+function next_code($products) {
+  return first_free_code($products);
+}
+
+function product_priority($p) {
+  if (isset($p["priority"]) && intval($p["priority"]) > 0) return intval($p["priority"]);
+  $n = intval(preg_replace("/\\D/", "", isset($p["code"]) ? $p["code"] : "0"));
+  return $n > 0 ? $n : 9999;
+}
+
+function sort_products($products) {
+  usort($products, function ($a, $b) {
+    $pa = product_priority($a);
+    $pb = product_priority($b);
+    if ($pa !== $pb) return $pa - $pb;
+    $na = intval(preg_replace("/\\D/", "", isset($a["code"]) ? $a["code"] : "0"));
+    $nb = intval(preg_replace("/\\D/", "", isset($b["code"]) ? $b["code"] : "0"));
+    if ($na !== $nb) return $na - $nb;
+    return strcmp(isset($a["code"]) ? $a["code"] : "", isset($b["code"]) ? $b["code"] : "");
+  });
+  return $products;
+}
+
+function code_taken($products, $code, $except) {
+  foreach ($products as $p) {
+    $c = isset($p["code"]) ? $p["code"] : "";
+    if ($c === $code && $c !== $except) return true;
+  }
+  return false;
+}
+
+function rename_offer_code($old, $new) {
+  $offers = read_json("offers.json", array());
+  $changed = false;
+  for ($i = 0; $i < count($offers); $i++) {
+    if ((isset($offers[$i]["code"]) ? $offers[$i]["code"] : "") !== $old) continue;
+    $offers[$i]["code"] = $new;
+    $changed = true;
+  }
+  if ($changed) write_json("offers.json", $offers);
 }
 
 function save_upload($key) {
@@ -359,14 +417,40 @@ if ($route === "admin/offers" && ($method === "PUT" || $method === "POST")) {
   ok($list);
 }
 
+if ($route === "admin/products-order" && ($method === "POST" || $method === "PUT")) {
+  require_auth();
+  $body = json_input();
+  $codes = isset($body["codes"]) ? $body["codes"] : array();
+  if (!is_array($codes) || !count($codes)) fail(400, "অর্ডার লিস্ট দিন");
+  $products = read_json("products.json", array());
+  $rank = array();
+  foreach ($codes as $i => $code) $rank[(string)$code] = $i + 1;
+  for ($i = 0; $i < count($products); $i++) {
+    $c = isset($products[$i]["code"]) ? $products[$i]["code"] : "";
+    if (isset($rank[$c])) $products[$i]["priority"] = $rank[$c];
+  }
+  $products = sort_products($products);
+  write_json("products.json", $products);
+  publish_catalog();
+  ok($products);
+}
+
 if ($route === "admin/products" && $method === "POST") {
   require_auth();
   $image = save_upload("image");
   if (!$image) fail(400, "ছবি দিন");
   $products = read_json("products.json", array());
   if (count($products) >= 200) fail(400, "২০০টার বেশি প্রোডাক্ট রাখা যাবে না");
+  $requested = isset($_POST["code"]) ? trim((string)$_POST["code"]) : "";
+  $code = $requested !== "" ? normalize_code($requested) : first_free_code($products);
+  if ($code === "") fail(400, "সেট নম্বর ১ থেকে ৯৯৯ দিন, যেমন 13 বা SET-13");
+  if (code_taken($products, $code, "")) fail(400, $code . " আগে থেকে আছে");
+  $priority = (isset($_POST["priority"]) && $_POST["priority"] !== "")
+    ? max(1, intval($_POST["priority"]))
+    : intval(preg_replace("/\\D/", "", $code));
   $product = array(
-    "code" => next_code($products),
+    "code" => $code,
+    "priority" => $priority,
     "name" => trim((string)(isset($_POST["name"]) ? $_POST["name"] : "নতুন সেট")),
     "price" => intval(isset($_POST["price"]) ? $_POST["price"] : 2040),
     "price36" => intval(isset($_POST["price36"]) ? $_POST["price36"] : (isset($_POST["price"]) ? $_POST["price"] : 2040)),
@@ -375,14 +459,14 @@ if ($route === "admin/products" && $method === "POST") {
     "image" => $image,
   );
   array_unshift($products, $product);
-  write_json("products.json", $products);
+  write_json("products.json", sort_products($products));
   publish_catalog();
   ok($product);
 }
 
 if (preg_match("#^admin/products/(.+)$#", $route, $m) && ($method === "PUT" || $method === "POST")) {
   require_auth();
-  $code = $m[1];
+  $code = rawurldecode($m[1]);
   $products = read_json("products.json", array());
   $found = false;
   $saved = null;
@@ -394,23 +478,48 @@ if (preg_match("#^admin/products/(.+)$#", $route, $m) && ($method === "PUT" || $
     if (!empty($_POST["price36"])) $products[$i]["price36"] = intval($_POST["price36"]);
     if (!empty($_POST["piece"])) $products[$i]["piece"] = intval($_POST["piece"]);
     if (isset($_POST["description"])) $products[$i]["description"] = trim((string)$_POST["description"]);
+    if (isset($_POST["priority"]) && $_POST["priority"] !== "") {
+      $products[$i]["priority"] = max(1, intval($_POST["priority"]));
+    }
+    if (isset($_POST["code"]) && trim((string)$_POST["code"]) !== "") {
+      $next = normalize_code($_POST["code"]);
+      if ($next === "") fail(400, "সেট নম্বর ১ থেকে ৯৯৯ দিন, যেমন 13 বা SET-13");
+      if (code_taken($products, $next, $code)) fail(400, $next . " আগে থেকে আছে");
+      if ($next !== $code) {
+        $products[$i]["code"] = $next;
+        rename_offer_code($code, $next);
+      }
+    }
     $image = save_upload("image");
     if ($image) $products[$i]["image"] = $image;
     $saved = $products[$i];
     break;
   }
   if (!$found) fail(404, "প্রোডাক্ট নেই");
-  write_json("products.json", $products);
+  write_json("products.json", sort_products($products));
   publish_catalog();
   ok($saved);
 }
 
-if (preg_match("#^admin/products/(.+)$#", $route, $m) && $method === "DELETE") {
-  require_auth();
-  $code = $m[1];
+function delete_product($code) {
+  $code = rawurldecode((string)$code);
   write_json("products.json", without_code(read_json("products.json", array()), "code", $code));
   write_json("offers.json", without_code(read_json("offers.json", array()), "code", $code));
   publish_catalog();
+}
+
+if ($route === "admin/products-delete" && $method === "POST") {
+  require_auth();
+  $body = json_input();
+  $code = isset($body["code"]) ? trim((string)$body["code"]) : "";
+  if ($code === "") fail(400, "প্রোডাক্ট নম্বর দিন");
+  delete_product($code);
+  ok(array("ok" => true));
+}
+
+if (preg_match("#^admin/products/(.+)$#", $route, $m) && $method === "DELETE") {
+  require_auth();
+  delete_product($m[1]);
   ok(array("ok" => true));
 }
 

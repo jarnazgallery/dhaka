@@ -61,10 +61,53 @@ function saveConfig(config) {
   fs.writeFileSync(path.join(DATA, "config.json"), JSON.stringify(config, null, 2));
 }
 
+function normalizeCode(raw) {
+  const n = Number(String(raw || "").replace(/\D/g, ""));
+  if (!n || n < 1 || n > 999) return "";
+  return `SET-${String(n).padStart(2, "0")}`;
+}
+
+function firstFreeCode(products) {
+  const used = new Set((products || []).map((p) => String(p.code || "").toUpperCase()));
+  for (let n = 1; n <= 999; n += 1) {
+    const code = `SET-${String(n).padStart(2, "0")}`;
+    if (!used.has(code)) return code;
+  }
+  return "";
+}
+
 function nextCode(products) {
-  const nums = products.map((p) => Number(String(p.code).replace(/\D/g, "")) || 0);
-  const next = (Math.max(0, ...nums) || 0) + 1;
-  return `SET-${String(next).padStart(2, "0")}`;
+  return firstFreeCode(products);
+}
+
+function productPriority(product) {
+  const n = Number(product && product.priority);
+  if (Number.isFinite(n) && n > 0) return n;
+  return Number(String((product && product.code) || "").replace(/\D/g, "")) || 9999;
+}
+
+function sortProducts(list) {
+  return (list || []).slice().sort((a, b) => {
+    const pa = productPriority(a);
+    const pb = productPriority(b);
+    if (pa !== pb) return pa - pb;
+    const na = Number(String(a.code || "").replace(/\D/g, "")) || 0;
+    const nb = Number(String(b.code || "").replace(/\D/g, "")) || 0;
+    if (na !== nb) return na - nb;
+    return String(a.code || "").localeCompare(String(b.code || ""));
+  });
+}
+
+function renameOfferCode(oldCode, nextCodeValue) {
+  const offers = readJson("offers.json", []);
+  let changed = false;
+  offers.forEach((offer) => {
+    if (offer.code === oldCode) {
+      offer.code = nextCodeValue;
+      changed = true;
+    }
+  });
+  if (changed) writeJson("offers.json", offers);
 }
 
 function auth(req, res, next) {
@@ -99,7 +142,7 @@ function catalogPayload() {
   const config = loadConfig();
   const site = readJson("site.json", {});
   return {
-    products: readJson("products.json", []),
+    products: sortProducts(readJson("products.json", [])),
     offers: readJson("offers.json", []),
     site,
     whatsapp: site.whatsapp || config.whatsapp || "8801735943156",
@@ -264,12 +307,48 @@ function saveOffers(req, res) {
 app.put("/api/admin/offers", auth, saveOffers);
 app.post("/api/admin/offers", auth, saveOffers);
 
+function deleteProductByCode(code) {
+  const clean = decodeURIComponent(String(code || ""));
+  writeJson("products.json", readJson("products.json", []).filter((p) => p.code !== clean));
+  writeJson("offers.json", readJson("offers.json", []).filter((o) => o.code !== clean));
+}
+
+app.post("/api/admin/products-delete", auth, (req, res) => {
+  const code = String((req.body && req.body.code) || "").trim();
+  if (!code) return res.status(400).json({ error: "প্রোডাক্ট নম্বর দিন" });
+  deleteProductByCode(code);
+  res.json({ ok: true });
+});
+
+app.post("/api/admin/products-order", auth, (req, res) => {
+  const codes = Array.isArray(req.body && req.body.codes) ? req.body.codes : [];
+  if (!codes.length) return res.status(400).json({ error: "অর্ডার লিস্ট দিন" });
+  const products = readJson("products.json", []);
+  const rank = {};
+  codes.forEach((code, i) => {
+    rank[String(code)] = i + 1;
+  });
+  products.forEach((product) => {
+    if (rank[product.code]) product.priority = rank[product.code];
+  });
+  const sorted = sortProducts(products);
+  writeJson("products.json", sorted);
+  res.json(sorted);
+});
+
 app.post("/api/admin/products", auth, upload.single("image"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "ছবি দিন" });
   const products = readJson("products.json", []);
   if (products.length >= 200) return res.status(400).json({ error: "২০০টার বেশি প্রোডাক্ট রাখা যাবে না" });
+  const requested = String(req.body.code || "").trim();
+  const code = requested ? normalizeCode(requested) : firstFreeCode(products);
+  if (!code) return res.status(400).json({ error: "সেট নম্বর ১ থেকে ৯৯৯ দিন, যেমন 13 বা SET-13" });
+  if (products.some((p) => p.code === code)) return res.status(400).json({ error: `${code} আগে থেকে আছে` });
   const product = {
-    code: nextCode(products),
+    code,
+    priority: req.body.priority !== undefined && String(req.body.priority).trim() !== ""
+      ? Math.max(1, Number(req.body.priority) || 1)
+      : Number(code.replace(/\D/g, "")) || products.length + 1,
     name: String(req.body.name || "নতুন সেট").trim(),
     price: Number(req.body.price || 2040),
     price36: Number(req.body.price36 || req.body.price || 2040),
@@ -278,21 +357,36 @@ app.post("/api/admin/products", auth, upload.single("image"), (req, res) => {
     image: `images/${req.file.filename}`,
   };
   products.unshift(product);
-  writeJson("products.json", products);
+  writeJson("products.json", sortProducts(products));
   res.json(product);
 });
 
 function updateProduct(req, res) {
   const products = readJson("products.json", []);
-  const product = products.find((p) => p.code === req.params.code);
+  const code = decodeURIComponent(req.params.code);
+  const product = products.find((p) => p.code === code);
   if (!product) return res.status(404).json({ error: "প্রোডাক্ট নেই" });
   if (req.body.name) product.name = String(req.body.name).trim();
   if (req.body.price) product.price = Number(req.body.price);
   if (req.body.price36) product.price36 = Number(req.body.price36);
   if (req.body.piece) product.piece = Number(req.body.piece);
   if (req.body.description != null) product.description = String(req.body.description).trim();
+  if (req.body.priority !== undefined && String(req.body.priority).trim() !== "") {
+    product.priority = Math.max(1, Number(req.body.priority) || 1);
+  }
+  if (req.body.code && String(req.body.code).trim()) {
+    const next = normalizeCode(req.body.code);
+    if (!next) return res.status(400).json({ error: "সেট নম্বর ১ থেকে ৯৯৯ দিন, যেমন 13 বা SET-13" });
+    if (next !== code && products.some((p) => p.code === next)) {
+      return res.status(400).json({ error: `${next} আগে থেকে আছে` });
+    }
+    if (next !== code) {
+      product.code = next;
+      renameOfferCode(code, next);
+    }
+  }
   if (req.file) product.image = `images/${req.file.filename}`;
-  writeJson("products.json", products);
+  writeJson("products.json", sortProducts(products));
   res.json(product);
 }
 
@@ -300,10 +394,7 @@ app.put("/api/admin/products/:code", auth, upload.single("image"), updateProduct
 app.post("/api/admin/products/:code", auth, upload.single("image"), updateProduct);
 
 app.delete("/api/admin/products/:code", auth, (req, res) => {
-  const products = readJson("products.json", []).filter((p) => p.code !== req.params.code);
-  writeJson("products.json", products);
-  const offers = readJson("offers.json", []).filter((o) => o.code !== req.params.code);
-  writeJson("offers.json", offers);
+  deleteProductByCode(req.params.code);
   res.json({ ok: true });
 });
 

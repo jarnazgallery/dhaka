@@ -234,6 +234,7 @@
         margin-bottom: 8px;
       }
       .offer-fields, .product-fields { display: grid; gap: 8px; }
+      .field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
       .row-actions, .panel-actions { display: flex; gap: 8px; flex-wrap: wrap; }
       .save-note { min-height: 1.2em; color: #187a45; font-weight: 700; }
       .save-note.is-error { color: #e2187a; }
@@ -343,7 +344,7 @@
           padding: 16px;
         }
         .stat-grid { grid-template-columns: repeat(4, 1fr); }
-        .add-grid { grid-template-columns: 1.1fr 1.4fr 130px 130px 90px; align-items: end; }
+        .add-grid { grid-template-columns: repeat(3, minmax(140px, 1fr)); align-items: end; }
         .product-admin { grid-template-columns: 1fr 1fr; }
         .site-grid { grid-template-columns: 1fr 1fr; }
       }
@@ -409,7 +410,7 @@
         <section class="admin-page" id="tab-products">
           <div class="page-head">
             <h2>প্রোডাক্ট</h2>
-            <p>প্রোডাক্ট লিমিট ১২টা নয় — যত খুশি যোগ করা যায় (সর্বোচ্চ ২০০)। এখন মোট <strong id="adminProductCount">0</strong> টা আছে।</p>
+            <p>সেট নম্বর নিজে বদলাতে পারবেন। ডিলিট করে গ্যাপ হলে খালি রাখলে নতুন সেট সেই গ্যাপ ভরবে। প্রায়োরিটি ১ = হোমে প্রথমে। এখন মোট <strong id="adminProductCount">0</strong> টা আছে।</p>
             <p class="save-note" id="productSyncNote"></p>
           </div>
           <form class="panel add-form" id="addForm">
@@ -420,6 +421,8 @@
               <label>০–৩ বছর দাম (৳) <input type="number" name="price" required value="2040" min="1" /></label>
               <label>৩–৬ বছর দাম (৳) <input type="number" name="price36" required value="2040" min="1" /></label>
               <label>পিস <input type="number" name="piece" required value="2" min="1" max="10" /></label>
+              <label>সেট নম্বর <input type="text" name="code" placeholder="যেমন 13 — খালি রাখলে গ্যাপ ভরবে" /></label>
+              <label>প্রায়োরিটি <input type="number" name="priority" min="1" placeholder="১ = প্রথমে দেখাবে" /></label>
             </div>
             <label class="add-desc">বিবরণ
               <textarea name="description" rows="3" placeholder="কাপড়, কালার, কী কী আছে সেটের মধ্যে..."></textarea>
@@ -619,7 +622,7 @@
       </div>
     </div>
 
-    <script src="catalog.js?v=20260920h"></script>
+    <script src="catalog.js?v=20260920j"></script>
     <script>
       const TOKEN_KEY = "jarnaz-admin-token";
       let offers = [];
@@ -762,11 +765,7 @@
           return result.data;
         } catch (err) {
           if (err.code === "NO_API") {
-            if (token() !== "local") {
-              localStorage.removeItem(TOKEN_KEY);
-              showLogin();
-              throw new Error("সার্ভার API পাওয়া যায়নি");
-            }
+            API_MODE = "local";
             return handleLocalAdmin(clean, opts || {});
           }
           throw err;
@@ -915,12 +914,17 @@
       }
 
       function renderProducts(highlightCode) {
+        PRODUCTS = sortProducts(PRODUCTS);
         document.getElementById("productAdmin").innerHTML = PRODUCTS.map(
           (p) => `
             <div class="product-admin-row${p.code === highlightCode ? " is-new" : ""}" data-code="${esc(p.code)}">
               <img src="${esc(p.image)}" alt="${esc(p.code)}" />
               <div class="product-fields">
-                <span class="code-pill">${esc(p.code)}</span>
+                <span class="code-pill">${esc(p.code)} · প্রায়োরিটি ${esc(productPriority(p))}</span>
+                <div class="field-pair">
+                  <label>সেট নম্বর <input data-edit="code" value="${esc(p.code)}" placeholder="SET-13" /></label>
+                  <label>প্রায়োরিটি <input type="number" data-edit="priority" value="${esc(productPriority(p))}" min="1" /></label>
+                </div>
                 <label>নাম <input data-edit="name" value="${esc(p.name)}" /></label>
                 <label>০–৩ বছর দাম (৳) <input type="number" data-edit="price" value="${esc(p.price)}" min="1" /></label>
                 <label>৩–৬ বছর দাম (৳) <input type="number" data-edit="price36" value="${esc(p.price36 || p.price)}" min="1" /></label>
@@ -928,6 +932,8 @@
                 <label>বিবরণ <textarea data-edit="description" rows="3">${esc(p.description || "")}</textarea></label>
                 <label>নতুন ছবি <input type="file" data-edit="image" accept="image/*" /></label>
                 <div class="row-actions">
+                  <button class="btn soft-btn" type="button" data-move="${esc(p.code)}" data-dir="-1">উপরে</button>
+                  <button class="btn soft-btn" type="button" data-move="${esc(p.code)}" data-dir="1">নিচে</button>
                   <button class="btn btn-dark" type="button" data-save="${esc(p.code)}">সেভ</button>
                   <button class="btn danger" type="button" data-del-product="${esc(p.code)}">ডিলিট</button>
                 </div>
@@ -1074,7 +1080,7 @@
 
       async function bootDash() {
         const catalog = await api("catalog");
-        PRODUCTS = catalog.products || [];
+        PRODUCTS = sortProducts(catalog.products || purgeExtraLocalProducts());
         offers = catalog.offers || [];
         fillWebsiteForm(catalog.site || SITE);
         fillManualOrderForm();
@@ -1295,6 +1301,8 @@
         if (save) {
           const row = save.closest(".product-admin-row");
           const data = new FormData();
+          data.append("code", row.querySelector('[data-edit="code"]').value);
+          data.append("priority", row.querySelector('[data-edit="priority"]').value);
           data.append("name", row.querySelector('[data-edit="name"]').value);
           data.append("price", row.querySelector('[data-edit="price"]').value);
           data.append("price36", row.querySelector('[data-edit="price36"]').value);
@@ -1304,15 +1312,41 @@
           const file = row.querySelector('[data-edit="image"]').files[0];
           if (file) data.append("image", await compressImage(file));
           try {
-            await api("admin/products/" + save.dataset.save, { method: "POST", headers: headers(), body: data });
+            await api("admin/products/" + encodeURIComponent(save.dataset.save), { method: "POST", headers: headers(), body: data });
             bootDash();
+          } catch (err) {
+            alert(err.message);
+          }
+        }
+        const move = event.target.closest("[data-move]");
+        if (move) {
+          const sorted = sortProducts(PRODUCTS.slice());
+          const i = sorted.findIndex((p) => p.code === move.dataset.move);
+          const j = i + Number(move.dataset.dir);
+          if (i < 0 || j < 0 || j >= sorted.length) return;
+          const [item] = sorted.splice(i, 1);
+          sorted.splice(j, 0, item);
+          try {
+            await api("admin/products-order", {
+              method: "POST",
+              headers: headers(true),
+              body: JSON.stringify({ codes: sorted.map((p) => p.code) }),
+            });
+            PRODUCTS = sortProducts(sorted.map((p, idx) => Object.assign({}, p, { priority: idx + 1 })));
+            renderProducts(move.dataset.move);
           } catch (err) {
             alert(err.message);
           }
         }
         if (del && confirm("এই প্রোডাক্ট ডিলিট করবেন?")) {
           try {
-            await api("admin/products/" + del.dataset.delProduct, { method: "DELETE", headers: headers() });
+            await api("admin/products-delete", {
+              method: "POST",
+              headers: headers(true),
+              body: JSON.stringify({ code: del.dataset.delProduct }),
+            });
+            PRODUCTS = PRODUCTS.filter((p) => p.code !== del.dataset.delProduct);
+            renderProducts();
             bootDash();
           } catch (err) {
             alert(err.message);
