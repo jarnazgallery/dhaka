@@ -159,6 +159,31 @@ app.get("/api/catalog", (_req, res) => {
   res.json(catalogPayload());
 });
 
+function findSellable(code) {
+  const product = readJson("products.json", []).find((p) => p.code === code);
+  if (product) return product;
+  const offer = readJson("offers.json", []).find((o) => o.code === code);
+  if (!offer) return null;
+  return {
+    code: offer.code,
+    name: offer.title || offer.name || "কম্বো অফার",
+    price: Number(offer.price || 2040),
+    price36: Number(offer.price36 || offer.price || 2040),
+    piece: Number(offer.piece || 2),
+    image: offer.image || "",
+    description: offer.description || "",
+  };
+}
+
+function firstFreeCombo(offers) {
+  const used = new Set((offers || []).map((o) => String(o.code || "").toUpperCase()));
+  for (let n = 1; n <= 99; n += 1) {
+    const code = `COMBO-${String(n).padStart(2, "0")}`;
+    if (!used.has(code)) return code;
+  }
+  return "";
+}
+
 function priceForAge(product, size) {
   const older = ["3-4 year", "4-5 year", "5-6 year"].includes(String(size || ""));
   if (older) return Number(product.price36 || product.price || 2040);
@@ -214,8 +239,7 @@ app.delete("/api/admin/reviews/:id", auth, (req, res) => {
 
 app.post("/api/orders", (req, res) => {
   const body = req.body || {};
-  const products = readJson("products.json", []);
-  const product = products.find((p) => p.code === body.productCode);
+  const product = findSellable(body.productCode);
   if (!product) return res.status(400).json({ error: "প্রোডাক্ট পাওয়া যায়নি" });
   const made = makeOrder(body, product, { status: "new", source: "web" });
   if (made.error) return res.status(400).json({ error: made.error });
@@ -244,8 +268,7 @@ app.get("/api/admin/orders", auth, (_req, res) => {
 
 app.post("/api/admin/orders", auth, (req, res) => {
   const body = req.body || {};
-  const products = readJson("products.json", []);
-  const product = products.find((p) => p.code === body.productCode);
+  const product = findSellable(body.productCode);
   if (!product) return res.status(400).json({ error: "প্রোডাক্ট পাওয়া যায়নি" });
   const made = makeOrder(body, product, {
     status: body.status === "new" ? "new" : "confirmed",
@@ -272,7 +295,7 @@ app.post("/api/admin/orders/:id", auth, (req, res) => {
   });
   if (body.qty != null) order.qty = Math.max(1, Number(body.qty) || 1);
   if (body.productCode) {
-    const product = readJson("products.json", []).find((p) => p.code === body.productCode);
+    const product = findSellable(body.productCode);
     if (product) {
       order.productCode = product.code;
       order.combo = Number(product.piece || order.combo || 2);
@@ -297,20 +320,63 @@ app.delete("/api/admin/orders/:id", auth, (req, res) => {
 
 function saveOffers(req, res) {
   const list = Array.isArray(req.body) ? req.body : [];
-  if (list.length < 4 || list.length > 5) {
-    return res.status(400).json({ error: "৪ থেকে ৫টা অফার রাখুন" });
+  if (list.length > 10) {
+    return res.status(400).json({ error: "১০টার বেশি কম্বো রাখা যাবে না" });
   }
   writeJson("offers.json", list);
   res.json(list);
 }
 
 app.put("/api/admin/offers", auth, saveOffers);
-app.post("/api/admin/offers", auth, saveOffers);
+
+app.post("/api/admin/offers-delete", auth, (req, res) => {
+  const code = String((req.body && req.body.code) || "").trim();
+  if (!code) return res.status(400).json({ error: "কম্বো নম্বর দিন" });
+  writeJson("offers.json", readJson("offers.json", []).filter((o) => o.code !== code));
+  res.json({ ok: true });
+});
+
+app.post("/api/admin/offers/:code", auth, upload.single("image"), (req, res) => {
+  const code = decodeURIComponent(req.params.code);
+  const offers = readJson("offers.json", []);
+  const offer = offers.find((o) => o.code === code);
+  if (!offer) return res.status(404).json({ error: "কম্বো নেই" });
+  if (req.body.title || req.body.name) offer.title = String(req.body.title || req.body.name || offer.title).trim();
+  if (req.body.price) offer.price = Number(req.body.price);
+  if (req.body.price36) offer.price36 = Number(req.body.price36);
+  if (req.body.piece) offer.piece = Number(req.body.piece);
+  if (req.body.description != null) offer.description = String(req.body.description).trim();
+  if (req.file) offer.image = `images/${req.file.filename}`;
+  writeJson("offers.json", offers);
+  res.json(offer);
+});
+
+app.post("/api/admin/offers", auth, upload.single("image"), (req, res) => {
+  if (req.file || (req.body && req.body.title)) {
+    if (!req.file) return res.status(400).json({ error: "কম্বোর ছবি দিন" });
+    const offers = readJson("offers.json", []);
+    if (offers.length >= 10) return res.status(400).json({ error: "১০টার বেশি কম্বো রাখা যাবে না" });
+    const code = firstFreeCombo(offers);
+    if (!code) return res.status(400).json({ error: "ফাঁকা কম্বো নম্বর নেই" });
+    const offer = {
+      code,
+      title: String(req.body.title || req.body.name || "কম্বো অফার").trim(),
+      price: Number(req.body.price || 2040),
+      price36: Number(req.body.price36 || req.body.price || 2040),
+      piece: Number(req.body.piece || 2),
+      description: String(req.body.description || "").trim(),
+      image: `images/${req.file.filename}`,
+    };
+    offers.unshift(offer);
+    writeJson("offers.json", offers);
+    return res.json(offer);
+  }
+  return saveOffers(req, res);
+});
 
 function deleteProductByCode(code) {
   const clean = decodeURIComponent(String(code || ""));
   writeJson("products.json", readJson("products.json", []).filter((p) => p.code !== clean));
-  writeJson("offers.json", readJson("offers.json", []).filter((o) => o.code !== clean));
 }
 
 app.post("/api/admin/products-delete", auth, (req, res) => {

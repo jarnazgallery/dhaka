@@ -26,11 +26,11 @@ const FALLBACK_PRODUCTS = [
 ];
 
 const FALLBACK_OFFERS = [
-  { code: "SET-01", title: "কম্বো অফার ১", price: 2040, piece: 2 },
-  { code: "SET-02", title: "কম্বো অফার ২", price: 2040, piece: 2 },
-  { code: "SET-04", title: "কম্বো অফার ৩", price: 2040, piece: 2 },
-  { code: "SET-07", title: "কম্বো অফার ৪", price: 2040, piece: 2 },
-  { code: "SET-10", title: "কম্বো অফার ৫", price: 2690, piece: 3 },
+  { code: "COMBO-01", title: "কম্বো অফার ১", price: 2040, price36: 2040, piece: 2, image: "images/set-01.png", description: "" },
+  { code: "COMBO-02", title: "কম্বো অফার ২", price: 2040, price36: 2040, piece: 2, image: "images/set-02.png", description: "" },
+  { code: "COMBO-03", title: "কম্বো অফার ৩", price: 2040, price36: 2040, piece: 2, image: "images/set-04.png", description: "" },
+  { code: "COMBO-04", title: "কম্বো অফার ৪", price: 2040, price36: 2040, piece: 2, image: "images/set-07.png", description: "" },
+  { code: "COMBO-05", title: "কম্বো অফার ৫", price: 2690, price36: 2690, piece: 3, image: "images/set-10.png", description: "" },
 ];
 
 const FALLBACK_SITE = {
@@ -85,6 +85,7 @@ const FALLBACK_SITE = {
 };
 
 let PRODUCTS = FALLBACK_PRODUCTS.slice();
+let OFFERS = FALLBACK_OFFERS.slice();
 let WHATSAPP = "8801735943156";
 let API_MODE = "unknown";
 
@@ -256,8 +257,50 @@ function applySite(raw) {
 
 let SITE = mergeSite();
 
+function offerAsProduct(offer) {
+  if (!offer) return null;
+  return {
+    code: offer.code,
+    name: offer.title || offer.name || "কম্বো অফার",
+    title: offer.title || offer.name || "কম্বো অফার",
+    price: Number(offer.price || 2040),
+    price36: Number(offer.price36 || offer.price || 2040),
+    piece: Number(offer.piece || 2),
+    image: offer.image || "",
+    description: offer.description || "",
+    isCombo: true,
+  };
+}
+
+function normalizeOffer(offer, products) {
+  if (!offer) return null;
+  const linked = (products || []).find((p) => p.code === offer.code);
+  const image = offer.image || (linked && linked.image) || "";
+  if (!image && !(offer.title || offer.name)) return null;
+  return {
+    code: offer.code || "COMBO-01",
+    title: offer.title || offer.name || (linked && linked.name) || "কম্বো অফার",
+    price: Number(offer.price || (linked && linked.price) || 2040),
+    price36: Number(offer.price36 || offer.price || (linked && linked.price36) || 2040),
+    piece: Number(offer.piece || (linked && linked.piece) || 2),
+    image,
+    description: offer.description || "",
+  };
+}
+
+function firstFreeComboCode(offers) {
+  const used = new Set((offers || []).map((o) => String(o.code || "").toUpperCase()));
+  for (let n = 1; n <= 99; n += 1) {
+    const code = `COMBO-${String(n).padStart(2, "0")}`;
+    if (!used.has(code)) return code;
+  }
+  throw new Error("ফাঁকা কম্বো নম্বর নেই");
+}
+
 function findProduct(code) {
-  return PRODUCTS.find((p) => p.code === code);
+  const product = PRODUCTS.find((p) => p.code === code);
+  if (product) return product;
+  return offerAsProduct((OFFERS || []).find((o) => o.code === code));
 }
 
 function normalizeSetCode(raw) {
@@ -322,6 +365,12 @@ async function apiCall(route, options = {}) {
     attempts.push({ url: "catalog.php?" + bust, options: { method: "GET" } });
     attempts.push({ url: "catalog-data.json?" + bust, options: { method: "GET" } });
   }
+  if (clean === "orders" && method === "POST") {
+    attempts.push({ url: "order.php", options: opts });
+  }
+  if (clean === "admin/orders" && method === "GET") {
+    attempts.push({ url: "admin-orders.php?t=" + Date.now(), options: opts });
+  }
   if (method !== "GET" && method !== "POST") {
     attempts.push({
       url: "api.php?route=" + encodeURIComponent(clean) + "&_method=" + method,
@@ -341,7 +390,7 @@ async function apiCall(route, options = {}) {
         continue;
       }
       if (attempt.url.indexOf("catalog-data.json") === 0) API_MODE = "file";
-      else if (attempt.url.indexOf("catalog.php") === 0) API_MODE = "php";
+      else if (attempt.url.indexOf("order.php") === 0 || attempt.url.indexOf("admin-orders.php") === 0 || attempt.url.indexOf("catalog.php") === 0) API_MODE = "php";
       else API_MODE = attempt.url.indexOf("api.php") === 0 ? "php" : "server";
       return { ok: res.ok, status: res.status, data };
     } catch (err) {
@@ -399,8 +448,19 @@ function applyCatalogData(data) {
   }
   SITE = mergeSite(data.site);
   WHATSAPP = SITE.whatsapp || data.whatsapp || WHATSAPP;
+  const localOffers = readLocal(LOCAL_KEYS.offers, null);
+  if (serverOk && Array.isArray(data.offers)) {
+    OFFERS = data.offers.map((o) => normalizeOffer(o, PRODUCTS)).filter(Boolean);
+    try { writeLocal(LOCAL_KEYS.offers, OFFERS); } catch (err) {}
+  } else if (Array.isArray(localOffers)) {
+    OFFERS = localOffers.map((o) => normalizeOffer(o, PRODUCTS)).filter(Boolean);
+  } else {
+    OFFERS = (Array.isArray(data.offers) ? data.offers : FALLBACK_OFFERS)
+      .map((o) => normalizeOffer(o, PRODUCTS))
+      .filter(Boolean);
+  }
   applySite(SITE);
-  return Object.assign({}, data, { products: PRODUCTS, site: SITE, whatsapp: WHATSAPP });
+  return Object.assign({}, data, { products: PRODUCTS, offers: OFFERS, site: SITE, whatsapp: WHATSAPP });
 }
 
 async function loadCatalog() {
@@ -517,7 +577,8 @@ async function handleLocalAdmin(route, options) {
 
   if (route === "admin/orders" && method === "POST") {
     const body = JSON.parse(options.body);
-    const product = products.find((p) => p.code === body.productCode) || PRODUCTS[0];
+    const product = products.find((p) => p.code === body.productCode)
+      || offerAsProduct(offers.find((o) => o.code === body.productCode));
     if (!product) throw new Error("প্রোডাক্ট পাওয়া যায়নি");
     const qty = Math.max(1, Number(body.qty || 1));
     const order = {
@@ -540,9 +601,59 @@ async function handleLocalAdmin(route, options) {
     return order;
   }
 
+  if (route === "admin/offers-delete" && method === "POST") {
+    const body = typeof options.body === "string" ? JSON.parse(options.body || "{}") : options.body || {};
+    const code = String(body.code || "").trim();
+    if (!code) throw new Error("কম্বো নম্বর দিন");
+    offers = offers.filter((o) => o.code !== code);
+    writeLocal(LOCAL_KEYS.offers, offers);
+    OFFERS = offers;
+    return { ok: true };
+  }
+
+  const offerItemMatch = route.match(/^admin\/offers\/(.+)$/);
+  if (offerItemMatch && (method === "PUT" || method === "POST")) {
+    const code = decodeURIComponent(offerItemMatch[1]);
+    const offer = offers.find((o) => o.code === code);
+    if (!offer) throw new Error("কম্বো নেই");
+    const form = options.body;
+    if (form.get("title") || form.get("name")) offer.title = String(form.get("title") || form.get("name") || offer.title).trim();
+    if (form.get("price")) offer.price = Number(form.get("price"));
+    if (form.get("price36")) offer.price36 = Number(form.get("price36"));
+    if (form.get("piece")) offer.piece = Number(form.get("piece"));
+    if (form.has("description")) offer.description = String(form.get("description") || "").trim();
+    const imageFile = form.get("image");
+    if (imageFile && imageFile.size) offer.image = await fileToDataUrl(await compressImage(imageFile));
+    writeLocal(LOCAL_KEYS.offers, offers);
+    OFFERS = offers;
+    return offer;
+  }
+
   if (route === "admin/offers" && (method === "PUT" || method === "POST")) {
+    if (options.body && typeof options.body.get === "function") {
+      const form = options.body;
+      const imageFile = form.get("image");
+      const compact = imageFile && imageFile.size ? await compressImage(imageFile) : null;
+      if (!compact) throw new Error("কম্বোর ছবি দিন");
+      if (offers.length >= 10) throw new Error("১০টার বেশি কম্বো রাখা যাবে না");
+      const offer = {
+        code: firstFreeComboCode(offers),
+        title: String(form.get("title") || form.get("name") || "কম্বো অফার").trim(),
+        price: Number(form.get("price") || 2040),
+        price36: Number(form.get("price36") || form.get("price") || 2040),
+        piece: Number(form.get("piece") || 2),
+        description: String(form.get("description") || "").trim(),
+        image: await fileToDataUrl(compact),
+      };
+      offers.unshift(offer);
+      writeLocal(LOCAL_KEYS.offers, offers);
+      OFFERS = offers;
+      API_MODE = "local";
+      return offer;
+    }
     offers = JSON.parse(options.body);
     writeLocal(LOCAL_KEYS.offers, offers);
+    OFFERS = offers;
     return offers;
   }
 
@@ -551,9 +662,7 @@ async function handleLocalAdmin(route, options) {
     const code = String(body.code || "").trim();
     if (!code) throw new Error("প্রোডাক্ট নম্বর দিন");
     products = products.filter((p) => p.code !== code);
-    offers = offers.filter((o) => o.code !== code);
     writeLocal(LOCAL_KEYS.products, products);
-    writeLocal(LOCAL_KEYS.offers, offers);
     return { ok: true };
   }
 
@@ -624,13 +733,7 @@ async function handleLocalAdmin(route, options) {
       const next = normalizeSetCode(form.get("code"));
       if (!next) throw new Error("সেট নম্বর ১ থেকে ৯৯৯ দিন, যেমন 13 বা SET-13");
       if (next !== code && products.some((p) => p.code === next)) throw new Error(next + " আগে থেকে আছে");
-      if (next !== code) {
-        product.code = next;
-        offers.forEach((offer) => {
-          if (offer.code === code) offer.code = next;
-        });
-        writeLocal(LOCAL_KEYS.offers, offers);
-      }
+      if (next !== code) product.code = next;
     }
     if (imageFile && imageFile.size) product.image = await fileToDataUrl(await compressImage(imageFile));
     writeLocal(LOCAL_KEYS.products, sortProducts(products));
@@ -640,9 +743,7 @@ async function handleLocalAdmin(route, options) {
   if (productMatch && method === "DELETE") {
     const code = decodeURIComponent(productMatch[1]);
     products = products.filter((p) => p.code !== code);
-    offers = offers.filter((o) => o.code !== code);
     writeLocal(LOCAL_KEYS.products, products);
-    writeLocal(LOCAL_KEYS.offers, offers);
     return { ok: true };
   }
 
@@ -659,7 +760,8 @@ async function handleLocalAdmin(route, options) {
     });
     if (body.qty != null) order.qty = Math.max(1, Number(body.qty) || 1);
     if (body.productCode) {
-      const product = products.find((p) => p.code === body.productCode);
+      const product = products.find((p) => p.code === body.productCode)
+        || offerAsProduct(offers.find((o) => o.code === body.productCode));
       if (product) {
         order.productCode = product.code;
         order.combo = Number(product.piece || order.combo || 2);

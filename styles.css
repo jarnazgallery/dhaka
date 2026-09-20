@@ -872,27 +872,114 @@ body.modal-open {
 
 .modal-card {
   background: #fff;
-  width: min(460px, 100%);
-  border-radius: 22px;
-  padding: 22px;
+  width: min(480px, 100%);
+  border-radius: 24px;
+  padding: 24px 20px 20px;
+}
+
+.success-badge {
+  width: 64px;
+  height: 64px;
+  margin: 4px auto 10px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #19a34a, #0d8a3c);
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 800;
+  box-shadow: 0 10px 24px rgba(25, 163, 74, 0.28);
+}
+
+.success-lead {
+  margin: 0 0 8px;
+  color: #187a45;
+  font-weight: 800;
+  font-size: 1.05rem;
 }
 
 .receipt {
   margin: 12px 0;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 12px;
+  border: 1px solid #c8f0d4;
+  border-radius: 18px;
+  padding: 16px 14px;
   text-align: center;
-  background: var(--bg);
+  background: #f4fff8;
 }
 
 .receipt .set-visual img {
-  height: 180px;
+  height: 160px;
   object-fit: contain;
 }
 
+.receipt-id {
+  margin: 0 0 10px;
+  color: #5b3d5e;
+}
+
+.receipt-id strong {
+  display: block;
+  color: #e2187a;
+  font-size: 1.15rem;
+  margin-top: 2px;
+}
+
 .receipt-code {
-  font-size: 1.8rem;
+  font-size: 1.6rem;
+  margin: 6px 0 0;
+}
+
+.receipt-name {
+  margin: 0 0 10px;
+  font-weight: 700;
+}
+
+.receipt-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  text-align: left;
+  margin: 12px 0;
+}
+
+.receipt-grid p {
+  margin: 0;
+  background: #fff;
+  border: 1px solid #d7f3e1;
+  border-radius: 12px;
+  padding: 8px 10px;
+  font-size: 0.88rem;
+  color: #5b3d5e;
+}
+
+.receipt-grid strong {
+  display: block;
+  color: #1d1220;
+  font-size: 0.98rem;
+}
+
+.receipt-customer,
+.receipt-addr {
+  margin: 4px 0;
+  font-size: 0.95rem;
+}
+
+.receipt-status {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.receipt-status.is-ok {
+  background: #e6f8ed;
+  color: #146c36;
+}
+
+.receipt-status.is-warn {
+  background: #fff4e5;
+  color: #9a5b00;
 }
 
 .modal-actions {

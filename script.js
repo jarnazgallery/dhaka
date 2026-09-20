@@ -173,10 +173,20 @@ async function saveOrder(order) {
       body: JSON.stringify(order),
     });
     if (!result.ok) throw new Error((result.data && result.data.error) || "অর্ডার সেভ হয়নি");
-    return result.data;
+    const saved = Object.assign({}, order, result.data || {});
+    saved.savedOnServer = API_MODE === "php" || API_MODE === "server";
+    try {
+      const local = readLocal(LOCAL_KEYS.orders, []);
+      if (!local.some((item) => item.id === saved.id)) {
+        local.unshift(saved);
+        writeLocal(LOCAL_KEYS.orders, local);
+      }
+    } catch (err) {}
+    return saved;
   } catch (err) {
     if (err.code !== "NO_API") throw err;
     const orders = readLocal(LOCAL_KEYS.orders, []);
+    order.savedOnServer = false;
     orders.unshift(order);
     writeLocal(LOCAL_KEYS.orders, orders);
     return order;
@@ -210,15 +220,35 @@ function waLink(order) {
 function showConfirm(order) {
   lastOrder = order;
   const product = findProduct(order.productCode);
+  const size = (SIZES.find((item) => item.value === order.size) || {}).label || order.size;
+  const onServer = order.savedOnServer !== false && (API_MODE === "php" || API_MODE === "server" || order.savedOnServer);
+  document.getElementById("confirmTitle").textContent = "অর্ডার সফল হয়েছে";
   document.getElementById("receipt").innerHTML = `
-    ${visualHTML(product)}
-    <p class="receipt-code">${order.productCode}</p>
-    <p>সাইজ: <strong>${order.size}</strong> · ${order.qty} সেট</p>
-    <p>মোট: <strong>${taka(order.total)}</strong></p>
-    <p>অর্ডার আইডি: ${order.id}</p>
-    <p>${htmlEsc(order.name)} · ${htmlEsc(order.phone)}</p>
-    <p>${htmlEsc(order.address)}</p>
+    <div class="success-badge" aria-hidden="true">✓</div>
+    <p class="success-lead">আপনার অর্ডার আমরা পেয়েছি</p>
+    <p class="receipt-id">অর্ডার আইডি <strong>${htmlEsc(order.id)}</strong></p>
+    ${product ? visualHTML(product) : ""}
+    <p class="receipt-code">${htmlEsc(order.productCode)}</p>
+    ${product ? `<p class="receipt-name">${htmlEsc(product.name)}</p>` : ""}
+    <div class="receipt-grid">
+      <p>সাইজ <strong>${htmlEsc(size)}</strong></p>
+      <p>পরিমাণ <strong>${htmlEsc(order.qty)} সেট</strong></p>
+      <p>মোট <strong>${taka(order.total)}</strong></p>
+      <p>পেমেন্ট <strong>ক্যাশ অন ডেলিভারি</strong></p>
+    </div>
+    <p class="receipt-customer"><strong>${htmlEsc(order.name)}</strong> · ${htmlEsc(order.phone)}</p>
+    <p class="receipt-addr">${htmlEsc(order.address)}</p>
+    <p class="receipt-status ${onServer ? "is-ok" : "is-warn"}">${
+      onServer
+        ? "অ্যাডমিন এই অর্ডার দেখতে পাবেন। শীঘ্রই ফোন করে কনফার্ম করা হবে।"
+        : "অর্ডার সেভ হয়েছে। WhatsApp-এ পাঠালে অ্যাডমিন নিশ্চিত পাবেন।"
+    }</p>
   `;
+  const help = document.getElementById("confirmHelp");
+  if (help) {
+    help.textContent = "ধন্যবাদ। ক্যাশ অন ডেলিভারি · ঢাকায় সাধারণত ১–২ দিন।";
+  }
+  document.body.classList.add("modal-open");
   document.getElementById("confirmModal").classList.add("is-open");
   document.getElementById("confirmModal").setAttribute("aria-hidden", "false");
 }
@@ -347,7 +377,10 @@ if (navToggle && siteNav) {
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
   if (document.getElementById("sizeModal").classList.contains("is-open")) closeSizeModal();
-  document.getElementById("confirmModal").classList.remove("is-open");
+  if (document.getElementById("confirmModal").classList.contains("is-open")) {
+    document.body.classList.remove("modal-open");
+    document.getElementById("confirmModal").classList.remove("is-open");
+  }
   if (siteNav) {
     siteNav.classList.remove("is-open");
     if (navToggle) navToggle.setAttribute("aria-expanded", "false");
@@ -355,6 +388,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 document.getElementById("closeModal").addEventListener("click", () => {
+  document.body.classList.remove("modal-open");
   document.getElementById("confirmModal").classList.remove("is-open");
 });
 
@@ -365,6 +399,7 @@ document.getElementById("waBtn").addEventListener("click", () => {
 
 document.getElementById("confirmModal").addEventListener("click", (event) => {
   if (event.target.id === "confirmModal") {
+    document.body.classList.remove("modal-open");
     event.target.classList.remove("is-open");
   }
 });
@@ -374,25 +409,22 @@ function currentOffer() {
 }
 
 function renderOfferSlider() {
-  const valid = offers.filter((offer) => findProduct(offer.code));
-  offers = valid.length ? valid : PRODUCTS.slice(0, 4).map((p, i) => ({
-    code: p.code,
-    title: `কম্বো অফার ${i + 1}`,
-    price: p.price,
-    piece: p.piece,
-  }));
-  if (!offers.length) return;
+  offers = (OFFERS || offers || []).filter((offer) => offer && offer.image);
+  if (!offers.length) {
+    document.body.classList.add("offers-off");
+    return;
+  }
+  if (SITE.offersEnabled !== false) document.body.classList.remove("offers-off");
   const track = document.getElementById("offerTrack");
   const dots = document.getElementById("offerDots");
   track.innerHTML = offers
-    .map((offer) => {
-      const product = findProduct(offer.code);
-      return `
+    .map(
+      (offer) => `
         <div class="offer-slide">
-          <img src="${htmlEsc(product.image)}" alt="${htmlEsc(offer.title)} ${htmlEsc(offer.code)}" />
+          <img src="${htmlEsc(offer.image)}" alt="${htmlEsc(offer.title || offer.code)}" />
         </div>
-      `;
-    })
+      `
+    )
     .join("");
   dots.innerHTML = offers
     .map((_, i) => `<button type="button" class="dot" data-dot="${i}" aria-label="অফার ${i + 1}"></button>`)
@@ -401,6 +433,7 @@ function renderOfferSlider() {
 }
 
 function showOffer(index) {
+  if (!offers.length) return;
   offerIndex = (index + offers.length) % offers.length;
   const track = document.getElementById("offerTrack");
   track.style.transform = `translateX(-${offerIndex * 100}%)`;
@@ -408,7 +441,8 @@ function showOffer(index) {
     dot.classList.toggle("is-active", i === offerIndex);
   });
   const offer = currentOffer();
-  document.getElementById("offerTitle").textContent = `${offer.title} · ${offer.code}`;
+  if (!offer) return;
+  document.getElementById("offerTitle").textContent = `${offer.title || "কম্বো অফার"} · ${offer.code}`;
   document.getElementById("offerPrice").textContent = `মাত্র ${taka(offer.price)} · ০–৩ বছর`;
 }
 
@@ -442,7 +476,8 @@ function bindOfferSlider() {
   });
   document.getElementById("offerOrderNow").addEventListener("click", () => {
     const offer = currentOffer();
-    document.getElementById("comboSelect").value = String(offer.piece);
+    if (!offer) return;
+    document.getElementById("comboSelect").value = String(offer.piece || 2);
     openSizeModal(offer.code, offer.price);
   });
 
@@ -569,7 +604,7 @@ document.getElementById("reviewForm").addEventListener("submit", async (event) =
 renderSizes();
 
 loadCatalog().then((data) => {
-  offers = data.offers || [];
+  offers = data.offers || OFFERS || [];
   userReviews = data.reviews || [];
   renderProducts();
   bindOfferSlider();

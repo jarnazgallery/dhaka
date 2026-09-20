@@ -56,6 +56,88 @@ if (!function_exists("hash_equals")) {
   }
 }
 
+$earlyDir = __DIR__ . "/data";
+if (!is_dir($earlyDir)) @mkdir($earlyDir, 0775, true);
+
+$earlyRead = function ($file, $fallback) use ($earlyDir) {
+  $path = $earlyDir . "/" . $file;
+  if (!is_file($path)) return $fallback;
+  $data = json_decode(@file_get_contents($path), true);
+  return is_array($data) ? $data : $fallback;
+};
+
+if ($earlyRoute === "orders" && $_SERVER["REQUEST_METHOD"] === "POST") {
+  $body = json_decode(file_get_contents("php://input"), true);
+  if (!is_array($body)) $body = array();
+  $name = trim((string)(isset($body["name"]) ? $body["name"] : ""));
+  $phone = trim((string)(isset($body["phone"]) ? $body["phone"] : ""));
+  $address = trim((string)(isset($body["address"]) ? $body["address"] : ""));
+  $size = trim((string)(isset($body["size"]) ? $body["size"] : ""));
+  $code = trim((string)(isset($body["productCode"]) ? $body["productCode"] : ""));
+  if ($name === "" || $phone === "" || $address === "" || $size === "" || $code === "") {
+    http_response_code(400);
+    echo json_encode(array("error" => "নাম, মোবাইল, ঠিকানা, সাইজ ও প্রোডাক্ট দিন"), JSON_UNESCAPED_UNICODE);
+    exit;
+  }
+  $orders = $earlyRead("orders.json", array());
+  $order = array(
+    "id" => isset($body["id"]) && $body["id"] !== "" ? $body["id"] : ("JZ-" . substr((string)round(microtime(true) * 1000), -8)),
+    "productCode" => $code,
+    "name" => $name,
+    "phone" => $phone,
+    "address" => $address,
+    "size" => $size,
+    "combo" => intval(isset($body["combo"]) ? $body["combo"] : 2),
+    "qty" => max(1, intval(isset($body["qty"]) ? $body["qty"] : 1)),
+    "total" => intval(isset($body["total"]) ? $body["total"] : 0),
+    "status" => "new",
+    "source" => isset($body["source"]) ? $body["source"] : "web",
+    "createdAt" => date("c"),
+  );
+  array_unshift($orders, $order);
+  @file_put_contents($earlyDir . "/orders.json", json_encode($orders, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+  echo json_encode($order, JSON_UNESCAPED_UNICODE);
+  exit;
+}
+
+if ($earlyRoute === "login" && $_SERVER["REQUEST_METHOD"] === "POST") {
+  $body = json_decode(file_get_contents("php://input"), true);
+  if (!is_array($body)) $body = array();
+  $config = $earlyRead("config.json", array());
+  $password = (string)(isset($body["password"]) ? $body["password"] : "");
+  $salt = isset($config["salt"]) ? $config["salt"] : "";
+  $hash = hash("sha256", $salt . $password);
+  if (empty($config["passwordHash"]) || !hash_equals($config["passwordHash"], $hash)) {
+    http_response_code(401);
+    echo json_encode(array("error" => "পাসওয়ার্ড ভুল"), JSON_UNESCAPED_UNICODE);
+    exit;
+  }
+  $token = bin2hex(random_bytes(24));
+  $tokens = $earlyRead("tokens.json", array());
+  $tokens[$token] = time();
+  @file_put_contents($earlyDir . "/tokens.json", json_encode($tokens, JSON_UNESCAPED_UNICODE));
+  echo json_encode(array("token" => $token));
+  exit;
+}
+
+if ($earlyRoute === "admin/orders" && $_SERVER["REQUEST_METHOD"] === "GET") {
+  $token = "";
+  if (!empty($_SERVER["HTTP_X_ADMIN_TOKEN"])) $token = $_SERVER["HTTP_X_ADMIN_TOKEN"];
+  if ($token === "" && !empty($_SERVER["HTTP_AUTHORIZATION"])) {
+    $token = preg_replace("/^Bearer\\s+/i", "", $_SERVER["HTTP_AUTHORIZATION"]);
+  }
+  if ($token === "" && !empty($_GET["token"])) $token = $_GET["token"];
+  $token = trim((string)$token);
+  $tokens = $earlyRead("tokens.json", array());
+  if ($token === "" || empty($tokens[$token])) {
+    http_response_code(401);
+    echo json_encode(array("error" => "লগইন করুন"), JSON_UNESCAPED_UNICODE);
+    exit;
+  }
+  echo json_encode($earlyRead("orders.json", array()), JSON_UNESCAPED_UNICODE);
+  exit;
+}
+
 $ROOT = __DIR__;
 $DATA = $ROOT . "/data";
 $IMAGES = $ROOT . "/images";
@@ -103,6 +185,40 @@ function price_for_age($product, $size) {
   $older = in_array((string)$size, array("3-4 year", "4-5 year", "5-6 year"), true);
   if ($older) return intval(isset($product["price36"]) ? $product["price36"] : (isset($product["price"]) ? $product["price"] : 2040));
   return intval(isset($product["price"]) ? $product["price"] : 2040);
+}
+
+function offer_as_product($o) {
+  return array(
+    "code" => isset($o["code"]) ? $o["code"] : "",
+    "name" => isset($o["title"]) ? $o["title"] : (isset($o["name"]) ? $o["name"] : "কম্বো অফার"),
+    "price" => intval(isset($o["price"]) ? $o["price"] : 2040),
+    "price36" => intval(isset($o["price36"]) ? $o["price36"] : (isset($o["price"]) ? $o["price"] : 2040)),
+    "piece" => intval(isset($o["piece"]) ? $o["piece"] : 2),
+    "image" => isset($o["image"]) ? $o["image"] : "",
+    "description" => isset($o["description"]) ? $o["description"] : "",
+  );
+}
+
+function find_sellable($code) {
+  foreach (read_json("products.json", array()) as $p) {
+    if ((isset($p["code"]) ? $p["code"] : "") === $code) return $p;
+  }
+  foreach (read_json("offers.json", array()) as $o) {
+    if ((isset($o["code"]) ? $o["code"] : "") === $code) return offer_as_product($o);
+  }
+  return null;
+}
+
+function first_free_combo($offers) {
+  $used = array();
+  foreach ($offers as $o) {
+    $used[strtoupper(isset($o["code"]) ? $o["code"] : "")] = true;
+  }
+  for ($n = 1; $n <= 99; $n++) {
+    $code = "COMBO-" . str_pad((string)$n, 2, "0", STR_PAD_LEFT);
+    if (empty($used[$code])) return $code;
+  }
+  return "";
 }
 
 function hash_password($password, $salt) {
@@ -270,12 +386,7 @@ $config = load_config();
 
 if ($route === "orders" && $method === "POST") {
   $body = json_input();
-  $products = read_json("products.json", array());
-  $code = isset($body["productCode"]) ? $body["productCode"] : "";
-  $product = null;
-  foreach ($products as $p) {
-    if ((isset($p["code"]) ? $p["code"] : "") === $code) $product = $p;
-  }
+  $product = find_sellable(isset($body["productCode"]) ? $body["productCode"] : "");
   if (!$product) fail(400, "প্রোডাক্ট পাওয়া যায়নি");
   $order = array(
     "id" => isset($body["id"]) ? $body["id"] : ("JZ-" . substr((string)round(microtime(true) * 1000), -8)),
@@ -325,12 +436,7 @@ if ($route === "admin/orders" && $method === "GET") {
 if ($route === "admin/orders" && $method === "POST") {
   require_auth();
   $body = json_input();
-  $products = read_json("products.json", array());
-  $code = isset($body["productCode"]) ? $body["productCode"] : "";
-  $product = null;
-  foreach ($products as $p) {
-    if ((isset($p["code"]) ? $p["code"] : "") === $code) $product = $p;
-  }
+  $product = find_sellable(isset($body["productCode"]) ? $body["productCode"] : "");
   if (!$product) fail(400, "প্রোডাক্ট পাওয়া যায়নি");
   $status = (isset($body["status"]) && $body["status"] === "new") ? "new" : "confirmed";
   $qty = max(1, intval(isset($body["qty"]) ? $body["qty"] : 1));
@@ -375,14 +481,13 @@ if (preg_match("#^admin/orders/(.+)$#", $route, $m) && ($method === "POST" || $m
     }
     if (isset($body["qty"])) $orders[$i]["qty"] = max(1, intval($body["qty"]));
     if (!empty($body["productCode"])) {
-      foreach ($products as $p) {
-        if ((isset($p["code"]) ? $p["code"] : "") !== $body["productCode"]) continue;
+      $p = find_sellable($body["productCode"]);
+      if ($p) {
         $orders[$i]["productCode"] = $p["code"];
         $orders[$i]["combo"] = intval(isset($p["piece"]) ? $p["piece"] : 2);
         if (!isset($body["total"])) {
           $orders[$i]["total"] = price_for_age($p, isset($orders[$i]["size"]) ? $orders[$i]["size"] : "") * intval($orders[$i]["qty"]);
         }
-        break;
       }
     }
     if (isset($body["total"]) && $body["total"] !== "") $orders[$i]["total"] = intval($body["total"]);
@@ -408,10 +513,66 @@ if (preg_match("#^admin/orders/(.+)$#", $route, $m) && $method === "DELETE") {
   ok(array("ok" => true));
 }
 
+if ($route === "admin/offers-delete" && $method === "POST") {
+  require_auth();
+  $body = json_input();
+  $code = isset($body["code"]) ? trim((string)$body["code"]) : "";
+  if ($code === "") fail(400, "কম্বো নম্বর দিন");
+  write_json("offers.json", without_code(read_json("offers.json", array()), "code", $code));
+  publish_catalog();
+  ok(array("ok" => true));
+}
+
+if (preg_match("#^admin/offers/(.+)$#", $route, $m) && ($method === "PUT" || $method === "POST")) {
+  require_auth();
+  $code = rawurldecode($m[1]);
+  $offers = read_json("offers.json", array());
+  $saved = null;
+  for ($i = 0; $i < count($offers); $i++) {
+    if ((isset($offers[$i]["code"]) ? $offers[$i]["code"] : "") !== $code) continue;
+    if (!empty($_POST["title"])) $offers[$i]["title"] = trim((string)$_POST["title"]);
+    if (!empty($_POST["name"])) $offers[$i]["title"] = trim((string)$_POST["name"]);
+    if (!empty($_POST["price"])) $offers[$i]["price"] = intval($_POST["price"]);
+    if (!empty($_POST["price36"])) $offers[$i]["price36"] = intval($_POST["price36"]);
+    if (!empty($_POST["piece"])) $offers[$i]["piece"] = intval($_POST["piece"]);
+    if (isset($_POST["description"])) $offers[$i]["description"] = trim((string)$_POST["description"]);
+    $image = save_upload("image");
+    if ($image) $offers[$i]["image"] = $image;
+    $saved = $offers[$i];
+    break;
+  }
+  if (!$saved) fail(404, "কম্বো নেই");
+  write_json("offers.json", $offers);
+  publish_catalog();
+  ok($saved);
+}
+
 if ($route === "admin/offers" && ($method === "PUT" || $method === "POST")) {
   require_auth();
+  if (!empty($_FILES["image"]["tmp_name"]) || (isset($_POST["title"]) && trim((string)$_POST["title"]) !== "")) {
+    $image = save_upload("image");
+    if (!$image) fail(400, "কম্বোর ছবি দিন");
+    $offers = read_json("offers.json", array());
+    if (count($offers) >= 10) fail(400, "১০টার বেশি কম্বো রাখা যাবে না");
+    $code = first_free_combo($offers);
+    if ($code === "") fail(400, "ফাঁকা কম্বো নম্বর নেই");
+    $offer = array(
+      "code" => $code,
+      "title" => trim((string)(isset($_POST["title"]) ? $_POST["title"] : (isset($_POST["name"]) ? $_POST["name"] : "কম্বো অফার"))),
+      "price" => intval(isset($_POST["price"]) ? $_POST["price"] : 2040),
+      "price36" => intval(isset($_POST["price36"]) ? $_POST["price36"] : (isset($_POST["price"]) ? $_POST["price"] : 2040)),
+      "piece" => intval(isset($_POST["piece"]) ? $_POST["piece"] : 2),
+      "description" => trim((string)(isset($_POST["description"]) ? $_POST["description"] : "")),
+      "image" => $image,
+    );
+    array_unshift($offers, $offer);
+    write_json("offers.json", $offers);
+    publish_catalog();
+    ok($offer);
+  }
   $list = json_input();
-  if (count($list) < 4 || count($list) > 5) fail(400, "৪ থেকে ৫টা অফার রাখুন");
+  if (!is_array($list)) fail(400, "কম্বো লিস্ট ভুল");
+  if (count($list) > 10) fail(400, "১০টার বেশি কম্বো রাখা যাবে না");
   write_json("offers.json", $list);
   publish_catalog();
   ok($list);
@@ -504,7 +665,6 @@ if (preg_match("#^admin/products/(.+)$#", $route, $m) && ($method === "PUT" || $
 function delete_product($code) {
   $code = rawurldecode((string)$code);
   write_json("products.json", without_code(read_json("products.json", array()), "code", $code));
-  write_json("offers.json", without_code(read_json("offers.json", array()), "code", $code));
   publish_catalog();
 }
 

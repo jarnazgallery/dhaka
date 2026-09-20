@@ -11,7 +11,7 @@
       href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=20260920g" />
+    <link rel="stylesheet" href="styles.css?v=20260920m" />
     <style>
       body.admin-app { min-height: 100vh; }
       .admin-top .header-inner { width: min(1240px, calc(100% - 28px)); }
@@ -437,7 +437,7 @@
         <section class="admin-page" id="tab-offers">
           <div class="page-head">
             <h2>কম্বো অফার</h2>
-            <p>হোমপেজের উপরের স্লাইডার চাইলে অফ করে রাখতে পারবেন। অফার লিস্ট সেভ থাকবে।</p>
+            <p>কম্বো সেট থেকে আলাদা। নিজের ছবি আপলোড করুন — SET-১, SET-২ থেকে নেওয়া হবে না।</p>
           </div>
           <div class="panel">
             <label class="offer-switch">
@@ -447,13 +447,25 @@
               </span>
               <input type="checkbox" id="offersEnabled" checked />
             </label>
-            <div id="offerEditor"></div>
-            <div class="panel-actions" style="margin-top: 16px;">
-              <button class="btn soft-btn" type="button" id="addOffer">আরেকটা অফার</button>
-              <button class="btn btn-dark" type="button" id="saveOffers">অফার সেভ করুন</button>
-            </div>
             <p class="save-note" id="saveNote"></p>
           </div>
+          <form class="panel add-form" id="addOfferForm">
+            <h3>নতুন কম্বো আপলোড</h3>
+            <div class="add-grid">
+              <label>ছবি <input type="file" name="image" accept="image/*" required /></label>
+              <label>টাইটেল <input type="text" name="title" required placeholder="কম্বো অফার ১" /></label>
+              <label>০–৩ বছর দাম (৳) <input type="number" name="price" required value="2040" min="1" /></label>
+              <label>৩–৬ বছর দাম (৳) <input type="number" name="price36" required value="2040" min="1" /></label>
+              <label>পিস <input type="number" name="piece" required value="2" min="1" max="10" /></label>
+            </div>
+            <label class="add-desc">বিবরণ
+              <textarea name="description" rows="2" placeholder="কম্বোতে কী কী আছে..."></textarea>
+            </label>
+            <button class="btn btn-dark" type="submit">কম্বো যোগ করুন</button>
+            <p class="save-note" id="addOfferNote"></p>
+          </form>
+          <h3 class="list-heading">কম্বো লিস্ট</h3>
+          <div class="product-admin" id="offerEditor"></div>
         </section>
 
         <section class="admin-page" id="tab-orders">
@@ -622,7 +634,7 @@
       </div>
     </div>
 
-    <script src="catalog.js?v=20260920k"></script>
+    <script src="catalog.js?v=20260920m"></script>
     <script>
       const TOKEN_KEY = "jarnaz-admin-token";
       let offers = [];
@@ -736,8 +748,8 @@
         const local = API_MODE === "local" || API_MODE === "file";
         if (note) {
           note.textContent = local
-            ? "লোকাল মোড চালু — নতুন প্রোডাক্ট শুধু এই ফোনে থাকবে, ইউজার ওয়েবসাইটে দেখবে না। api.php ও data ফোল্ডার আপলোড করুন।"
-            : "অর্ডার ও প্রোডাক্ট সার্ভারে সেভ হচ্ছে। ফোন থেকে অর্ডার করলেও এখানে আসবে।";
+            ? "লোকাল মোড — আপনার ফোনের অর্ডার দেখা যাবে, ইউজারের অর্ডার আসবে না। order.php ও api.php আপলোড করে সার্ভার মোডে লগইন করুন।"
+            : "ইউজার ওয়েবসাইট থেকে অর্ডার করলে এখানে নাম, মোবাইল ও ঠিকানা আসবে।";
         }
         const sync = document.getElementById("productSyncNote");
         if (sync) {
@@ -794,12 +806,9 @@
         });
       }
 
-      function findProduct(code) {
-        return PRODUCTS.find((p) => p.code === code);
-      }
-
       function productOptions(selected) {
-        return PRODUCTS.map(
+        const items = PRODUCTS.concat((OFFERS || []).map(offerAsProduct).filter(Boolean));
+        return items.map(
           (p) => `<option value="${esc(p.code)}" ${p.code === selected ? "selected" : ""}>${esc(p.code)} — ${esc(p.name)}</option>`
         ).join("");
       }
@@ -858,7 +867,7 @@
         const productSel = document.getElementById("manualProduct");
         const sizeSel = document.getElementById("manualSize");
         if (!productSel || !sizeSel) return;
-        productSel.innerHTML = PRODUCTS.map(
+        productSel.innerHTML = PRODUCTS.concat((OFFERS || []).map(offerAsProduct).filter(Boolean)).map(
           (p) => `<option value="${esc(p.code)}">${esc(p.code)} — ${esc(p.name)} (${taka(p.price)})</option>`
         ).join("");
         sizeSel.innerHTML = SIZES.map((s) => `<option value="${esc(s.value)}">${esc(s.label)}</option>`).join("");
@@ -944,36 +953,59 @@
         renderStats();
       }
 
-      function renderOffers() {
+      function renderOffers(highlightCode) {
+        OFFERS = Array.isArray(OFFERS) ? OFFERS : offers;
+        offers = OFFERS;
         const editor = document.getElementById("offerEditor");
+        if (!offers.length) {
+          editor.innerHTML = '<p class="empty">এখনো কম্বো নেই। উপরে ছবি দিয়ে আলাদা কম্বো আপলোড করুন।</p>';
+          renderStats();
+          return;
+        }
         editor.innerHTML = offers
-          .map((offer, i) => {
-            const product = findProduct(offer.code) || PRODUCTS[0];
-            if (!product) return "";
-            return `
-              <div class="offer-row" data-index="${i}">
-                <img src="${esc(product.image)}" alt="${esc(offer.code)}" />
-                <div class="offer-fields">
-                  <span class="code-pill">অফার ${i + 1}</span>
-                  <label>প্রোডাক্ট <select data-field="code">${productOptions(offer.code)}</select></label>
-                  <label>টাইটেল <input data-field="title" value="${esc(offer.title)}" /></label>
-                  <label>দাম <input type="number" data-field="price" value="${esc(offer.price)}" /></label>
-                  ${offers.length > 4 ? `<button type="button" class="btn soft-btn" data-remove="${i}">অফার বাদ</button>` : ""}
+          .map(
+            (offer) => `
+            <div class="product-admin-row${offer.code === highlightCode ? " is-new" : ""}" data-code="${esc(offer.code)}">
+              <img src="${esc(offer.image)}" alt="${esc(offer.code)}" />
+              <div class="product-fields">
+                <span class="code-pill">${esc(offer.code)}</span>
+                <label>টাইটেল <input data-offer-edit="title" value="${esc(offer.title || "")}" /></label>
+                <label>০–৩ বছর দাম (৳) <input type="number" data-offer-edit="price" value="${esc(offer.price)}" min="1" /></label>
+                <label>৩–৬ বছর দাম (৳) <input type="number" data-offer-edit="price36" value="${esc(offer.price36 || offer.price)}" min="1" /></label>
+                <label>পিস <input type="number" data-offer-edit="piece" value="${esc(offer.piece || 2)}" min="1" max="10" /></label>
+                <label>বিবরণ <textarea data-offer-edit="description" rows="2">${esc(offer.description || "")}</textarea></label>
+                <label>নতুন ছবি <input type="file" data-offer-edit="image" accept="image/*" /></label>
+                <div class="row-actions">
+                  <button class="btn btn-dark" type="button" data-save-offer="${esc(offer.code)}">সেভ</button>
+                  <button class="btn danger" type="button" data-del-offer="${esc(offer.code)}">ডিলিট</button>
                 </div>
               </div>
-            `;
-          })
+            </div>`
+          )
           .join("");
-        document.getElementById("addOffer").classList.toggle("is-hidden", offers.length >= 5 || !PRODUCTS.length);
+        renderStats();
       }
 
-      function readOffers() {
-        return [...document.querySelectorAll("#offerEditor .offer-row")].map((row) => ({
-          code: row.querySelector('[data-field="code"]').value,
-          title: row.querySelector('[data-field="title"]').value.trim() || "কম্বো অফার",
-          price: Number(row.querySelector('[data-field="price"]').value) || 2040,
-          piece: 2,
-        }));
+      function mergeOrderLists(server, local) {
+        const list = Array.isArray(server) ? server.slice() : [];
+        const seen = new Set(list.map((o) => o && o.id));
+        (local || []).forEach((order) => {
+          if (order && order.id && !seen.has(order.id)) {
+            list.push(order);
+            seen.add(order.id);
+          }
+        });
+        return list.sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+      }
+
+      function startOrderPoll() {
+        if (window._orderPoll) clearInterval(window._orderPoll);
+        window._orderPoll = setInterval(async () => {
+          try {
+            const orders = await api("admin/orders", { headers: headers() });
+            renderOrders(mergeOrderLists(orders, readLocal(LOCAL_KEYS.orders, [])));
+          } catch (err) {}
+        }, 12000);
       }
 
       function filteredOrders() {
@@ -1081,7 +1113,8 @@
       async function bootDash() {
         const catalog = applyCatalogData(await api("catalog"));
         PRODUCTS = sortProducts(catalog.products || []);
-        offers = catalog.offers || [];
+        offers = catalog.offers || OFFERS || [];
+        OFFERS = offers;
         fillWebsiteForm(catalog.site || SITE);
         fillManualOrderForm();
         lastReviews = catalog.reviews || [];
@@ -1089,7 +1122,8 @@
         renderProducts();
         renderOffers();
         const orders = await api("admin/orders", { headers: headers() });
-        renderOrders(orders);
+        renderOrders(mergeOrderLists(orders, readLocal(LOCAL_KEYS.orders, [])));
+        startOrderPoll();
         setModeNote();
       }
 
@@ -1356,32 +1390,78 @@
         }
       });
 
-      document.getElementById("offerEditor").addEventListener("change", (event) => {
-        if (event.target.dataset.field === "code") {
-          const product = findProduct(event.target.value);
-          event.target.closest(".offer-row").querySelector("img").src = product.image;
+      document.getElementById("addOfferForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const note = document.getElementById("addOfferNote");
+        const btn = event.target.querySelector('button[type="submit"]');
+        note.classList.remove("is-error");
+        btn.disabled = true;
+        try {
+          const data = new FormData(event.target);
+          const image = event.target.image && event.target.image.files[0];
+          if (image) data.set("image", await compressImage(image));
+          data.append("token", token());
+          const offer = await api("admin/offers", { method: "POST", headers: headers(), body: data });
+          event.target.reset();
+          if (offer && !OFFERS.some((o) => o.code === offer.code)) OFFERS.unshift(offer);
+          offers = OFFERS;
+          renderOffers(offer.code);
+          fillManualOrderForm();
+          note.classList.toggle("is-error", API_MODE === "local" || API_MODE === "file");
+          note.textContent = (API_MODE === "local" || API_MODE === "file")
+            ? `${offer.code} শুধু এই ফোনে সেভ হয়েছে।`
+            : `${offer.code} কম্বো ওয়েবসাইটে যোগ হয়েছে। হোম রিফ্রেশ করলে স্লাইডারে দেখা যাবে।`;
+        } catch (err) {
+          note.classList.add("is-error");
+          note.textContent = err.message;
+        } finally {
+          btn.disabled = false;
         }
       });
 
-      document.getElementById("addOffer").addEventListener("click", () => {
-        offers = readOffers();
-        if (offers.length >= 5 || !PRODUCTS.length) return;
-        offers.push({
-          code: PRODUCTS[0].code,
-          title: `কম্বো অফার ${offers.length + 1}`,
-          price: PRODUCTS[0].price,
-          piece: 2,
-        });
-        renderOffers();
-      });
-
-      document.getElementById("offerEditor").addEventListener("click", (event) => {
-        const remove = event.target.closest("[data-remove]");
-        if (remove) {
-          offers = readOffers();
-          if (offers.length <= 4) return;
-          offers.splice(Number(remove.dataset.remove), 1);
-          renderOffers();
+      document.getElementById("offerEditor").addEventListener("click", async (event) => {
+        const save = event.target.closest("[data-save-offer]");
+        const del = event.target.closest("[data-del-offer]");
+        if (save) {
+          const row = save.closest(".product-admin-row");
+          const data = new FormData();
+          data.append("title", row.querySelector('[data-offer-edit="title"]').value);
+          data.append("price", row.querySelector('[data-offer-edit="price"]').value);
+          data.append("price36", row.querySelector('[data-offer-edit="price36"]').value);
+          data.append("piece", row.querySelector('[data-offer-edit="piece"]').value);
+          data.append("description", row.querySelector('[data-offer-edit="description"]').value);
+          data.append("token", token());
+          const file = row.querySelector('[data-offer-edit="image"]').files[0];
+          if (file) data.append("image", await compressImage(file));
+          try {
+            await api("admin/offers/" + encodeURIComponent(save.dataset.saveOffer), {
+              method: "POST",
+              headers: headers(),
+              body: data,
+            });
+            const catalog = applyCatalogData(await api("catalog"));
+            offers = catalog.offers || OFFERS;
+            OFFERS = offers;
+            renderOffers(save.dataset.saveOffer);
+          } catch (err) {
+            alert(err.message);
+          }
+        }
+        if (del && confirm("এই কম্বো ডিলিট করবেন?")) {
+          try {
+            await api("admin/offers-delete", {
+              method: "POST",
+              headers: headers(true),
+              body: JSON.stringify({ code: del.dataset.delOffer }),
+            });
+            OFFERS = OFFERS.filter((o) => o.code !== del.dataset.delOffer);
+            offers = OFFERS;
+            try { writeLocal(LOCAL_KEYS.offers, OFFERS); } catch (err) {}
+            renderOffers();
+            fillManualOrderForm();
+          } catch (err) {
+            alert(err.message);
+          }
         }
       });
 
@@ -1408,24 +1488,6 @@
         } catch (err) {
           event.target.checked = !enabled;
           siteDraft.offersEnabled = event.target.checked;
-          note.classList.add("is-error");
-          note.textContent = err.message;
-        }
-      });
-
-      document.getElementById("saveOffers").addEventListener("click", async () => {
-        offers = readOffers();
-        const note = document.getElementById("saveNote");
-        note.classList.remove("is-error");
-        try {
-          await api("admin/offers", {
-            method: "POST",
-            headers: headers(true),
-            body: JSON.stringify(offers),
-          });
-          note.textContent = "অফার সেভ হয়েছে। হোম রিফ্রেশ করুন।";
-          renderStats();
-        } catch (err) {
           note.classList.add("is-error");
           note.textContent = err.message;
         }
