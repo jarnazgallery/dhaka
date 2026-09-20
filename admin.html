@@ -622,7 +622,7 @@
       </div>
     </div>
 
-    <script src="catalog.js?v=20260920j"></script>
+    <script src="catalog.js?v=20260920k"></script>
     <script>
       const TOKEN_KEY = "jarnaz-admin-token";
       let offers = [];
@@ -1079,8 +1079,8 @@
       }
 
       async function bootDash() {
-        const catalog = await api("catalog");
-        PRODUCTS = sortProducts(catalog.products || purgeExtraLocalProducts());
+        const catalog = applyCatalogData(await api("catalog"));
+        PRODUCTS = sortProducts(catalog.products || []);
         offers = catalog.offers || [];
         fillWebsiteForm(catalog.site || SITE);
         fillManualOrderForm();
@@ -1346,8 +1346,10 @@
               body: JSON.stringify({ code: del.dataset.delProduct }),
             });
             PRODUCTS = PRODUCTS.filter((p) => p.code !== del.dataset.delProduct);
+            try { writeLocal(LOCAL_KEYS.products, PRODUCTS); } catch (err) {}
             renderProducts();
-            bootDash();
+            fillManualOrderForm();
+            renderStats();
           } catch (err) {
             alert(err.message);
           }

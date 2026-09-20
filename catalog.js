@@ -373,24 +373,11 @@ function writeLocal(key, value) {
   }
 }
 
-function officialProductCodes() {
-  return new Set(FALLBACK_PRODUCTS.map((p) => p.code));
-}
-
-function purgeExtraLocalProducts() {
-  const current = readLocal(LOCAL_KEYS.products, null);
-  if (!Array.isArray(current) || !current.length) return FALLBACK_PRODUCTS.slice();
-  const keep = officialProductCodes();
-  const cleaned = current.filter((p) => keep.has(p.code));
-  const next = cleaned.length ? sortProducts(cleaned) : FALLBACK_PRODUCTS.slice();
-  if (cleaned.length !== current.length) writeLocal(LOCAL_KEYS.products, next);
-  return next;
-}
-
 function localCatalog() {
   const site = mergeSite(readLocal(LOCAL_KEYS.site, null));
+  const products = readLocal(LOCAL_KEYS.products, null);
   return {
-    products: sortProducts(purgeExtraLocalProducts()),
+    products: Array.isArray(products) ? products : FALLBACK_PRODUCTS.slice(),
     offers: readLocal(LOCAL_KEYS.offers, FALLBACK_OFFERS.slice()),
     site,
     whatsapp: site.whatsapp || WHATSAPP,
@@ -398,23 +385,32 @@ function localCatalog() {
   };
 }
 
+function applyCatalogData(data) {
+  data = data || {};
+  const localProducts = readLocal(LOCAL_KEYS.products, null);
+  const serverOk = API_MODE === "server" || API_MODE === "php";
+  if (serverOk && Array.isArray(data.products)) {
+    PRODUCTS = sortProducts(data.products);
+    try { writeLocal(LOCAL_KEYS.products, PRODUCTS); } catch (err) {}
+  } else if (Array.isArray(localProducts)) {
+    PRODUCTS = sortProducts(localProducts);
+  } else {
+    PRODUCTS = sortProducts(Array.isArray(data.products) ? data.products : FALLBACK_PRODUCTS.slice());
+  }
+  SITE = mergeSite(data.site);
+  WHATSAPP = SITE.whatsapp || data.whatsapp || WHATSAPP;
+  applySite(SITE);
+  return Object.assign({}, data, { products: PRODUCTS, site: SITE, whatsapp: WHATSAPP });
+}
+
 async function loadCatalog() {
   try {
     const result = await apiCall("catalog");
     if (!result.ok || !result.data || !Array.isArray(result.data.products)) throw new Error("empty");
-    PRODUCTS = sortProducts(result.data.products);
-    SITE = mergeSite(result.data.site);
-    WHATSAPP = SITE.whatsapp || result.data.whatsapp || WHATSAPP;
-    applySite(SITE);
-    return Object.assign({}, result.data, { site: SITE, whatsapp: WHATSAPP });
+    return applyCatalogData(result.data);
   } catch (err) {
-    const local = localCatalog();
-    PRODUCTS = sortProducts(local.products);
-    SITE = local.site;
-    WHATSAPP = local.whatsapp || WHATSAPP;
     API_MODE = "local";
-    applySite(SITE);
-    return local;
+    return applyCatalogData(localCatalog());
   }
 }
 
