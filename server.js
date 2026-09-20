@@ -68,7 +68,8 @@ function nextCode(products) {
 }
 
 function auth(req, res, next) {
-  const token = String(req.headers.authorization || "").replace("Bearer ", "");
+  const header = String(req.headers.authorization || req.headers["x-admin-token"] || "");
+  const token = header.replace(/^Bearer\s+/i, "").trim() || String(req.body && req.body.token || req.query.token || "");
   if (!token || !tokens.has(token)) {
     return res.status(401).json({ error: "লগইন করুন" });
   }
@@ -266,6 +267,7 @@ app.post("/api/admin/offers", auth, saveOffers);
 app.post("/api/admin/products", auth, upload.single("image"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "ছবি দিন" });
   const products = readJson("products.json", []);
+  if (products.length >= 200) return res.status(400).json({ error: "২০০টার বেশি প্রোডাক্ট রাখা যাবে না" });
   const product = {
     code: nextCode(products),
     name: String(req.body.name || "নতুন সেট").trim(),

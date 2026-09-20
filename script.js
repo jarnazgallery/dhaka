@@ -81,10 +81,11 @@ function showStep(step) {
 }
 
 function openSizeModal(code, offerPrice) {
+  const product = findProduct(code);
+  if (!product) return;
   pendingCode = code;
   selectedOfferPrice = offerPrice || null;
   selectedSize = "";
-  const product = findProduct(code);
   document.getElementById("sizeModalMeta").textContent = product.description
     ? `${product.code} · ${product.name} · ${product.description}`
     : `${product.code} · ${product.name}`;
@@ -136,7 +137,8 @@ function unitPrice(product, sizeValue) {
 }
 
 function updateTotal() {
-  const qty = Number(document.querySelector('[name="qty"]').value || 1);
+  const qtyInput = document.querySelector('#orderForm [name="qty"]');
+  const qty = Number((qtyInput && qtyInput.value) || 1);
   const product = selected || findProduct(pendingCode);
   const unit = unitPrice(product, selectedSize || document.getElementById("sizeInput").value);
   document.getElementById("totalPrice").textContent = taka(unit * qty);
@@ -245,7 +247,8 @@ document.addEventListener("click", (event) => {
   closeSizeModal();
 });
 
-document.querySelector('[name="qty"]').addEventListener("input", updateTotal);
+const qtyInput = document.querySelector('#orderForm [name="qty"]');
+if (qtyInput) qtyInput.addEventListener("input", updateTotal);
 
 document.getElementById("orderForm").addEventListener("submit", (event) => {
   event.preventDefault();

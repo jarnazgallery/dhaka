@@ -11,7 +11,7 @@
       href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=20260920e" />
+    <link rel="stylesheet" href="styles.css?v=20260920g" />
     <style>
       body.admin-app { min-height: 100vh; }
       .admin-top .header-inner { width: min(1240px, calc(100% - 28px)); }
@@ -409,7 +409,7 @@
         <section class="admin-page" id="tab-products">
           <div class="page-head">
             <h2>প্রোডাক্ট</h2>
-            <p>নতুন সেট যোগ করলে লিস্ট বাড়বে। এখন মোট <strong id="adminProductCount">0</strong> টা প্রোডাক্ট আছে।</p>
+            <p>প্রোডাক্ট লিমিট ১২টা নয় — যত খুশি যোগ করা যায় (সর্বোচ্চ ২০০)। এখন মোট <strong id="adminProductCount">0</strong> টা আছে।</p>
             <p class="save-note" id="productSyncNote"></p>
           </div>
           <form class="panel add-form" id="addForm">
@@ -619,7 +619,7 @@
       </div>
     </div>
 
-    <script src="catalog.js?v=20260920e"></script>
+    <script src="catalog.js?v=20260920h"></script>
     <script>
       const TOKEN_KEY = "jarnaz-admin-token";
       let offers = [];
@@ -1266,16 +1266,20 @@
         btn.disabled = true;
         try {
           const data = new FormData(event.target);
+          const image = event.target.image && event.target.image.files[0];
+          if (image) data.set("image", await compressImage(image));
           data.append("token", token());
           const product = await api("admin/products", { method: "POST", headers: headers(), body: data });
           event.target.reset();
           switchTab("products");
           await bootDash();
+          if (product && !PRODUCTS.some((p) => p.code === product.code)) PRODUCTS.unshift(product);
           renderProducts(product.code);
           const row = document.querySelector(`[data-code="${product.code}"]`);
           if (row) row.scrollIntoView({ behavior: "smooth", block: "center" });
-          note.textContent = API_MODE === "local"
-            ? `${product.code} শুধু এই ফোনে সেভ হয়েছে। ইউজার ওয়েবসাইটে দেখবে না।`
+          note.classList.toggle("is-error", API_MODE === "local" || API_MODE === "file");
+          note.textContent = (API_MODE === "local" || API_MODE === "file")
+            ? `${product.code} শুধু এই ফোনে সেভ হয়েছে। ইউজার ওয়েবসাইটে দেখবে না। api.php আপলোড করে সার্ভার মোডে লগইন করুন।`
             : `${product.code} ওয়েবসাইটে যোগ হয়েছে। হোমপেজ রিফ্রেশ করলে ইউজার দেখবে। এখন মোট ${PRODUCTS.length} টা প্রোডাক্ট।`;
         } catch (err) {
           note.classList.add("is-error");
@@ -1298,7 +1302,7 @@
           data.append("description", row.querySelector('[data-edit="description"]').value);
           data.append("token", token());
           const file = row.querySelector('[data-edit="image"]').files[0];
-          if (file) data.append("image", file);
+          if (file) data.append("image", await compressImage(file));
           try {
             await api("admin/products/" + save.dataset.save, { method: "POST", headers: headers(), body: data });
             bootDash();

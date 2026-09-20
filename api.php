@@ -10,6 +10,31 @@ if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
   exit;
 }
 
+$earlyRoute = isset($_GET["route"]) ? $_GET["route"] : "";
+if ($earlyRoute === "health") {
+  echo json_encode(array("ok" => true));
+  exit;
+}
+if ($earlyRoute === "catalog") {
+  $dir = __DIR__ . "/data";
+  $read = function ($file, $fallback) use ($dir) {
+    $path = $dir . "/" . $file;
+    if (!is_file($path)) return $fallback;
+    $data = json_decode(@file_get_contents($path), true);
+    return is_array($data) ? $data : $fallback;
+  };
+  $site = $read("site.json", array());
+  $config = $read("config.json", array());
+  echo json_encode(array(
+    "products" => $read("products.json", array()),
+    "offers" => $read("offers.json", array()),
+    "site" => $site,
+    "whatsapp" => !empty($site["whatsapp"]) ? $site["whatsapp"] : (isset($config["whatsapp"]) ? $config["whatsapp"] : "8801735943156"),
+    "reviews" => $read("reviews.json", array()),
+  ), JSON_UNESCAPED_UNICODE);
+  exit;
+}
+
 if (!function_exists("random_bytes")) {
   function random_bytes($n) {
     if (function_exists("openssl_random_pseudo_bytes")) return openssl_random_pseudo_bytes($n);
@@ -106,7 +131,8 @@ function catalog_payload() {
 
 function publish_catalog() {
   global $ROOT;
-  @file_put_contents($ROOT . "/catalog-data.json", json_encode(catalog_payload(), JSON_UNESCAPED_UNICODE));
+  $json = json_encode(catalog_payload(), JSON_UNESCAPED_UNICODE);
+  if ($json) @file_put_contents($ROOT . "/catalog-data.json", $json);
 }
 
 function bearer_token() {
@@ -140,13 +166,20 @@ function next_code($products) {
 
 function save_upload($key) {
   global $IMAGES;
+  if (!empty($_FILES[$key]["error"]) && $_FILES[$key]["error"] !== UPLOAD_ERR_OK) {
+    if ($_FILES[$key]["error"] === UPLOAD_ERR_INI_SIZE || $_FILES[$key]["error"] === UPLOAD_ERR_FORM_SIZE) {
+      fail(400, "ছবি খুব বড়। ৮ এমবির নিচে দিন।");
+    }
+    fail(400, "ছবি আপলোড হয়নি। আবার চেষ্টা করুন।");
+  }
   if (empty($_FILES[$key]["tmp_name"]) || !is_uploaded_file($_FILES[$key]["tmp_name"])) return null;
+  if (!is_dir($IMAGES) && !@mkdir($IMAGES, 0775, true)) fail(500, "images ফোল্ডার তৈরি হয়নি");
   $name = isset($_FILES[$key]["name"]) ? $_FILES[$key]["name"] : "image.png";
   $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
   if ($ext === "") $ext = "png";
   if (!in_array($ext, array("png", "jpg", "jpeg", "webp", "gif", "heic", "heif", "bmp"), true)) fail(400, "শুধু ছবি আপলোড করুন");
   $filename = "set-" . round(microtime(true) * 1000) . "." . $ext;
-  if (!move_uploaded_file($_FILES[$key]["tmp_name"], "$IMAGES/$filename")) fail(400, "ছবি সেভ হয়নি");
+  if (!move_uploaded_file($_FILES[$key]["tmp_name"], "$IMAGES/$filename")) fail(400, "ছবি সেভ হয়নি। images ফোল্ডার writable করুন।");
   return "images/$filename";
 }
 
@@ -166,6 +199,10 @@ if ($route === "") {
 $route = trim($route, "/");
 $method = $_SERVER["REQUEST_METHOD"];
 if (!empty($_GET["_method"])) $method = strtoupper($_GET["_method"]);
+
+if ($route === "health" && $method === "GET") {
+  ok(array("ok" => true));
+}
 
 if ($route === "catalog" && $method === "GET") {
   ok(catalog_payload());
@@ -327,6 +364,7 @@ if ($route === "admin/products" && $method === "POST") {
   $image = save_upload("image");
   if (!$image) fail(400, "ছবি দিন");
   $products = read_json("products.json", array());
+  if (count($products) >= 200) fail(400, "২০০টার বেশি প্রোডাক্ট রাখা যাবে না");
   $product = array(
     "code" => next_code($products),
     "name" => trim((string)(isset($_POST["name"]) ? $_POST["name"] : "নতুন সেট")),

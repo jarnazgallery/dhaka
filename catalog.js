@@ -285,6 +285,7 @@ async function apiCall(route, options = {}) {
     { url: "api.php?route=" + encodeURIComponent(clean) + (bust ? "&" + bust : ""), options: opts },
   ];
   if (clean === "catalog" && method === "GET") {
+    attempts.push({ url: "catalog.php?" + bust, options: { method: "GET" } });
     attempts.push({ url: "catalog-data.json?" + bust, options: { method: "GET" } });
   }
   if (method !== "GET" && method !== "POST") {
@@ -295,18 +296,25 @@ async function apiCall(route, options = {}) {
   }
 
   let sawHtml = false;
+  let lastFail = null;
   for (const attempt of attempts) {
     try {
       const res = await fetch(attempt.url, attempt.options);
       const text = await res.text();
       const data = parseJsonSafe(text);
+      if (!res.ok && res.status !== 400 && res.status !== 401) {
+        lastFail = { ok: false, status: res.status, data };
+        continue;
+      }
       if (attempt.url.indexOf("catalog-data.json") === 0) API_MODE = "file";
+      else if (attempt.url.indexOf("catalog.php") === 0) API_MODE = "php";
       else API_MODE = attempt.url.indexOf("api.php") === 0 ? "php" : "server";
       return { ok: res.ok, status: res.status, data };
     } catch (err) {
       if (err.code === "NOT_JSON") sawHtml = true;
     }
   }
+  if (lastFail) return lastFail;
   const err = new Error(sawHtml ? "NO_API" : "সার্ভারে সংযোগ হয়নি");
   err.code = "NO_API";
   throw err;
@@ -324,7 +332,11 @@ function readLocal(key, fallback) {
 }
 
 function writeLocal(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (err) {
+    throw new Error("স্টোরেজ ভরে গেছে। ছবি ছোট করে আবার সেভ করুন।");
+  }
 }
 
 function localCatalog() {
@@ -362,6 +374,24 @@ function localNextCode(products) {
   const nums = products.map((p) => Number(String(p.code).replace(/\D/g, "")) || 0);
   const next = (Math.max(0, ...nums) || 0) + 1;
   return `SET-${String(next).padStart(2, "0")}`;
+}
+
+async function compressImage(file) {
+  if (!file || !/^image\//i.test(file.type || "") || file.size < 350 * 1024) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const max = 1400;
+    const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
+    if (!blob) return file;
+    return new File([blob], String(file.name || "set").replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
+  } catch (err) {
+    return file;
+  }
 }
 
 function fileToDataUrl(file) {
@@ -477,6 +507,7 @@ async function handleLocalAdmin(route, options) {
   if (route === "admin/products" && method === "POST") {
     const form = options.body;
     const imageFile = form.get("image");
+    const compact = imageFile ? await compressImage(imageFile) : null;
     const product = {
       code: localNextCode(products),
       name: String(form.get("name") || "নতুন সেট").trim(),
@@ -484,10 +515,12 @@ async function handleLocalAdmin(route, options) {
       price36: Number(form.get("price36") || form.get("price") || 2040),
       piece: Number(form.get("piece") || 2),
       description: String(form.get("description") || "").trim(),
-      image: imageFile ? await fileToDataUrl(imageFile) : "images/set-01.png",
+      image: compact ? await fileToDataUrl(compact) : "images/set-01.png",
     };
+    if (products.length >= 200) throw new Error("২০০টার বেশি প্রোডাক্ট রাখা যাবে না");
     products.unshift(product);
     writeLocal(LOCAL_KEYS.products, products);
+    API_MODE = "local";
     return product;
   }
 
@@ -507,7 +540,7 @@ async function handleLocalAdmin(route, options) {
     if (price36) product.price36 = Number(price36);
     if (piece) product.piece = Number(piece);
     if (form.has("description")) product.description = String(form.get("description") || "").trim();
-    if (imageFile && imageFile.size) product.image = await fileToDataUrl(imageFile);
+    if (imageFile && imageFile.size) product.image = await fileToDataUrl(await compressImage(imageFile));
     writeLocal(LOCAL_KEYS.products, products);
     return product;
   }
