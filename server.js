@@ -199,6 +199,7 @@ function makeOrder(body, product, extra) {
     name: String(body.name || "").trim(),
     phone: String(body.phone || "").trim(),
     address: String(body.address || "").trim(),
+    note: String(body.note || "").trim(),
     size: String(body.size || "").trim(),
     combo: Number(body.combo || product.piece || 2),
     qty,
@@ -235,6 +236,20 @@ app.delete("/api/admin/reviews/:id", auth, (req, res) => {
   const reviews = readJson("reviews.json", []).filter((r) => r.id !== req.params.id);
   writeJson("reviews.json", reviews);
   res.json({ ok: true });
+});
+
+function lookupPhone(phone) {
+  let digits = String(phone || "").replace(/\D/g, "");
+  if (digits.indexOf("880") === 0 && digits.length >= 13) digits = digits.slice(-11);
+  if (digits.length === 10) digits = "0" + digits;
+  return digits;
+}
+
+app.post("/api/orders/lookup", (req, res) => {
+  const want = lookupPhone(req.body && req.body.phone);
+  if (want.length < 10) return res.status(400).json({ error: "সঠিক মোবাইল দিন" });
+  const matched = readJson("orders.json", []).filter((order) => lookupPhone(order && order.phone) === want);
+  res.json({ orders: matched });
 });
 
 app.post("/api/orders", (req, res) => {

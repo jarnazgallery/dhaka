@@ -66,6 +66,29 @@ $earlyRead = function ($file, $fallback) use ($earlyDir) {
   return is_array($data) ? $data : $fallback;
 };
 
+if (($earlyRoute === "orders/lookup" || $earlyRoute === "orders-lookup") && $_SERVER["REQUEST_METHOD"] === "POST") {
+  $body = json_decode(file_get_contents("php://input"), true);
+  if (!is_array($body)) $body = array();
+  $digits = preg_replace("/\\D/", "", (string)(isset($body["phone"]) ? $body["phone"] : ""));
+  if (strpos($digits, "880") === 0 && strlen($digits) >= 13) $digits = substr($digits, -11);
+  if (strlen($digits) === 10) $digits = "0" . $digits;
+  if (strlen($digits) < 10) {
+    http_response_code(400);
+    echo json_encode(array("error" => "সঠিক মোবাইল দিন"), JSON_UNESCAPED_UNICODE);
+    exit;
+  }
+  $matched = array();
+  foreach ($earlyRead("orders.json", array()) as $order) {
+    if (!is_array($order)) continue;
+    $p = preg_replace("/\\D/", "", (string)(isset($order["phone"]) ? $order["phone"] : ""));
+    if (strpos($p, "880") === 0 && strlen($p) >= 13) $p = substr($p, -11);
+    if (strlen($p) === 10) $p = "0" . $p;
+    if ($p === $digits) $matched[] = $order;
+  }
+  echo json_encode(array("orders" => $matched), JSON_UNESCAPED_UNICODE);
+  exit;
+}
+
 if ($earlyRoute === "orders" && $_SERVER["REQUEST_METHOD"] === "POST") {
   $body = json_decode(file_get_contents("php://input"), true);
   if (!is_array($body)) $body = array();
@@ -86,6 +109,7 @@ if ($earlyRoute === "orders" && $_SERVER["REQUEST_METHOD"] === "POST") {
     "name" => $name,
     "phone" => $phone,
     "address" => $address,
+    "note" => trim((string)(isset($body["note"]) ? $body["note"] : "")),
     "size" => $size,
     "combo" => intval(isset($body["combo"]) ? $body["combo"] : 2),
     "qty" => max(1, intval(isset($body["qty"]) ? $body["qty"] : 1)),

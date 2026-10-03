@@ -13,7 +13,7 @@
       href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=20260920n" />
+    <link rel="stylesheet" href="styles.css?v=20261003c" />
     <style>
       body.admin-app { min-height: 100vh; }
       .admin-top .header-inner { width: min(1240px, calc(100% - 28px)); }
@@ -336,6 +336,46 @@
         cursor: pointer;
       }
       .recent-item:last-child { border-bottom: 0; }
+      .cloud-setup-steps {
+        margin: 0 0 16px;
+        padding-left: 1.2rem;
+        display: grid;
+        gap: 8px;
+        color: #5b3d5e;
+        font-size: 0.94rem;
+      }
+      .cloud-setup-steps code { background: #fff4fa; padding: 1px 6px; border-radius: 6px; }
+      .cloud-test-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 12px 0; }
+      .sync-ok { color: #187a45; font-weight: 700; }
+      .sync-bad { color: #b42318; font-weight: 700; }
+      .desk-stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .desk-stats article {
+        background: #fffafd;
+        border: 1px solid #ffd6ec;
+        border-radius: 16px;
+        padding: 12px 14px;
+      }
+      .desk-stats span { display: block; color: #7a5a8a; font-size: 0.82rem; font-weight: 700; }
+      .desk-stats strong { font-size: 1.35rem; }
+      .order-card.is-called { border-color: #b7ebc8; }
+      .called-tag { color: #146c36; font-weight: 800; font-size: 0.78rem; }
+      .invoice-print { display: none; }
+      @media print {
+        body.printing-invoice * { visibility: hidden; }
+        body.printing-invoice .invoice-print,
+        body.printing-invoice .invoice-print * { visibility: visible; }
+        body.printing-invoice .invoice-print {
+          display: block;
+          position: absolute;
+          inset: 0;
+          padding: 24px;
+        }
+      }
       @media (min-width: 980px) {
         .admin-shell { grid-template-columns: 230px 1fr; align-items: start; }
         .admin-sidebar {
@@ -346,6 +386,7 @@
           padding: 16px;
         }
         .stat-grid { grid-template-columns: repeat(4, 1fr); }
+        .desk-stats { grid-template-columns: repeat(4, 1fr); }
         .add-grid { grid-template-columns: repeat(3, minmax(140px, 1fr)); align-items: end; }
         .product-admin { grid-template-columns: 1fr 1fr; }
         .site-grid { grid-template-columns: 1fr 1fr; }
@@ -386,6 +427,7 @@
         <button class="admin-nav-btn" type="button" data-tab="products">প্রোডাক্ট</button>
         <button class="admin-nav-btn" type="button" data-tab="offers">কম্বো অফার</button>
         <button class="admin-nav-btn" type="button" data-tab="orders">অর্ডার <span class="nav-badge is-hidden" id="newOrderBadge">0</span></button>
+        <button class="admin-nav-btn" type="button" data-tab="sync">অর্ডার সিঙ্ক</button>
         <button class="admin-nav-btn" type="button" data-tab="comments">রিভিউ</button>
         <button class="admin-nav-btn" type="button" data-tab="website">ওয়েবসাইট</button>
         <button class="admin-nav-btn" type="button" data-tab="settings">সেটিংস</button>
@@ -472,10 +514,16 @@
 
         <section class="admin-page" id="tab-orders">
           <div class="page-head">
-            <h2>অর্ডার লিস্ট</h2>
-            <p id="modeNote">ফোন, পিসি বা যেকোনো ডিভাইস থেকে অর্ডার এলে এখানে আসবে।</p>
+            <h2>অর্ডার ডেস্ক</h2>
+            <p id="modeNote">নতুন অর্ডার এলে এখানে আসবে। ফোন করে কনফার্ম করুন, তারপর ডেলিভারি মার্ক করুন।</p>
             <span class="mode-pill" id="modePill">সার্ভার মোড</span>
             <button class="btn soft-btn" type="button" id="refreshOrders">অর্ডার রিফ্রেশ</button>
+          </div>
+          <div class="desk-stats" id="orderDesk">
+            <article><span>নতুন</span><strong id="deskNew">0</strong></article>
+            <article><span>কনফার্ম</span><strong id="deskConfirmed">0</strong></article>
+            <article><span>ডেলিভারি</span><strong id="deskDelivered">0</strong></article>
+            <article><span>মোট সেল</span><strong id="deskRevenue">৳০</strong></article>
           </div>
           <form class="panel add-form" id="manualOrderForm">
             <h3>ম্যানুয়াল অর্ডার যোগ</h3>
@@ -501,11 +549,11 @@
               <input class="search-box" id="orderSearch" type="search" placeholder="নাম, মোবাইল বা SET নম্বর" />
             </label>
             <div class="filter-pills" id="orderFilters">
-              <button class="admin-nav-btn is-active" type="button" data-filter="all">সব</button>
-              <button class="admin-nav-btn" type="button" data-filter="new">নতুন</button>
-              <button class="admin-nav-btn" type="button" data-filter="confirmed">কনফার্ম</button>
-              <button class="admin-nav-btn" type="button" data-filter="delivered">ডেলিভারি</button>
-              <button class="admin-nav-btn" type="button" data-filter="cancelled">ক্যান্সেল</button>
+              <button class="admin-nav-btn is-active" type="button" data-filter="all" data-label="সব">সব</button>
+              <button class="admin-nav-btn" type="button" data-filter="new" data-label="নতুন">নতুন</button>
+              <button class="admin-nav-btn" type="button" data-filter="confirmed" data-label="কনফার্ম">কনফার্ম</button>
+              <button class="admin-nav-btn" type="button" data-filter="delivered" data-label="ডেলিভারি">ডেলিভারি</button>
+              <button class="admin-nav-btn" type="button" data-filter="cancelled" data-label="ক্যান্সেল">ক্যান্সেল</button>
             </div>
             <div id="list"></div>
           </div>
@@ -533,17 +581,68 @@
                   <label>মোট (৳) <input name="total" type="number" min="1" required /></label>
                 </div>
                 <label>নোট <textarea name="note" rows="2" placeholder="ডেলিভারি নোট, কাস্টমার কমেন্ট..."></textarea></label>
+                <label class="check-row"><input type="checkbox" id="orderCalled" /> ফোন করেছি / কল করা হয়েছে</label>
                 <div class="order-links" id="orderQuickLinks"></div>
+                <p class="save-note" id="orderCourierNote"></p>
                 <div class="panel-actions" style="margin-top: 16px;">
                   <button class="btn btn-dark" type="submit">ডিটেইলস সেভ</button>
+                  <button class="btn soft-btn" type="button" id="copyAddressBtn">ঠিকানা কপি</button>
+                  <button class="btn soft-btn" type="button" id="printInvoiceBtn">ইনভয়েস প্রিন্ট</button>
                   <button class="btn ok-btn" type="button" data-status-action="confirmed">কনফার্ম</button>
                   <button class="btn soft-btn" type="button" data-status-action="delivered">ডেলিভারি হয়েছে</button>
+                  <button class="btn ok-btn is-hidden" type="button" id="steadfastSendBtn">Steadfast-এ পাঠান</button>
                   <button class="btn danger" type="button" data-status-action="cancelled">ক্যান্সেল</button>
                   <button class="btn danger" type="button" id="deleteOrderBtn">মুছে ফেলুন</button>
                 </div>
                 <p class="save-note" id="orderEditNote"></p>
               </form>
             </div>
+          </div>
+        </section>
+
+        <section class="admin-page" id="tab-sync">
+          <div class="page-head">
+            <h2>অর্ডার সিঙ্ক (ফোন + পিসি)</h2>
+            <p>AI Water-এর মতো Google Sheet-এ অর্ডার যাবে। একবার সেট করলে সব ডিভাইসে একই অর্ডার দেখা যাবে।</p>
+          </div>
+          <div class="panel">
+            <h3>Google Apps Script সেটআপ</h3>
+            <ol class="cloud-setup-steps">
+              <li>কম্পিউটারে <code>cloud-orders.gs</code> খুলে সব কোড কপি করুন</li>
+              <li><a href="https://script.google.com" target="_blank" rel="noopener noreferrer">script.google.com</a> → <strong>New project</strong> → পেস্ট → Save</li>
+              <li>Run → <strong>setup</strong> → Allow (একবার অনুমতি দিন)</li>
+              <li>Deploy → New deployment → Type: <strong>Web app</strong></li>
+              <li>Execute as: <strong>Me</strong> · Who has access: <strong>Anyone</strong> → Deploy
+                <br /><small>⚠️ "Anyone with a Google account" দিলে Sync ভাঙবে</small>
+              </li>
+              <li>ওয়েব অ্যাপ URL (<code>/exec</code>) নিচে পেস্ট → <strong>Test Sync</strong> → গ্রিন হলে Save</li>
+              <li>ডাউনলোড হওয়া <code>site-config.js</code> হোস্টিংয়ে আপলোড করুন</li>
+            </ol>
+            <form class="add-form" id="cloudSyncForm">
+              <label>ordersApi URL (Google Apps Script)
+                <input type="url" id="cloudOrdersApi" placeholder="https://script.google.com/macros/s/XXXX/exec" />
+              </label>
+              <div class="cloud-test-row">
+                <button class="btn ok-btn" type="button" id="cloudTestBtn">Test Sync</button>
+                <button class="btn btn-dark" type="submit">সেভ ও site-config.js ডাউনলোড</button>
+              </div>
+              <p class="save-note" id="cloudTestResult"></p>
+            </form>
+          </div>
+          <div class="panel">
+            <h3>Steadfast Courier</h3>
+            <p>কনফার্ম অর্ডার এক ক্লিকে কুরিয়ারে যাবে। কি শুধু Google Script-এ সেভ হয় — ওয়েবসাইট ফাইলে থাকে না।</p>
+            <form class="add-form" id="steadfastKeysForm">
+              <div class="site-grid">
+                <label>API Key <input type="password" id="steadfastApiKey" autocomplete="off" placeholder="Steadfast API Key" /></label>
+                <label>Secret Key <input type="password" id="steadfastSecretKey" autocomplete="off" placeholder="Steadfast Secret Key" /></label>
+              </div>
+              <div class="cloud-test-row">
+                <button class="btn btn-dark" type="submit">API Keys সেভ</button>
+                <button class="btn soft-btn" type="button" id="steadfastStatusBtn">স্ট্যাটাস দেখুন</button>
+              </div>
+              <p class="save-note" id="steadfastStatusText"></p>
+            </form>
           </div>
         </section>
 
@@ -637,7 +736,10 @@
       </div>
     </div>
 
-    <script src="catalog.js?v=20260920p"></script>
+    <div class="invoice-print" id="invoicePrint"></div>
+    <script src="site-config.js?v=20261003c"></script>
+    <script src="orders-api.js?v=20261003c"></script>
+    <script src="catalog.js?v=20261003c"></script>
     <script>
       const TOKEN_KEY = "jarnaz-admin-token";
       let offers = [];
@@ -745,14 +847,20 @@
         return h;
       }
 
+      function cloudOrdersOn() {
+        return !!(window.OrdersAPI && OrdersAPI.hasCloudOrdersApi());
+      }
+
       function setModeNote() {
         const note = document.getElementById("modeNote");
         const pill = document.getElementById("modePill");
         const local = API_MODE === "local" || API_MODE === "file";
         if (note) {
-          note.textContent = local
-            ? "লোকাল মোড — আপনার ফোনের অর্ডার দেখা যাবে, ইউজারের অর্ডার আসবে না। order.php ও api.php আপলোড করে সার্ভার মোডে লগইন করুন।"
-            : "ইউজার ওয়েবসাইট থেকে অর্ডার করলে এখানে নাম, মোবাইল ও ঠিকানা আসবে।";
+          note.textContent = cloudOrdersOn()
+            ? "ক্লাউড সিঙ্ক চালু — ফোন, পিসি সব জায়গায় একই অর্ডার দেখা যাবে।"
+            : (local
+              ? "লোকাল মোড — ইউজারের অর্ডার আসবে না। অর্ডার সিঙ্ক ট্যাবে Google URL দিন, অথবা order.php আপলোড করুন।"
+              : "ইউজার ওয়েবসাইট থেকে অর্ডার করলে এখানে নাম, মোবাইল ও ঠিকানা আসবে।");
         }
         const sync = document.getElementById("productSyncNote");
         if (sync) {
@@ -762,8 +870,8 @@
             : "প্রোডাক্ট সার্ভারে সেভ হলে হোমপেজ রিফ্রেশ করলেই ইউজার দেখবে।";
         }
         if (pill) {
-          pill.textContent = local ? "লোকাল মোড" : "সার্ভার মোড";
-          pill.classList.toggle("is-local", local);
+          pill.textContent = cloudOrdersOn() ? "ক্লাউড সিঙ্ক" : (local ? "লোকাল মোড" : "সার্ভার মোড");
+          pill.classList.toggle("is-local", local && !cloudOrdersOn());
         }
       }
 
@@ -895,11 +1003,21 @@
         const count = document.getElementById("adminProductCount");
         if (count) count.textContent = PRODUCTS.length;
         const news = lastOrders.filter((o) => orderStatus(o) === "new").length;
+        const confirmed = lastOrders.filter((o) => orderStatus(o) === "confirmed").length;
+        const delivered = lastOrders.filter((o) => orderStatus(o) === "delivered").length;
         const badge = document.getElementById("newOrderBadge");
         if (badge) {
           badge.textContent = news;
           badge.classList.toggle("is-hidden", news === 0);
         }
+        const deskNew = document.getElementById("deskNew");
+        if (deskNew) deskNew.textContent = news;
+        const deskConfirmed = document.getElementById("deskConfirmed");
+        if (deskConfirmed) deskConfirmed.textContent = confirmed;
+        const deskDelivered = document.getElementById("deskDelivered");
+        if (deskDelivered) deskDelivered.textContent = delivered;
+        const deskRevenue = document.getElementById("deskRevenue");
+        if (deskRevenue) deskRevenue.textContent = taka(revenue);
       }
 
       function renderRecent() {
@@ -1002,6 +1120,15 @@
       }
 
       async function loadServerOrders() {
+        if (cloudOrdersOn()) {
+          try {
+            const orders = await OrdersAPI.fetchOrdersList();
+            renderOrders(Array.isArray(orders) ? orders : []);
+            try { writeLocal(LOCAL_KEYS.orders, lastOrders); } catch (err) {}
+            setModeNote();
+            return;
+          } catch (cloudErr) {}
+        }
         const orders = await api("admin/orders", { headers: headers() });
         const serverOk = API_MODE === "php" || API_MODE === "server";
         if (serverOk && Array.isArray(orders)) {
@@ -1033,10 +1160,82 @@
         });
       }
 
+      let seenNewIds = new Set();
+      let chimeReady = false;
+
+      function playNewOrderChime() {
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.value = 880;
+          gain.gain.value = 0.07;
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.16);
+        } catch (err) {}
+      }
+
+      function maybeChime(orders) {
+        const news = (orders || []).filter((o) => orderStatus(o) === "new").map((o) => o.id);
+        if (chimeReady && news.some((id) => !seenNewIds.has(id))) playNewOrderChime();
+        seenNewIds = new Set(news);
+        chimeReady = true;
+      }
+
+      function updateFilterCounts() {
+        document.querySelectorAll("#orderFilters [data-filter]").forEach((btn) => {
+          const filter = btn.dataset.filter;
+          const label = btn.dataset.label || btn.textContent.split("·")[0].trim();
+          btn.dataset.label = label;
+          const count = filter === "all"
+            ? lastOrders.length
+            : lastOrders.filter((o) => orderStatus(o) === filter).length;
+          btn.textContent = count ? `${label} · ${count}` : label;
+        });
+      }
+
+      function copyText(text) {
+        return navigator.clipboard.writeText(String(text || "")).catch(() => {});
+      }
+
+      function printInvoice(order) {
+        const product = findProduct(order.productCode);
+        const size = (SIZES.find((item) => item.value === order.size) || {}).label || order.size;
+        const el = document.getElementById("invoicePrint");
+        if (!el) return;
+        el.innerHTML = `
+          <h2>Jarnaz Gallery</h2>
+          <p>Pallabi, Mirpur 11 · 01735943156</p>
+          <h3>ইনভয়েস · ${esc(order.id)}</h3>
+          <p>তারিখ: ${esc(formatOrderTime(order.createdAt))}</p>
+          <p><strong>${esc(order.name)}</strong> · ${esc(order.phone)}</p>
+          <p>${esc(order.address || "")}</p>
+          <table>
+            <tr><th>প্রোডাক্ট</th><th>সাইজ</th><th>পরিমাণ</th><th>মোট</th></tr>
+            <tr>
+              <td>${esc(order.productCode)}${product ? " · " + esc(product.name) : ""}</td>
+              <td>${esc(size)}</td>
+              <td>${esc(order.qty)}</td>
+              <td>${taka(order.total)}</td>
+            </tr>
+          </table>
+          <p>পেমেন্ট: ক্যাশ অন ডেলিভারি</p>
+          ${order.note ? `<p>নোট: ${esc(order.note)}</p>` : ""}
+        `;
+        document.body.classList.add("printing-invoice");
+        window.print();
+        setTimeout(() => document.body.classList.remove("printing-invoice"), 400);
+      }
+
       function renderOrders(list) {
         if (Array.isArray(list)) lastOrders = list;
+        maybeChime(lastOrders);
         renderStats();
         renderRecent();
+        updateFilterCounts();
         const rows = filteredOrders();
         const root = document.getElementById("list");
         if (!rows.length) {
@@ -1047,22 +1246,25 @@
           .map((o) => {
             const status = orderStatus(o);
             const product = findProduct(o.productCode);
+            const called = o.called === "yes" || o.called === true;
             return `
-              <article class="order-card">
+              <article class="order-card${called ? " is-called" : ""}">
                 <div class="order-card-top">
                   <span class="status-pill is-${status}">${statusLabel(status)}</span>
                   <strong>${taka(o.total)}</strong>
                 </div>
                 <h4>${esc(o.name || "নাম নেই")} · ${esc(o.productCode)}</h4>
-                <p>মোবাইল: <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a></p>
+                <p>মোবাইল: <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>${called ? ' <span class="called-tag">ফোন হয়েছে</span>' : ""}</p>
                 <p class="addr">ঠিকানা: ${esc(o.address || "—")}</p>
                 <p>সাইজ ${esc(o.size)} · ${esc(o.qty)} সেট${product ? " · " + esc(product.name) : ""}</p>
                 <div class="order-card-meta">
                   <small>${esc(o.id)} · ${formatOrderTime(o.createdAt)}</small>
                   <div class="row-actions">
                     <button class="btn soft-btn" type="button" data-open-order="${esc(o.id)}">ডিটেইলস</button>
+                    <button class="btn soft-btn" type="button" data-copy-address="${esc(o.id)}">ঠিকানা</button>
                     ${status === "new" ? `<button class="btn ok-btn" type="button" data-status-order="${esc(o.id)}" data-status="confirmed">কনফার্ম</button>` : ""}
                     ${status === "confirmed" ? `<button class="btn ok-btn" type="button" data-status-order="${esc(o.id)}" data-status="delivered">ডেলিভারি</button>` : ""}
+                    ${status === "confirmed" && cloudOrdersOn() ? `<button class="btn soft-btn" type="button" data-steadfast-order="${esc(o.id)}">Steadfast</button>` : ""}
                     ${status === "new" || status === "confirmed" ? `<button class="btn danger" type="button" data-status-order="${esc(o.id)}" data-status="cancelled">ক্যান্সেল</button>` : ""}
                   </div>
                 </div>
@@ -1099,27 +1301,55 @@
           (s) => `<option value="${esc(s.value)}" ${s.value === order.size ? "selected" : ""}>${esc(s.label)}</option>`
         ).join("");
         const digits = adminPhoneDigits(order.phone);
+        const calledBox = document.getElementById("orderCalled");
+        if (calledBox) calledBox.checked = order.called === "yes" || order.called === true;
         document.getElementById("orderQuickLinks").innerHTML = `
           <a class="btn soft-btn" href="tel:${esc(order.phone)}">কল করুন</a>
           ${digits ? `<a class="btn ok-btn" href="https://wa.me/${digits}" target="_blank" rel="noopener">WhatsApp</a>` : ""}
+          ${order.steadfastTracking ? `<span class="save-note">ট্র্যাকিং: ${esc(order.steadfastTracking)}</span>` : ""}
         `;
         document.getElementById("orderEditNote").textContent = "";
+        const courierNote = document.getElementById("orderCourierNote");
+        if (courierNote) courierNote.textContent = order.consignmentNo ? ("কুরিয়ার: " + order.consignmentNo) : "";
+        const sfBtn = document.getElementById("steadfastSendBtn");
+        if (sfBtn) sfBtn.classList.toggle("is-hidden", !cloudOrdersOn() || status === "cancelled");
         const drawer = document.getElementById("orderDrawer");
         drawer.classList.add("is-open");
         drawer.setAttribute("aria-hidden", "false");
       }
 
       async function patchOrder(id, body) {
-        const saved = await api("admin/orders/" + id, {
-          method: "POST",
-          headers: headers(true),
-          body: JSON.stringify(body),
-        });
+        let saved = cloudOrdersOn()
+          ? await OrdersAPI.updateOrderRemote(id, body)
+          : await api("admin/orders/" + id, {
+              method: "POST",
+              headers: headers(true),
+              body: JSON.stringify(body),
+            });
+        if (!saved || typeof saved !== "object") {
+          const current = lastOrders.find((o) => o.id === id) || { id };
+          saved = Object.assign({}, current, body, { id });
+        }
         const idx = lastOrders.findIndex((o) => o.id === id);
         if (idx >= 0) lastOrders[idx] = saved;
         else lastOrders.unshift(saved);
         renderOrders();
         return saved;
+      }
+
+      async function sendSteadfast(id) {
+        if (!cloudOrdersOn()) throw new Error("আগে অর্ডার সিঙ্ক URL সেট করুন");
+        const current = lastOrders.find((o) => o.id === id);
+        const result = await OrdersAPI.sendOrderToSteadfast(id, current || null);
+        if (result && result.order) {
+          const idx = lastOrders.findIndex((o) => o.id === id);
+          if (idx >= 0) lastOrders[idx] = result.order;
+          else lastOrders.unshift(result.order);
+          renderOrders();
+        } else {
+          await loadServerOrders();
+        }
+        return result;
       }
 
       async function bootDash() {
@@ -1129,6 +1359,7 @@
         OFFERS = offers;
         fillWebsiteForm(catalog.site || SITE);
         fillManualOrderForm();
+        fillCloudForm();
         lastReviews = catalog.reviews || [];
         renderComments();
         renderProducts();
@@ -1172,20 +1403,29 @@
         const product = findProduct(form.productCode.value);
         const qty = Number(form.qty.value) || 1;
         try {
-          await api("admin/orders", {
-            method: "POST",
-            headers: headers(true),
-            body: JSON.stringify({
-              productCode: form.productCode.value,
-              size: form.size.value,
-              qty,
-              name: form.name.value.trim(),
-              phone: form.phone.value.trim(),
-              address: form.address.value.trim(),
-              total: (product ? priceForSize(product, form.size.value) : 0) * qty,
-              status: form.confirmNow.checked ? "confirmed" : "new",
-            }),
-          });
+          const manualOrder = {
+            id: "JZ-" + Date.now().toString().slice(-8),
+            productCode: form.productCode.value,
+            size: form.size.value,
+            qty,
+            combo: Number((product && product.piece) || 2),
+            name: form.name.value.trim(),
+            phone: form.phone.value.trim(),
+            address: form.address.value.trim(),
+            total: (product ? priceForSize(product, form.size.value) : 0) * qty,
+            status: form.confirmNow.checked ? "confirmed" : "new",
+            source: "admin",
+            createdAt: new Date().toISOString(),
+          };
+          if (cloudOrdersOn()) {
+            await OrdersAPI.createOrderRemote(manualOrder);
+          } else {
+            await api("admin/orders", {
+              method: "POST",
+              headers: headers(true),
+              body: JSON.stringify(manualOrder),
+            });
+          }
           form.reset();
           form.qty.value = 1;
           if (form.confirmNow) form.confirmNow.checked = true;
@@ -1521,6 +1761,23 @@
           openOrderDrawer(openBtn.dataset.openOrder);
           return;
         }
+        const copyBtn = event.target.closest("[data-copy-address]");
+        if (copyBtn) {
+          const order = lastOrders.find((o) => o.id === copyBtn.dataset.copyAddress);
+          if (order) copyText([order.name, order.phone, order.address].filter(Boolean).join("\n"));
+          return;
+        }
+        const sfBtn = event.target.closest("[data-steadfast-order]");
+        if (sfBtn) {
+          if (!confirm("এই অর্ডার Steadfast-এ পাঠাবেন?")) return;
+          try {
+            const result = await sendSteadfast(sfBtn.dataset.steadfastOrder);
+            alert((result && result.message) || "Steadfast-এ পাঠানো হয়েছে");
+          } catch (err) {
+            alert(err.message);
+          }
+          return;
+        }
         const statusBtn = event.target.closest("[data-status-order]");
         if (!statusBtn) return;
         const status = statusBtn.dataset.status;
@@ -1537,6 +1794,29 @@
         if (!openBtn) return;
         switchTab("orders");
         openOrderDrawer(openBtn.dataset.openOrder);
+      });
+
+      document.getElementById("copyAddressBtn").addEventListener("click", () => {
+        const order = lastOrders.find((o) => o.id === currentOrderId);
+        if (!order) return;
+        copyText([order.name, order.phone, order.address].filter(Boolean).join("\n"));
+        document.getElementById("orderEditNote").textContent = "ঠিকানা কপি হয়েছে।";
+      });
+
+      document.getElementById("printInvoiceBtn").addEventListener("click", () => {
+        const order = lastOrders.find((o) => o.id === currentOrderId);
+        if (order) printInvoice(order);
+      });
+
+      document.getElementById("orderCalled").addEventListener("change", async (event) => {
+        if (!currentOrderId) return;
+        try {
+          await patchOrder(currentOrderId, { called: event.target.checked ? "yes" : "" });
+          document.getElementById("orderEditNote").textContent = event.target.checked ? "ফোন করা মার্ক হয়েছে।" : "ফোন মার্ক সরানো হয়েছে।";
+        } catch (err) {
+          event.target.checked = !event.target.checked;
+          alert(err.message);
+        }
       });
 
       document.getElementById("closeOrderDrawer").addEventListener("click", closeOrderDrawer);
@@ -1596,12 +1876,97 @@
       document.getElementById("deleteOrderBtn").addEventListener("click", async () => {
         if (!currentOrderId || !confirm("অর্ডার মুছে ফেলবেন? এটা আর ফিরে আসবে না।")) return;
         try {
-          await api("admin/orders/" + currentOrderId, { method: "DELETE", headers: headers() });
+          if (cloudOrdersOn()) await OrdersAPI.deleteOrderRemote(currentOrderId);
+          else await api("admin/orders/" + currentOrderId, { method: "DELETE", headers: headers() });
           lastOrders = lastOrders.filter((o) => o.id !== currentOrderId);
           closeOrderDrawer();
           renderOrders();
         } catch (err) {
           alert(err.message);
+        }
+      });
+
+      document.getElementById("steadfastSendBtn").addEventListener("click", async () => {
+        if (!currentOrderId || !confirm("এই অর্ডার Steadfast-এ পাঠাবেন?")) return;
+        const note = document.getElementById("orderEditNote");
+        note.classList.remove("is-error");
+        try {
+          const result = await sendSteadfast(currentOrderId);
+          note.textContent = (result && result.message) || "Steadfast-এ পাঠানো হয়েছে";
+          if (result && result.order) openOrderDrawer(result.order.id);
+        } catch (err) {
+          note.classList.add("is-error");
+          note.textContent = err.message;
+        }
+      });
+
+      function fillCloudForm() {
+        const input = document.getElementById("cloudOrdersApi");
+        if (input && window.OrdersAPI) input.value = OrdersAPI.getConfiguredOrdersApi() || "";
+      }
+
+      document.getElementById("cloudTestBtn").addEventListener("click", async () => {
+        const resultEl = document.getElementById("cloudTestResult");
+        const url = document.getElementById("cloudOrdersApi").value.trim();
+        resultEl.classList.remove("is-error", "sync-ok", "sync-bad");
+        resultEl.textContent = "টেস্ট হচ্ছে...";
+        const result = await OrdersAPI.testCloudConnection(url);
+        resultEl.classList.add(result.ok ? "sync-ok" : "sync-bad");
+        resultEl.textContent = result.message;
+        if (result.ok) {
+          OrdersAPI.setConfiguredOrdersApi(url);
+          setModeNote();
+          try { await loadServerOrders(); } catch (err) {}
+        }
+      });
+
+      document.getElementById("cloudSyncForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const resultEl = document.getElementById("cloudTestResult");
+        const url = document.getElementById("cloudOrdersApi").value.trim();
+        resultEl.classList.remove("is-error", "sync-ok", "sync-bad");
+        const result = await OrdersAPI.testCloudConnection(url);
+        if (!result.ok) {
+          resultEl.classList.add("sync-bad");
+          resultEl.textContent = result.message;
+          return;
+        }
+        OrdersAPI.setConfiguredOrdersApi(url);
+        OrdersAPI.downloadSiteConfig({ ordersApi: url });
+        resultEl.classList.add("sync-ok");
+        resultEl.textContent = result.message + " — site-config.js ডাউনলোড হয়েছে, হোস্টিংয়ে আপলোড করুন।";
+        setModeNote();
+        try { await loadServerOrders(); } catch (err) {}
+      });
+
+      document.getElementById("steadfastKeysForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const note = document.getElementById("steadfastStatusText");
+        note.classList.remove("is-error");
+        try {
+          if (!cloudOrdersOn()) throw new Error("আগে Order Sync URL সেট করুন");
+          await OrdersAPI.setSteadfastCredentials(
+            document.getElementById("steadfastApiKey").value,
+            document.getElementById("steadfastSecretKey").value
+          );
+          document.getElementById("steadfastApiKey").value = "";
+          document.getElementById("steadfastSecretKey").value = "";
+          note.textContent = "Steadfast কি সেভ হয়েছে।";
+        } catch (err) {
+          note.classList.add("is-error");
+          note.textContent = err.message;
+        }
+      });
+
+      document.getElementById("steadfastStatusBtn").addEventListener("click", async () => {
+        const note = document.getElementById("steadfastStatusText");
+        note.classList.remove("is-error");
+        try {
+          const ok = await OrdersAPI.steadfastConfigured();
+          note.textContent = ok ? "Steadfast কি সেট আছে।" : "Steadfast কি এখনো সেট নেই।";
+        } catch (err) {
+          note.classList.add("is-error");
+          note.textContent = err.message;
         }
       });
 

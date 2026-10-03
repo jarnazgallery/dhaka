@@ -79,6 +79,11 @@ function showStep(step) {
   const isSize = step === 1;
   document.getElementById("stepSize").classList.toggle("is-hidden", !isSize);
   document.getElementById("stepDetails").classList.toggle("is-hidden", isSize);
+  document.querySelectorAll(".checkout-step").forEach((el) => {
+    const n = Number(el.dataset.step);
+    el.classList.toggle("is-active", n === step);
+    el.classList.toggle("is-done", n < step);
+  });
 }
 
 function openSizeModal(code, offerPrice) {
@@ -128,6 +133,7 @@ function goToDetails() {
   const unit = unitPrice(selected || findProduct(pendingCode), selectedSize);
   document.getElementById("sizePicked").innerHTML =
     `সাইজ: <strong>${size.label}</strong> · ${taka(unit)}`;
+  fillRememberedCustomer();
   showStep(2);
   updateTotal();
 }
@@ -161,30 +167,67 @@ function selectProduct(code) {
   updateTotal();
 }
 
+const CUST_KEY = "jarnaz-customer";
+
+function rememberCustomer(data) {
+  try {
+    localStorage.setItem(CUST_KEY, JSON.stringify({
+      name: data.name || "",
+      phone: data.phone || "",
+      address: data.address || "",
+    }));
+  } catch (err) {}
+}
+
+function fillRememberedCustomer() {
+  const form = document.getElementById("orderForm");
+  if (!form) return;
+  try {
+    const saved = JSON.parse(localStorage.getItem(CUST_KEY) || "null");
+    if (!saved) return;
+    if (!form.name.value && saved.name) form.name.value = saved.name;
+    if (!form.phone.value && saved.phone) form.phone.value = saved.phone;
+    if (!form.address.value && saved.address) form.address.value = saved.address;
+  } catch (err) {}
+}
+
 function orderId() {
   return `JZ-${Date.now().toString().slice(-8)}`;
 }
 
+function cacheSavedOrder(saved) {
+  try {
+    const local = readLocal(LOCAL_KEYS.orders, []);
+    if (!local.some((item) => item.id === saved.id)) {
+      local.unshift(saved);
+      writeLocal(LOCAL_KEYS.orders, local);
+    }
+  } catch (err) {}
+}
+
 async function saveOrder(order) {
+  const payload = window.OrdersAPI && OrdersAPI.normalizeOrder ? OrdersAPI.normalizeOrder(order) : order;
+  if (window.OrdersAPI && OrdersAPI.hasCloudOrdersApi()) {
+    try {
+      const saved = await OrdersAPI.createOrderRemote(payload);
+      saved.savedOnServer = true;
+      cacheSavedOrder(saved);
+      return saved;
+    } catch (cloudErr) {}
+  }
   try {
     const result = await apiCall("orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(order),
+      body: JSON.stringify(payload),
     });
     if (!result.ok) throw new Error((result.data && result.data.error) || "অর্ডার সেভ হয়নি");
-    const saved = Object.assign({}, order, result.data || {});
+    const saved = Object.assign({}, payload, result.data || {});
     saved.savedOnServer = API_MODE === "php" || API_MODE === "server";
     if (!saved.savedOnServer) {
       throw new Error("অর্ডার সার্ভারে যায়নি। একটু পরে আবার চেষ্টা করুন, অথবা WhatsApp-এ পাঠান।");
     }
-    try {
-      const local = readLocal(LOCAL_KEYS.orders, []);
-      if (!local.some((item) => item.id === saved.id)) {
-        local.unshift(saved);
-        writeLocal(LOCAL_KEYS.orders, local);
-      }
-    } catch (err) {}
+    cacheSavedOrder(saved);
     return saved;
   } catch (err) {
     if (err.code === "NO_API") {
@@ -214,7 +257,8 @@ function waLink(order) {
     `নাম: ${order.name}`,
     `মোবাইল: ${order.phone}`,
     `ঠিকানা: ${order.address}`,
-  ].join("\n");
+    order.note ? `নোট: ${order.note}` : "",
+  ].filter(Boolean).join("\n");
   return `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(text)}`;
 }
 
@@ -222,7 +266,12 @@ function showConfirm(order) {
   lastOrder = order;
   const product = findProduct(order.productCode);
   const size = (SIZES.find((item) => item.value === order.size) || {}).label || order.size;
-  const onServer = order.savedOnServer !== false && (API_MODE === "php" || API_MODE === "server" || order.savedOnServer);
+  const onServer = order.savedOnServer !== false && (
+    API_MODE === "php" ||
+    API_MODE === "server" ||
+    order.savedOnServer ||
+    (window.OrdersAPI && OrdersAPI.hasCloudOrdersApi())
+  );
   document.getElementById("confirmTitle").textContent = "অর্ডার সফল হয়েছে";
   document.getElementById("receipt").innerHTML = `
     <div class="success-badge" aria-hidden="true">✓</div>
@@ -239,6 +288,7 @@ function showConfirm(order) {
     </div>
     <p class="receipt-customer"><strong>${htmlEsc(order.name)}</strong> · ${htmlEsc(order.phone)}</p>
     <p class="receipt-addr">${htmlEsc(order.address)}</p>
+    ${order.note ? `<p class="receipt-addr">নোট: ${htmlEsc(order.note)}</p>` : ""}
     <p class="receipt-status ${onServer ? "is-ok" : "is-warn"}">${
       onServer
         ? "অ্যাডমিন এই অর্ডার দেখতে পাবেন। শীঘ্রই ফোন করে কনফার্ম করা হবে।"
@@ -281,6 +331,16 @@ document.addEventListener("click", (event) => {
 
 const qtyInput = document.querySelector('#orderForm [name="qty"]');
 if (qtyInput) qtyInput.addEventListener("input", updateTotal);
+function bumpQty(delta) {
+  const input = document.querySelector('#orderForm [name="qty"]');
+  if (!input) return;
+  input.value = String(Math.min(10, Math.max(1, Number(input.value || 1) + delta)));
+  updateTotal();
+}
+const qtyMinus = document.getElementById("qtyMinus");
+const qtyPlus = document.getElementById("qtyPlus");
+if (qtyMinus) qtyMinus.addEventListener("click", () => bumpQty(-1));
+if (qtyPlus) qtyPlus.addEventListener("click", () => bumpQty(1));
 
 document.getElementById("orderForm").addEventListener("submit", (event) => {
   event.preventDefault();
@@ -302,6 +362,7 @@ document.getElementById("orderForm").addEventListener("submit", (event) => {
   const name = form.get("name").trim();
   const phone = form.get("phone").trim();
   const address = form.get("address").trim();
+  const note = String(form.get("note") || "").trim();
   if (!name || !address) {
     setOrderError("নাম ও সম্পূর্ণ ঠিকানা দিন।");
     return;
@@ -310,6 +371,7 @@ document.getElementById("orderForm").addEventListener("submit", (event) => {
     setOrderError("সঠিক মোবাইল দিন, যেমন 017XXXXXXXX");
     return;
   }
+  rememberCustomer({ name, phone, address });
 
   const combo = Number(form.get("combo"));
   const qty = Number(form.get("qty"));
@@ -320,6 +382,7 @@ document.getElementById("orderForm").addEventListener("submit", (event) => {
     name,
     phone,
     address,
+    note,
     size: form.get("size"),
     combo,
     qty,
@@ -396,6 +459,90 @@ document.getElementById("closeModal").addEventListener("click", () => {
 document.getElementById("waBtn").addEventListener("click", () => {
   if (!lastOrder) return;
   window.open(waLink(lastOrder), "_blank");
+});
+
+document.getElementById("copyOrderId").addEventListener("click", async () => {
+  if (!lastOrder) return;
+  const btn = document.getElementById("copyOrderId");
+  try {
+    await navigator.clipboard.writeText(lastOrder.id);
+    btn.textContent = "কপি হয়েছে";
+  } catch (err) {
+    btn.textContent = lastOrder.id;
+  }
+  setTimeout(() => { btn.textContent = "অর্ডার আইডি কপি"; }, 1600);
+});
+
+document.getElementById("goTrackBtn").addEventListener("click", () => {
+  document.body.classList.remove("modal-open");
+  document.getElementById("confirmModal").classList.remove("is-open");
+  if (lastOrder && lastOrder.phone) {
+    const input = document.getElementById("trackPhone");
+    if (input) input.value = lastOrder.phone;
+  }
+  const section = document.getElementById("track");
+  if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (lastOrder && lastOrder.phone) lookupCustomerOrders();
+});
+
+function trackStatusLabel(status) {
+  return { new: "নতুন", confirmed: "কনফার্ম", delivered: "ডেলিভারি হয়েছে", cancelled: "ক্যান্সেল" }[status] || "নতুন";
+}
+
+function trackCard(order) {
+  const status = order.status || "new";
+  const size = (SIZES.find((item) => item.value === order.size) || {}).label || order.size;
+  return `
+    <article class="track-card">
+      <div class="track-card-top">
+        <span class="status-pill is-${htmlEsc(status)}">${trackStatusLabel(status)}</span>
+        <strong>${taka(order.total)}</strong>
+      </div>
+      <h3>${htmlEsc(order.productCode)} · ${htmlEsc(size)}</h3>
+      <p>${htmlEsc(order.qty)} সেট · ${htmlEsc(order.name)}</p>
+      <p class="track-id">${htmlEsc(order.id)}</p>
+    </article>
+  `;
+}
+
+async function lookupCustomerOrders() {
+  const phone = document.getElementById("trackPhone").value.trim();
+  const err = document.getElementById("trackError");
+  const out = document.getElementById("trackResults");
+  const submit = document.getElementById("trackSubmit");
+  err.textContent = "";
+  if (!validBdPhone(phone)) {
+    err.textContent = "সঠিক মোবাইল দিন, যেমন 017XXXXXXXX";
+    return;
+  }
+  if (submit) {
+    submit.disabled = true;
+    submit.textContent = "খোঁজা হচ্ছে...";
+  }
+  out.innerHTML = '<p class="empty-pick">অর্ডার খোঁজা হচ্ছে...</p>';
+  try {
+    const list = window.OrdersAPI && OrdersAPI.findOrdersByPhone
+      ? await OrdersAPI.findOrdersByPhone(phone)
+      : [];
+    if (!list.length) {
+      out.innerHTML = '<p class="empty-pick">এই নম্বরে কোনো অর্ডার পাওয়া যায়নি।</p>';
+      return;
+    }
+    out.innerHTML = list.map(trackCard).join("");
+  } catch (error) {
+    err.textContent = error.message || "ট্র্যাক করা যায়নি";
+    out.innerHTML = "";
+  } finally {
+    if (submit) {
+      submit.disabled = false;
+      submit.textContent = "স্ট্যাটাস দেখুন";
+    }
+  }
+}
+
+document.getElementById("trackForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  lookupCustomerOrders();
 });
 
 document.getElementById("confirmModal").addEventListener("click", (event) => {

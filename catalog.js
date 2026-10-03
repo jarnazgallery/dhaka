@@ -51,6 +51,7 @@ const FALLBACK_SITE = {
   navCollection: "কালেকশন",
   navReviews: "রিভিউ",
   navHowto: "কিভাবে অর্ডার",
+  navTrack: "অর্ডার ট্র্যাক",
   navOrder: "অর্ডার",
   collectionEyebrow: "Collection",
   collectionTitle: "কালেকশন",
@@ -81,6 +82,7 @@ const FALLBACK_SITE = {
     { title: "নম্বর দেখুন", text: "SET-07-এর মতো নম্বর অ্যাডমিন বুঝবে।" },
     { title: "Order Now", text: "চাপুন, সাইজ সিলেক্ট করলেই পরের ধাপে যাবে।" },
     { title: "কনফার্ম করুন", text: "নাম, ফোন ও ঠিকানা দিয়ে অর্ডার শেষ করুন।" },
+    { title: "ট্র্যাক করুন", text: "একই মোবাইল দিয়ে অর্ডার স্ট্যাটাস দেখুন।" },
   ],
 };
 
@@ -166,6 +168,7 @@ function applySite(raw) {
     navCollection: SITE.navCollection,
     navReviews: SITE.navReviews,
     navHowto: SITE.navHowto,
+    navTrack: SITE.navTrack,
     navOrder: SITE.navOrder,
     collectionEyebrow: SITE.collectionEyebrow,
     collectionTitle: SITE.collectionTitle,
@@ -360,6 +363,9 @@ async function apiCall(route, options = {}) {
   const attempts = [];
   if (clean === "orders" && method === "POST") {
     attempts.push({ url: "order.php", options: opts });
+  }
+  if (clean === "orders/lookup" && method === "POST") {
+    attempts.push({ url: "order-lookup.php", options: opts });
   }
   if (clean === "login" && method === "POST") {
     attempts.push({ url: "login.php", options: opts });

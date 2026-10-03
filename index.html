@@ -28,7 +28,7 @@
       rel="stylesheet"
     />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎀</text></svg>" />
-    <link rel="stylesheet" href="styles.css?v=20260920n" />
+    <link rel="stylesheet" href="styles.css?v=20261003c" />
     <script type="application/ld+json" id="businessJson">
       {
         "@context": "https://schema.org",
@@ -53,6 +53,7 @@
           <a href="#collection" id="navCollection">কালেকশন</a>
           <a href="#reviews" id="navReviews">রিভিউ</a>
           <a href="#howto" id="navHowto">কিভাবে অর্ডার</a>
+          <a href="#track" id="navTrack">অর্ডার ট্র্যাক</a>
           <a class="nav-cta" href="#collection" id="navOrder">অর্ডার</a>
         </nav>
       </div>
@@ -99,6 +100,22 @@
         </div>
       </section>
 
+      <section class="track-desk" id="track">
+        <div class="section-head">
+          <p class="eyebrow">Track order</p>
+          <h2>অর্ডার ট্র্যাক করুন</h2>
+          <p>যে মোবাইল দিয়ে অর্ডার করেছেন সেই নম্বর দিন। স্ট্যাটাস এখানে দেখাবে।</p>
+        </div>
+        <form class="track-form" id="trackForm">
+          <label>মোবাইল নম্বর
+            <input type="tel" id="trackPhone" name="phone" required placeholder="01XXXXXXXXX" pattern="01[0-9]{9}" />
+          </label>
+          <button class="btn btn-dark" type="submit" id="trackSubmit">স্ট্যাটাস দেখুন</button>
+          <p class="form-error" id="trackError"></p>
+        </form>
+        <div class="track-results" id="trackResults"></div>
+      </section>
+
       <section class="reviews" id="reviews">
         <div class="section-head">
           <p class="eyebrow" id="reviewsEyebrow">Reviews</p>
@@ -131,6 +148,7 @@
           <li><strong>নম্বর দেখুন</strong> SET-07-এর মতো নম্বর অ্যাডমিন বুঝবে।</li>
           <li><strong>Order Now</strong> চাপুন, সাইজ সিলেক্ট করলেই পরের ধাপে যাবে।</li>
           <li><strong>কনফার্ম করুন</strong> নাম, ফোন ও ঠিকানা দিয়ে অর্ডার শেষ করুন।</li>
+          <li><strong>ট্র্যাক করুন</strong> একই মোবাইল দিয়ে অর্ডার স্ট্যাটাস দেখুন।</li>
         </ol>
       </section>
 
@@ -177,6 +195,12 @@
           <input type="hidden" name="size" id="sizeInput" required />
           <input type="hidden" name="combo" id="comboSelect" value="2" />
 
+          <ol class="checkout-steps" aria-label="অর্ডার ধাপ">
+            <li class="checkout-step is-active" data-step="1">১. সাইজ</li>
+            <li class="checkout-step" data-step="2">২. তথ্য</li>
+            <li class="checkout-step" data-step="3">৩. কনফার্ম</li>
+          </ol>
+
           <div id="stepSize" class="size-step">
             <p class="size-kicker">Size</p>
             <h2 id="sizeTitle">সাইজ বেছে নিন</h2>
@@ -202,10 +226,19 @@
               <textarea name="address" required rows="3" placeholder="বাসা, রোড, থানা, জেলা"></textarea>
             </label>
             <label>
+              নোট (ঐচ্ছিক)
+              <textarea name="note" rows="2" placeholder="সাইজ হেল্প, ডেলিভারি সময়..."></textarea>
+            </label>
+            <label>
               পরিমাণ
-              <input type="number" name="qty" min="1" max="10" value="1" required />
+              <div class="qty-stepper">
+                <button type="button" id="qtyMinus" aria-label="কমাও">−</button>
+                <input type="number" name="qty" min="1" max="10" value="1" required />
+                <button type="button" id="qtyPlus" aria-label="বাড়াও">+</button>
+              </div>
             </label>
             <p class="pay-note"><span id="payNoteText">পেমেন্ট: ক্যাশ অন ডেলিভারি</span> · মোট: <strong id="totalPrice">৳০</strong></p>
+            <p class="cod-copy">হাতে পেয়ে টাকা দিবেন। আলাদা অ্যাডভান্স লাগবে না। অ্যাডমিন ফোন করে কনফার্ম করবে।</p>
             <p class="form-error" id="orderFormError"></p>
             <button class="btn btn-dark" type="submit" id="orderSubmit">অর্ডার কনফার্ম করুন</button>
           </div>
@@ -218,13 +251,22 @@
         <h2 id="confirmTitle">অর্ডার সফল হয়েছে</h2>
         <div class="receipt" id="receipt"></div>
         <p class="modal-help" id="confirmHelp">ধন্যবাদ। ক্যাশ অন ডেলিভারি · ঢাকায় সাধারণত ১–২ দিন।</p>
+        <ol class="next-steps">
+          <li>অ্যাডমিন এই নম্বরে ফোন করে কনফার্ম করবে</li>
+          <li>ঢাকায় সাধারণত ১–২ দিনে ডেলিভারি</li>
+          <li>হাতে পেয়ে ক্যাশ অন ডেলিভারি</li>
+        </ol>
         <div class="modal-actions">
+          <button class="btn btn-ghost" type="button" id="copyOrderId">অর্ডার আইডি কপি</button>
           <button class="btn btn-dark" type="button" id="waBtn">WhatsApp-এ অ্যাডমিনকে পাঠান</button>
+          <button class="btn btn-ghost" type="button" id="goTrackBtn">অর্ডার ট্র্যাক করুন</button>
           <button class="btn btn-ghost" type="button" id="closeModal">ঠিক আছে</button>
         </div>
       </div>
     </div>
-    <script src="catalog.js?v=20260920p"></script>
-    <script src="script.js?v=20260920p"></script>
+    <script src="site-config.js?v=20261003c"></script>
+    <script src="orders-api.js?v=20261003c"></script>
+    <script src="catalog.js?v=20261003c"></script>
+    <script src="script.js?v=20261003c"></script>
   </body>
 </html>

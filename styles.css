@@ -1085,3 +1085,132 @@ thead {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+.checkout-steps {
+  display: flex;
+  gap: 8px;
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.checkout-step {
+  flex: 1;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #9a6a9e;
+  background: #fff6fb;
+  border: 1px solid #ffd6ec;
+  border-radius: 999px;
+  padding: 7px 6px;
+}
+
+.checkout-step.is-active {
+  background: #ffe6f4;
+  color: #e2187a;
+  border-color: #ffb3d9;
+}
+
+.checkout-step.is-done {
+  background: #e8fff4;
+  color: #146c36;
+  border-color: #b7ebc8;
+}
+
+.qty-stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qty-stepper button {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 12px;
+  background: #ffe6f4;
+  color: #e2187a;
+  font-size: 1.3rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.qty-stepper input {
+  width: 72px;
+  text-align: center;
+}
+
+.cod-copy {
+  margin: 6px 0 0;
+  color: #5b3d5e;
+  font-size: 0.9rem;
+}
+
+.track-desk {
+  width: min(920px, calc(100% - 28px));
+  margin: 28px auto;
+  padding: 22px 18px;
+  background: #fff;
+  border: 1px solid #ffd6ec;
+  border-radius: 24px;
+}
+
+.track-form {
+  display: grid;
+  gap: 10px;
+  max-width: 420px;
+}
+
+.track-results {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.track-card {
+  background: #fffafd;
+  border: 1px solid #ffd6ec;
+  border-radius: 16px;
+  padding: 14px 16px;
+}
+
+.track-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.track-card h3 {
+  margin: 8px 0 4px;
+  font-size: 1.05rem;
+}
+
+.track-id {
+  color: #e2187a;
+  font-weight: 800;
+  margin-top: 4px;
+}
+
+.status-pill {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fff4e5;
+  color: #9a5b00;
+}
+
+.status-pill.is-new { background: #fff4e5; color: #9a5b00; }
+.status-pill.is-confirmed { background: #e6f8ed; color: #146c36; }
+.status-pill.is-delivered { background: #e8f1ff; color: #175cd3; }
+.status-pill.is-cancelled { background: #fde8ee; color: #b42318; }
+
+.next-steps {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  color: #5b3d5e;
+  font-size: 0.92rem;
+}

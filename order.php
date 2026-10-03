@@ -44,6 +44,7 @@ $order = array(
   "name" => $name,
   "phone" => $phone,
   "address" => $address,
+  "note" => trim((string)(isset($body["note"]) ? $body["note"] : "")),
   "size" => $size,
   "combo" => intval(isset($body["combo"]) ? $body["combo"] : 2),
   "qty" => max(1, intval(isset($body["qty"]) ? $body["qty"] : 1)),
