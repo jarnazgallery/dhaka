@@ -357,19 +357,23 @@ async function apiCall(route, options = {}) {
     opts.headers["X-Admin-Token"] = String(adminToken).replace(/^Bearer\s+/i, "");
   }
   const bust = clean === "catalog" && method === "GET" ? "t=" + Date.now() : "";
-  const attempts = [
-    { url: "/api/" + clean + (bust ? "?" + bust : ""), options: opts },
-    { url: "api.php?route=" + encodeURIComponent(clean) + (bust ? "&" + bust : ""), options: opts },
-  ];
-  if (clean === "catalog" && method === "GET") {
-    attempts.push({ url: "catalog.php?" + bust, options: { method: "GET" } });
-    attempts.push({ url: "catalog-data.json?" + bust, options: { method: "GET" } });
-  }
+  const attempts = [];
   if (clean === "orders" && method === "POST") {
     attempts.push({ url: "order.php", options: opts });
   }
+  if (clean === "login" && method === "POST") {
+    attempts.push({ url: "login.php", options: opts });
+  }
   if (clean === "admin/orders" && method === "GET") {
     attempts.push({ url: "admin-orders.php?t=" + Date.now(), options: opts });
+  }
+  attempts.push(
+    { url: "/api/" + clean + (bust ? "?" + bust : ""), options: opts },
+    { url: "api.php?route=" + encodeURIComponent(clean) + (bust ? "&" + bust : ""), options: opts }
+  );
+  if (clean === "catalog" && method === "GET") {
+    attempts.push({ url: "catalog.php?" + bust, options: { method: "GET" } });
+    attempts.push({ url: "catalog-data.json?" + bust, options: { method: "GET" } });
   }
   if (method !== "GET" && method !== "POST") {
     attempts.push({
@@ -390,7 +394,12 @@ async function apiCall(route, options = {}) {
         continue;
       }
       if (attempt.url.indexOf("catalog-data.json") === 0) API_MODE = "file";
-      else if (attempt.url.indexOf("order.php") === 0 || attempt.url.indexOf("admin-orders.php") === 0 || attempt.url.indexOf("catalog.php") === 0) API_MODE = "php";
+      else if (
+        attempt.url.indexOf("order.php") === 0 ||
+        attempt.url.indexOf("admin-orders.php") === 0 ||
+        attempt.url.indexOf("login.php") === 0 ||
+        attempt.url.indexOf("catalog.php") === 0
+      ) API_MODE = "php";
       else API_MODE = attempt.url.indexOf("api.php") === 0 ? "php" : "server";
       return { ok: res.ok, status: res.status, data };
     } catch (err) {
@@ -436,26 +445,22 @@ function localCatalog() {
 
 function applyCatalogData(data) {
   data = data || {};
-  const localProducts = readLocal(LOCAL_KEYS.products, null);
-  const serverOk = API_MODE === "server" || API_MODE === "php";
-  if (serverOk && Array.isArray(data.products)) {
+  const fromSite = API_MODE === "server" || API_MODE === "php" || API_MODE === "file";
+  if (fromSite && Array.isArray(data.products)) {
     PRODUCTS = sortProducts(data.products);
     try { writeLocal(LOCAL_KEYS.products, PRODUCTS); } catch (err) {}
-  } else if (Array.isArray(localProducts)) {
-    PRODUCTS = sortProducts(localProducts);
   } else {
-    PRODUCTS = sortProducts(Array.isArray(data.products) ? data.products : FALLBACK_PRODUCTS.slice());
+    const localProducts = readLocal(LOCAL_KEYS.products, null);
+    PRODUCTS = sortProducts(Array.isArray(localProducts) ? localProducts : (data.products || FALLBACK_PRODUCTS.slice()));
   }
   SITE = mergeSite(data.site);
   WHATSAPP = SITE.whatsapp || data.whatsapp || WHATSAPP;
-  const localOffers = readLocal(LOCAL_KEYS.offers, null);
-  if (serverOk && Array.isArray(data.offers)) {
+  if (fromSite && Array.isArray(data.offers)) {
     OFFERS = data.offers.map((o) => normalizeOffer(o, PRODUCTS)).filter(Boolean);
     try { writeLocal(LOCAL_KEYS.offers, OFFERS); } catch (err) {}
-  } else if (Array.isArray(localOffers)) {
-    OFFERS = localOffers.map((o) => normalizeOffer(o, PRODUCTS)).filter(Boolean);
   } else {
-    OFFERS = (Array.isArray(data.offers) ? data.offers : FALLBACK_OFFERS)
+    const localOffers = readLocal(LOCAL_KEYS.offers, null);
+    OFFERS = (Array.isArray(localOffers) ? localOffers : (data.offers || FALLBACK_OFFERS))
       .map((o) => normalizeOffer(o, PRODUCTS))
       .filter(Boolean);
   }

@@ -500,14 +500,27 @@ function saveSite(req, res) {
 app.put("/api/admin/site", auth, upload.single("logo"), saveSite);
 app.post("/api/admin/site", auth, upload.single("logo"), saveSite);
 
+function noStore(res, filePath) {
+  if (/\.(html?|js|css)$/i.test(filePath || "")) {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+  }
+}
+
 app.use("/data", (_req, res) => res.status(404).end());
 app.get("/admin", (_req, res) => {
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
   res.sendFile(path.join(ROOT, "admin.html"));
 });
 app.use((err, _req, res, _next) => {
   res.status(400).json({ error: err.message || "অনুরোধ ব্যর্থ" });
 });
-app.use(express.static(ROOT));
+app.use(express.static(ROOT, {
+  etag: false,
+  lastModified: false,
+  setHeaders: noStore,
+}));
 
 app.listen(PORT, () => {
   console.log(`Jarnaz Gallery running at http://localhost:${PORT}`);

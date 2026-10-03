@@ -175,6 +175,9 @@ async function saveOrder(order) {
     if (!result.ok) throw new Error((result.data && result.data.error) || "অর্ডার সেভ হয়নি");
     const saved = Object.assign({}, order, result.data || {});
     saved.savedOnServer = API_MODE === "php" || API_MODE === "server";
+    if (!saved.savedOnServer) {
+      throw new Error("অর্ডার সার্ভারে যায়নি। একটু পরে আবার চেষ্টা করুন, অথবা WhatsApp-এ পাঠান।");
+    }
     try {
       const local = readLocal(LOCAL_KEYS.orders, []);
       if (!local.some((item) => item.id === saved.id)) {
@@ -184,12 +187,10 @@ async function saveOrder(order) {
     } catch (err) {}
     return saved;
   } catch (err) {
-    if (err.code !== "NO_API") throw err;
-    const orders = readLocal(LOCAL_KEYS.orders, []);
-    order.savedOnServer = false;
-    orders.unshift(order);
-    writeLocal(LOCAL_KEYS.orders, orders);
-    return order;
+    if (err.code === "NO_API") {
+      throw new Error("অর্ডার সার্ভারে যায়নি। একটু পরে আবার চেষ্টা করুন, অথবা WhatsApp-এ পাঠান।");
+    }
+    throw err;
   }
 }
 

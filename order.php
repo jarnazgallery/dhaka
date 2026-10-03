@@ -53,5 +53,10 @@ $order = array(
   "createdAt" => date("c"),
 );
 array_unshift($orders, $order);
-@file_put_contents($path, json_encode($orders, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+$json = json_encode($orders, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+if ($json === false || @file_put_contents($path, $json) === false) {
+  http_response_code(500);
+  echo json_encode(array("error" => "অর্ডার সেভ হয়নি। হোস্টিংয়ে data ফোল্ডার 775 করুন।"), JSON_UNESCAPED_UNICODE);
+  exit;
+}
 echo json_encode($order, JSON_UNESCAPED_UNICODE);

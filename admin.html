@@ -3,6 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
     <title>Jarnaz Gallery অ্যাডমিন</title>
     <meta name="robots" content="noindex, nofollow" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -11,7 +13,7 @@
       href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=20260920m" />
+    <link rel="stylesheet" href="styles.css?v=20260920n" />
     <style>
       body.admin-app { min-height: 100vh; }
       .admin-top .header-inner { width: min(1240px, calc(100% - 28px)); }
@@ -471,8 +473,9 @@
         <section class="admin-page" id="tab-orders">
           <div class="page-head">
             <h2>অর্ডার লিস্ট</h2>
-            <p id="modeNote">ইউজার অর্ডার করলে নাম, মোবাইল ও ঠিকানা এখানে আসবে। ডিটেইলস খুলে এডিট, কনফার্ম বা ক্যান্সেল করুন।</p>
+            <p id="modeNote">ফোন, পিসি বা যেকোনো ডিভাইস থেকে অর্ডার এলে এখানে আসবে।</p>
             <span class="mode-pill" id="modePill">সার্ভার মোড</span>
+            <button class="btn soft-btn" type="button" id="refreshOrders">অর্ডার রিফ্রেশ</button>
           </div>
           <form class="panel add-form" id="manualOrderForm">
             <h3>ম্যানুয়াল অর্ডার যোগ</h3>
@@ -634,7 +637,7 @@
       </div>
     </div>
 
-    <script src="catalog.js?v=20260920m"></script>
+    <script src="catalog.js?v=20260920p"></script>
     <script>
       const TOKEN_KEY = "jarnaz-admin-token";
       let offers = [];
@@ -998,14 +1001,23 @@
         return list.sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
       }
 
+      async function loadServerOrders() {
+        const orders = await api("admin/orders", { headers: headers() });
+        const serverOk = API_MODE === "php" || API_MODE === "server";
+        if (serverOk && Array.isArray(orders)) {
+          renderOrders(orders);
+          try { writeLocal(LOCAL_KEYS.orders, orders); } catch (err) {}
+        } else {
+          renderOrders(mergeOrderLists(orders, readLocal(LOCAL_KEYS.orders, [])));
+        }
+        setModeNote();
+      }
+
       function startOrderPoll() {
         if (window._orderPoll) clearInterval(window._orderPoll);
-        window._orderPoll = setInterval(async () => {
-          try {
-            const orders = await api("admin/orders", { headers: headers() });
-            renderOrders(mergeOrderLists(orders, readLocal(LOCAL_KEYS.orders, [])));
-          } catch (err) {}
-        }, 12000);
+        window._orderPoll = setInterval(() => {
+          loadServerOrders().catch(() => {});
+        }, 10000);
       }
 
       function filteredOrders() {
@@ -1121,8 +1133,7 @@
         renderComments();
         renderProducts();
         renderOffers();
-        const orders = await api("admin/orders", { headers: headers() });
-        renderOrders(mergeOrderLists(orders, readLocal(LOCAL_KEYS.orders, [])));
+        await loadServerOrders();
         startOrderPoll();
         setModeNote();
       }
@@ -1130,6 +1141,14 @@
       document.getElementById("adminNav").addEventListener("click", (event) => {
         const btn = event.target.closest("[data-tab]");
         if (btn) switchTab(btn.dataset.tab);
+      });
+
+      document.getElementById("refreshOrders").addEventListener("click", async () => {
+        try {
+          await loadServerOrders();
+        } catch (err) {
+          alert(err.message);
+        }
       });
 
       document.getElementById("orderSearch").addEventListener("input", () => renderOrders());
@@ -1286,6 +1305,9 @@
             data = await localLogin(password);
           }
           localStorage.setItem(TOKEN_KEY, data.token);
+          if (data.token === "local") {
+            errorEl.textContent = "সার্ভার লগইন হয়নি। login.php আপলোড করে আবার লগইন করুন, নাহলে ফোনের অর্ডার দেখা যাবে না।";
+          }
           showDash();
           bootDash();
         } catch (err) {
