@@ -13,7 +13,7 @@
       href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=20261003c" />
+    <link rel="stylesheet" href="styles.css?v=20261006a" />
     <style>
       body.admin-app { min-height: 100vh; }
       .admin-top .header-inner { width: min(1240px, calc(100% - 28px)); }
@@ -225,6 +225,11 @@
         border: 1px solid #ffe3f2;
         border-radius: 14px;
       }
+      .review-shot-row img {
+        height: 160px;
+        background: #1d1224;
+      }
+      .list-heading { margin: 18px 0 10px; }
       .code-pill {
         display: inline-block;
         background: #ffe6f4;
@@ -648,9 +653,23 @@
 
         <section class="admin-page" id="tab-comments">
           <div class="page-head">
-            <h2>কাস্টমার রিভিউ</h2>
-            <p>ইউজার ছবিসহ কমেন্ট দিলে এখানে আসবে। খারাপ রিভিউ ডিলিট করতে পারবেন।</p>
+            <h2>রিভিউ স্ক্রিনশট</h2>
+            <p>ফোনের WhatsApp/রিভিউ স্ক্রিনশট আপলোড করুন। হোমপেজের স্লাইডারে সেগুলো ঘুরবে।</p>
           </div>
+          <form class="panel add-form" id="reviewUploadForm">
+            <h3>নতুন স্ক্রিনশট</h3>
+            <div class="site-grid">
+              <label>ফোন স্ক্রিনশট
+                <input type="file" name="image" accept="image/*" required />
+              </label>
+              <label>নোট (ঐচ্ছিক)
+                <input name="name" placeholder="যেমন: WhatsApp · সেপ্টেম্বর" />
+              </label>
+            </div>
+            <button class="btn btn-dark" type="submit">স্ক্রিনশট আপলোড</button>
+            <p class="save-note" id="reviewUploadNote"></p>
+          </form>
+          <h3 class="list-heading">আপলোড করা রিভিউ</h3>
           <div class="panel" id="commentList"></div>
         </section>
 
@@ -737,9 +756,9 @@
     </div>
 
     <div class="invoice-print" id="invoicePrint"></div>
-    <script src="site-config.js?v=20261003c"></script>
-    <script src="orders-api.js?v=20261003c"></script>
-    <script src="catalog.js?v=20261003c"></script>
+    <script src="site-config.js?v=20261006a"></script>
+    <script src="orders-api.js?v=20261006a"></script>
+    <script src="catalog.js?v=20261006a"></script>
     <script>
       const TOKEN_KEY = "jarnaz-admin-token";
       let offers = [];
@@ -956,17 +975,18 @@
         const root = document.getElementById("commentList");
         if (!root) return;
         if (!lastReviews.length) {
-          root.innerHTML = '<p class="empty">এখনো ইউজার রিভিউ নেই।</p>';
+          root.innerHTML = '<p class="empty">এখনো স্ক্রিনশট নেই। উপরে ফোনের রিভিউ ছবি আপলোড করুন।</p>';
           return;
         }
         root.innerHTML = lastReviews
           .map(
             (r) => `
-            <div class="product-admin-row">
-              ${r.image ? `<img src="${esc(r.image)}" alt="${esc(r.name)}" />` : "<div></div>"}
+            <div class="product-admin-row review-shot-row">
+              ${r.image ? `<img src="${esc(r.image)}" alt="${esc(r.name || r.id)}" />` : "<div></div>"}
               <div class="product-fields">
-                <strong>${esc(r.name)}</strong>
-                <p>${esc(r.text)}</p>
+                <span class="code-pill">${esc(r.id)}</span>
+                <strong>${esc(r.name || "স্ক্রিনশট রিভিউ")}</strong>
+                ${r.text ? `<p>${esc(r.text)}</p>` : ""}
                 <button class="btn danger" type="button" data-del-review-id="${esc(r.id)}">ডিলিট</button>
               </div>
             </div>`
@@ -1967,6 +1987,32 @@
         } catch (err) {
           note.classList.add("is-error");
           note.textContent = err.message;
+        }
+      });
+
+      document.getElementById("reviewUploadForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const note = document.getElementById("reviewUploadNote");
+        const btn = event.target.querySelector('button[type="submit"]');
+        note.classList.remove("is-error");
+        btn.disabled = true;
+        try {
+          const data = new FormData(event.target);
+          const image = event.target.image && event.target.image.files[0];
+          if (!image) throw new Error("ফোন স্ক্রিনশট সিলেক্ট করুন");
+          data.set("image", await compressImage(image));
+          data.append("token", token());
+          const saved = await api("admin/reviews", { method: "POST", headers: headers(), body: data });
+          event.target.reset();
+          if (saved && saved.id) lastReviews.unshift(saved);
+          renderComments();
+          note.textContent = "স্ক্রিনশট হোমে যোগ হয়েছে। হোমপেজ রিফ্রেশ করলে দেখাবে।";
+          await bootDash();
+        } catch (err) {
+          note.classList.add("is-error");
+          note.textContent = err.message;
+        } finally {
+          btn.disabled = false;
         }
       });
 

@@ -28,7 +28,7 @@
       rel="stylesheet"
     />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎀</text></svg>" />
-    <link rel="stylesheet" href="styles.css?v=20261003c" />
+    <link rel="stylesheet" href="styles.css?v=20261006a" />
     <script type="application/ld+json" id="businessJson">
       {
         "@context": "https://schema.org",
@@ -121,21 +121,13 @@
           <p class="eyebrow" id="reviewsEyebrow">Reviews</p>
           <h2 id="reviewsTitle">কাস্টমার রিভিউ</h2>
         </div>
-        <div class="review-slider" id="reviewSlider">
+        <div class="review-slider is-hidden" id="reviewSlider">
           <div class="review-track" id="reviewTrack"></div>
           <button class="offer-arrow prev" type="button" id="reviewPrev" aria-label="আগের রিভিউ">‹</button>
           <button class="offer-arrow next" type="button" id="reviewNext" aria-label="পরের রিভিউ">›</button>
           <div class="offer-dots" id="reviewDots"></div>
         </div>
-        <form class="review-form" id="reviewForm">
-          <h3>আপনার রিভিউ দিন</h3>
-          <p class="modal-help">ছবি ও কমেন্ট যোগ করুন, নিচে স্লাইডারে দেখাবে।</p>
-          <label>আপনার নাম <input name="name" required placeholder="নাম · শহর" /></label>
-          <label>কমেন্ট <textarea name="text" rows="3" required placeholder="আপনার মতামত লিখুন"></textarea></label>
-          <label>ছবি (ঐচ্ছিক) <input type="file" name="image" accept="image/*" /></label>
-          <button class="btn btn-dark" type="submit">রিভিউ পাঠান</button>
-          <p class="save-note" id="reviewNote"></p>
-        </form>
+        <p class="empty-pick" id="reviewEmpty">অ্যাডমিন ফোনের রিভিউ স্ক্রিনশট আপলোড করলে এখানে দেখাবে।</p>
       </section>
 
       <section class="howto" id="howto">
@@ -264,9 +256,9 @@
         </div>
       </div>
     </div>
-    <script src="site-config.js?v=20261003c"></script>
-    <script src="orders-api.js?v=20261003c"></script>
-    <script src="catalog.js?v=20261003c"></script>
-    <script src="script.js?v=20261003c"></script>
+    <script src="site-config.js?v=20261006a"></script>
+    <script src="orders-api.js?v=20261006a"></script>
+    <script src="catalog.js?v=20261006a"></script>
+    <script src="script.js?v=20261006a"></script>
   </body>
 </html>

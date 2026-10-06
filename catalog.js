@@ -471,6 +471,9 @@ function applyCatalogData(data) {
       .filter(Boolean);
   }
   applySite(SITE);
+  if (fromSite && Array.isArray(data.reviews)) {
+    try { writeLocal(LOCAL_KEYS.reviews, data.reviews); } catch (err) {}
+  }
   return Object.assign({}, data, { products: PRODUCTS, offers: OFFERS, site: SITE, whatsapp: WHATSAPP });
 }
 
@@ -533,18 +536,18 @@ async function handleLocalAdmin(route, options) {
   let orders = readLocal(LOCAL_KEYS.orders, []);
 
   if (route === "admin/me" && method === "GET") return { ok: true };
-  if (route === "reviews" && method === "POST") {
+  if ((route === "admin/reviews" || route === "reviews") && method === "POST") {
     const form = options.body;
-    const imageFile = form.get("image");
+    const imageFile = form && form.get ? form.get("image") : null;
+    if (!imageFile || !imageFile.size) throw new Error("ফোন স্ক্রিনশট আপলোড করুন");
     const review = {
       id: "RV-" + String(Date.now()).slice(-8),
       name: String(form.get("name") || "").trim(),
       text: String(form.get("text") || "").trim(),
-      image: imageFile && imageFile.size ? await fileToDataUrl(imageFile) : "",
+      image: await fileToDataUrl(imageFile),
       status: "confirmed",
       createdAt: new Date().toISOString(),
     };
-    if (!review.name || !review.text) throw new Error("নাম ও কমেন্ট দিন");
     const list = readLocal(LOCAL_KEYS.reviews, []);
     list.unshift(review);
     writeLocal(LOCAL_KEYS.reviews, list);

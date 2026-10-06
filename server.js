@@ -214,15 +214,17 @@ function makeOrder(body, product, extra) {
   return { order };
 }
 
-app.post("/api/reviews", upload.single("image"), (req, res) => {
-  const name = String(req.body.name || "").trim();
-  const text = String(req.body.text || "").trim();
-  if (!name || !text) return res.status(400).json({ error: "নাম ও কমেন্ট দিন" });
+app.post("/api/reviews", (_req, res) => {
+  res.status(403).json({ error: "রিভিউ শুধু অ্যাডমিন স্ক্রিনশট আপলোড করবে" });
+});
+
+app.post("/api/admin/reviews", auth, upload.single("image"), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: "ফোন স্ক্রিনশট আপলোড করুন" });
   const review = {
     id: `RV-${Date.now().toString().slice(-8)}`,
-    name,
-    text,
-    image: req.file ? `images/${req.file.filename}` : "",
+    name: String(req.body.name || "").trim(),
+    text: String(req.body.text || "").trim(),
+    image: `images/${req.file.filename}`,
     status: "confirmed",
     createdAt: new Date().toISOString(),
   };

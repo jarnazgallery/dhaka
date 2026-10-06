@@ -509,6 +509,19 @@ h1 {
   background: #fff6fb;
 }
 
+.review-slide.is-shot {
+  padding: 18px 18px 46px;
+}
+
+.review-slide.is-shot img {
+  width: min(100%, 340px);
+  height: auto;
+  max-height: 560px;
+  object-fit: contain;
+  background: #1d1224;
+  box-shadow: 0 14px 32px rgba(59, 36, 80, 0.18);
+}
+
 .review-slide p {
   font-family: "Fredoka", "Noto Sans Bengali", sans-serif;
   font-size: 1.1rem;

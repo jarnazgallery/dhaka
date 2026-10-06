@@ -645,27 +645,31 @@ function bindOfferSlider() {
 }
 
 function reviewList() {
-  if (userReviews.length) return userReviews;
-  return (SITE.reviews || []).map((item, i) => ({
-    id: "site-" + i,
-    name: item.name,
-    text: item.text,
-    image: "",
-  }));
+  return (userReviews || []).filter((item) => item && item.image);
 }
 
 function renderReviewSlider() {
   const items = reviewList();
   const track = document.getElementById("reviewTrack");
   const dots = document.getElementById("reviewDots");
-  if (!track || !dots || !items.length) return;
+  const slider = document.getElementById("reviewSlider");
+  const empty = document.getElementById("reviewEmpty");
+  if (!track || !dots) return;
+  if (!items.length) {
+    if (slider) slider.classList.add("is-hidden");
+    if (empty) empty.classList.remove("is-hidden");
+    track.innerHTML = "";
+    dots.innerHTML = "";
+    return;
+  }
+  if (slider) slider.classList.remove("is-hidden");
+  if (empty) empty.classList.add("is-hidden");
   track.innerHTML = items
     .map(
       (item) => `
-        <article class="review-slide">
-          ${item.image ? `<img src="${htmlEsc(item.image)}" alt="${htmlEsc(item.name)}" />` : ""}
-          <p>“${htmlEsc(item.text)}”</p>
-          <span>${htmlEsc(item.name)}</span>
+        <article class="review-slide is-shot">
+          <img src="${htmlEsc(item.image)}" alt="${htmlEsc(item.name || "কাস্টমার রিভিউ")}" />
+          ${item.name ? `<span>${htmlEsc(item.name)}</span>` : ""}
         </article>`
     )
     .join("");
@@ -721,33 +725,6 @@ function bindReviewSlider() {
     startReviewTimer();
   }, { passive: true });
 }
-
-async function saveReview(formData) {
-  try {
-    const result = await apiCall("reviews", { method: "POST", body: formData });
-    if (!result.ok) throw new Error((result.data && result.data.error) || "রিভিউ সেভ হয়নি");
-    return result.data;
-  } catch (err) {
-    if (err.code !== "NO_API") throw err;
-    return handleLocalAdmin("reviews", { method: "POST", body: formData });
-  }
-}
-
-document.getElementById("reviewForm").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const note = document.getElementById("reviewNote");
-  note.textContent = "";
-  try {
-    const saved = await saveReview(new FormData(event.target));
-    userReviews.unshift(saved);
-    event.target.reset();
-    renderReviewSlider();
-    startReviewTimer();
-    note.textContent = "রিভিউ যোগ হয়েছে। নিচে স্লাইডে দেখুন।";
-  } catch (err) {
-    note.textContent = err.message;
-  }
-});
 
 renderSizes();
 

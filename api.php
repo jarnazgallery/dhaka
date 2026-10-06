@@ -362,7 +362,7 @@ function rename_offer_code($old, $new) {
   if ($changed) write_json("offers.json", $offers);
 }
 
-function save_upload($key) {
+function save_upload($key, $prefix = "set") {
   global $IMAGES;
   if (!empty($_FILES[$key]["error"]) && $_FILES[$key]["error"] !== UPLOAD_ERR_OK) {
     if ($_FILES[$key]["error"] === UPLOAD_ERR_INI_SIZE || $_FILES[$key]["error"] === UPLOAD_ERR_FORM_SIZE) {
@@ -376,7 +376,7 @@ function save_upload($key) {
   $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
   if ($ext === "") $ext = "png";
   if (!in_array($ext, array("png", "jpg", "jpeg", "webp", "gif", "heic", "heif", "bmp"), true)) fail(400, "শুধু ছবি আপলোড করুন");
-  $filename = "set-" . round(microtime(true) * 1000) . "." . $ext;
+  $filename = ($prefix ? $prefix : "set") . "-" . round(microtime(true) * 1000) . "." . $ext;
   if (!move_uploaded_file($_FILES[$key]["tmp_name"], "$IMAGES/$filename")) fail(400, "ছবি সেভ হয়নি। images ফোল্ডার writable করুন।");
   return "images/$filename";
 }
@@ -740,15 +740,18 @@ if ($route === "admin/site" && ($method === "PUT" || $method === "POST")) {
 }
 
 if ($route === "reviews" && $method === "POST") {
-  $name = trim((string)(isset($_POST["name"]) ? $_POST["name"] : ""));
-  $text = trim((string)(isset($_POST["text"]) ? $_POST["text"] : ""));
-  if ($name === "" || $text === "") fail(400, "নাম ও কমেন্ট দিন");
-  $image = save_upload("image");
+  fail(403, "রিভিউ শুধু অ্যাডমিন স্ক্রিনশট আপলোড করবে");
+}
+
+if ($route === "admin/reviews" && $method === "POST") {
+  require_auth();
+  $image = save_upload("image", "review");
+  if (!$image) fail(400, "ফোন স্ক্রিনশট আপলোড করুন");
   $review = array(
     "id" => "RV-" . substr((string)round(microtime(true) * 1000), -8),
-    "name" => $name,
-    "text" => $text,
-    "image" => $image ? $image : "",
+    "name" => trim((string)(isset($_POST["name"]) ? $_POST["name"] : "")),
+    "text" => trim((string)(isset($_POST["text"]) ? $_POST["text"] : "")),
+    "image" => $image,
     "status" => "confirmed",
     "createdAt" => date("c"),
   );
