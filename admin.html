@@ -13,7 +13,7 @@
       href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=20261006a" />
+    <link rel="stylesheet" href="styles.css?v=20261006b" />
     <style>
       body.admin-app { min-height: 100vh; }
       .admin-top .header-inner { width: min(1240px, calc(100% - 28px)); }
@@ -756,9 +756,9 @@
     </div>
 
     <div class="invoice-print" id="invoicePrint"></div>
-    <script src="site-config.js?v=20261006a"></script>
-    <script src="orders-api.js?v=20261006a"></script>
-    <script src="catalog.js?v=20261006a"></script>
+    <script src="site-config.js?v=20261006b"></script>
+    <script src="orders-api.js?v=20261006b"></script>
+    <script src="catalog.js?v=20261006b"></script>
     <script>
       const TOKEN_KEY = "jarnaz-admin-token";
       let offers = [];
@@ -1380,7 +1380,7 @@
         fillWebsiteForm(catalog.site || SITE);
         fillManualOrderForm();
         fillCloudForm();
-        lastReviews = catalog.reviews || [];
+        lastReviews = mergeReviewLists(catalog.reviews, lastReviews);
         renderComments();
         renderProducts();
         renderOffers();
@@ -1565,6 +1565,7 @@
             data = await localLogin(password);
           }
           localStorage.setItem(TOKEN_KEY, data.token);
+          try { localStorage.setItem(LOCAL_KEYS.pass, String(password)); } catch (err) {}
           if (data.token === "local") {
             errorEl.textContent = "সার্ভার লগইন হয়নি। login.php আপলোড করে আবার লগইন করুন, নাহলে ফোনের অর্ডার দেখা যাবে না।";
           }
@@ -2002,12 +2003,24 @@
           if (!image) throw new Error("ফোন স্ক্রিনশট সিলেক্ট করুন");
           data.set("image", await compressImage(image));
           data.append("token", token());
+          try {
+            const savedPass = localStorage.getItem(LOCAL_KEYS.pass);
+            if (savedPass) data.append("password", savedPass);
+          } catch (err) {}
           const saved = await api("admin/reviews", { method: "POST", headers: headers(), body: data });
+          if (!saved || !saved.image) throw new Error("স্ক্রিনশট সার্ভারে যায়নি। review-admin.php আপলোড করুন।");
           event.target.reset();
-          if (saved && saved.id) lastReviews.unshift(saved);
+          lastReviews = mergeReviewLists([saved], lastReviews);
+          try { writeLocal(LOCAL_KEYS.reviews, lastReviews); } catch (err) {}
           renderComments();
-          note.textContent = "স্ক্রিনশট হোমে যোগ হয়েছে। হোমপেজ রিফ্রেশ করলে দেখাবে।";
-          await bootDash();
+          const onServer = API_MODE === "php" || API_MODE === "server";
+          note.classList.toggle("is-error", !onServer);
+          note.textContent = onServer
+            ? "স্ক্রিনশট হোমে যোগ হয়েছে। হোমপেজ রিফ্রেশ করলে দেখাবে।"
+            : "এই ফোনে সেভ হয়েছে, কিন্তু ওয়েবসাইটে যায়নি। review-admin.php আপলোড করে আবার আপলোড করুন।";
+          try { await bootDash(); } catch (err) {}
+          lastReviews = mergeReviewLists(lastReviews, [saved]);
+          renderComments();
         } catch (err) {
           note.classList.add("is-error");
           note.textContent = err.message;

@@ -373,6 +373,16 @@ async function apiCall(route, options = {}) {
   if (clean === "admin/orders" && method === "GET") {
     attempts.push({ url: "admin-orders.php?t=" + Date.now(), options: opts });
   }
+  if (clean === "admin/reviews" && method === "POST") {
+    attempts.unshift({ url: "review-admin.php", options: opts });
+  }
+  const reviewDel = clean.match(/^admin\/reviews\/(.+)$/);
+  if (reviewDel && (method === "DELETE" || method === "POST")) {
+    attempts.unshift({
+      url: "review-admin.php?action=delete&id=" + encodeURIComponent(reviewDel[1]),
+      options: Object.assign({}, opts, { method: "POST" }),
+    });
+  }
   attempts.push(
     { url: "/api/" + clean + (bust ? "?" + bust : ""), options: opts },
     { url: "api.php?route=" + encodeURIComponent(clean) + (bust ? "&" + bust : ""), options: opts }
@@ -404,7 +414,8 @@ async function apiCall(route, options = {}) {
         attempt.url.indexOf("order.php") === 0 ||
         attempt.url.indexOf("admin-orders.php") === 0 ||
         attempt.url.indexOf("login.php") === 0 ||
-        attempt.url.indexOf("catalog.php") === 0
+        attempt.url.indexOf("catalog.php") === 0 ||
+        attempt.url.indexOf("review-admin.php") === 0
       ) API_MODE = "php";
       else API_MODE = attempt.url.indexOf("api.php") === 0 ? "php" : "server";
       return { ok: res.ok, status: res.status, data };
@@ -449,6 +460,17 @@ function localCatalog() {
   };
 }
 
+function mergeReviewLists(server, local) {
+  const list = [];
+  const seen = new Set();
+  (Array.isArray(server) ? server : []).concat(Array.isArray(local) ? local : []).forEach((item) => {
+    if (!item || !item.id || seen.has(item.id)) return;
+    seen.add(item.id);
+    list.push(item);
+  });
+  return list;
+}
+
 function applyCatalogData(data) {
   data = data || {};
   const fromSite = API_MODE === "server" || API_MODE === "php" || API_MODE === "file";
@@ -471,10 +493,16 @@ function applyCatalogData(data) {
       .filter(Boolean);
   }
   applySite(SITE);
-  if (fromSite && Array.isArray(data.reviews)) {
-    try { writeLocal(LOCAL_KEYS.reviews, data.reviews); } catch (err) {}
+  const localReviews = readLocal(LOCAL_KEYS.reviews, []);
+  let reviews = Array.isArray(data.reviews) ? data.reviews.slice() : [];
+  const remoteShots = reviews.filter((item) => item && item.image);
+  if (fromSite && remoteShots.length) {
+    reviews = remoteShots;
+    try { writeLocal(LOCAL_KEYS.reviews, reviews); } catch (err) {}
+  } else {
+    reviews = mergeReviewLists(remoteShots, localReviews);
   }
-  return Object.assign({}, data, { products: PRODUCTS, offers: OFFERS, site: SITE, whatsapp: WHATSAPP });
+  return Object.assign({}, data, { products: PRODUCTS, offers: OFFERS, site: SITE, whatsapp: WHATSAPP, reviews });
 }
 
 async function loadCatalog() {
