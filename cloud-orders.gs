@@ -14,6 +14,8 @@
 
 function setup() {
   var sheet = getSheet_();
+  getReviewSheet_();
+  getReviewFolder_();
   Logger.log('OK sheet: ' + sheet.getParent().getUrl());
 }
 
@@ -190,11 +192,123 @@ function findOrdersByPhone_(sheet, phone) {
   return matched;
 }
 
+var REVIEW_SHEET = 'Reviews';
+var PROP_REVIEW_FOLDER = 'JARNAZ_REVIEW_FOLDER_ID';
+var REVIEW_HEADERS = ['id', 'createdAt', 'name', 'text', 'image', 'fileId', 'status'];
+
+function getReviewFolder_() {
+  var props = PropertiesService.getScriptProperties();
+  var folderId = props.getProperty(PROP_REVIEW_FOLDER);
+  var folder = null;
+  if (folderId) {
+    try {
+      folder = DriveApp.getFolderById(folderId);
+    } catch (e) {
+      folder = null;
+    }
+  }
+  if (!folder) {
+    folder = DriveApp.createFolder('Jarnaz-Gallery-Reviews');
+    props.setProperty(PROP_REVIEW_FOLDER, folder.getId());
+  }
+  try {
+    folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  } catch (shareErr) {}
+  return folder;
+}
+
+function getReviewSheet_() {
+  var ss = getSheet_().getParent();
+  var sheet = ss.getSheetByName(REVIEW_SHEET);
+  if (!sheet) {
+    sheet = ss.insertSheet(REVIEW_SHEET);
+    sheet.appendRow(REVIEW_HEADERS);
+  } else {
+    var lastCol = Math.max(sheet.getLastColumn(), REVIEW_HEADERS.length);
+    var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    for (var i = 0; i < REVIEW_HEADERS.length; i++) {
+      if (String(headers[i] || '') !== REVIEW_HEADERS[i]) {
+        sheet.getRange(1, 1, 1, REVIEW_HEADERS.length).setValues([REVIEW_HEADERS]);
+        break;
+      }
+    }
+  }
+  return sheet;
+}
+
+function reviewImageUrl_(fileId) {
+  return 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w1200';
+}
+
+function rowsToReviews_(sheet) {
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) return [];
+  var headers = data[0];
+  var reviews = [];
+  for (var r = 1; r < data.length; r++) {
+    var row = data[r];
+    var item = {};
+    for (var c = 0; c < headers.length; c++) {
+      item[String(headers[c] || '')] = row[c];
+    }
+    if (item.id) reviews.push(item);
+  }
+  return reviews;
+}
+
+function findReviewRow_(sheet, id) {
+  var data = sheet.getDataRange().getValues();
+  for (var r = 1; r < data.length; r++) {
+    if (String(data[r][0]) === String(id)) return r + 1;
+  }
+  return -1;
+}
+
+function createReview_(body) {
+  var raw = String(body.imageBase64 || '').replace(/^data:[^;]+;base64,/, '');
+  if (!raw) throw new Error('স্ক্রিনশট ছবি দিন');
+  var bytes = Utilities.base64Decode(raw);
+  var mime = body.mimeType || 'image/jpeg';
+  var blob = Utilities.newBlob(bytes, mime, body.fileName || 'review.jpg');
+  var file = getReviewFolder_().createFile(blob);
+  try {
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  } catch (shareErr) {}
+  var review = {
+    id: body.id || ('RV-' + String(Date.now()).slice(-8)),
+    createdAt: body.createdAt || new Date().toISOString(),
+    name: body.name || '',
+    text: body.text || '',
+    image: reviewImageUrl_(file.getId()),
+    fileId: file.getId(),
+    status: 'confirmed'
+  };
+  getReviewSheet_().appendRow([
+    review.id, review.createdAt, review.name, review.text,
+    review.image, review.fileId, review.status
+  ]);
+  return review;
+}
+
+function deleteReview_(id) {
+  var sheet = getReviewSheet_();
+  var row = findReviewRow_(sheet, id);
+  if (row < 0) throw new Error('রিভিউ পাওয়া যায়নি');
+  var fileId = String(sheet.getRange(row, 6).getValue() || '');
+  if (fileId) {
+    try { DriveApp.getFileById(fileId).setTrashed(true); } catch (e) {}
+  }
+  sheet.deleteRow(row);
+}
+
 function doGet(e) {
   try {
-    var sheet = getSheet_();
     var action = (e && e.parameter && e.parameter.action) ? String(e.parameter.action) : '';
     var phone = (e && e.parameter && e.parameter.phone) ? String(e.parameter.phone) : '';
+    if (action === 'reviews' || action === 'reviewList') {
+      return jsonOut_({ success: true, reviews: rowsToReviews_(getReviewSheet_()) });
+    }
+    var sheet = getSheet_();
     if (action === 'find' && phone) {
       return jsonOut_({ success: true, orders: findOrdersByPhone_(sheet, phone) });
     }
@@ -216,6 +330,28 @@ function doPost(e) {
 
     if (action === 'find') {
       return jsonOut_({ success: true, orders: findOrdersByPhone_(sheet, body.phone) });
+    }
+
+    if (action === 'reviewList' || action === 'reviews') {
+      return jsonOut_({ success: true, reviews: rowsToReviews_(getReviewSheet_()) });
+    }
+
+    if (action === 'reviewCreate') {
+      try {
+        var made = createReview_(body);
+        return jsonOut_({ success: true, review: made });
+      } catch (revErr) {
+        return jsonOut_({ success: false, error: String(revErr.message || revErr) });
+      }
+    }
+
+    if (action === 'reviewDelete') {
+      try {
+        deleteReview_(body.id);
+        return jsonOut_({ success: true, message: 'মুছে ফেলা হয়েছে' });
+      } catch (delErr) {
+        return jsonOut_({ success: false, error: String(delErr.message || delErr) });
+      }
     }
 
     if (action === 'create') {

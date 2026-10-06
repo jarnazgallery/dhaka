@@ -13,7 +13,7 @@
       href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=20261006b" />
+    <link rel="stylesheet" href="styles.css?v=20261006d" />
     <style>
       body.admin-app { min-height: 100vh; }
       .admin-top .header-inner { width: min(1240px, calc(100% - 28px)); }
@@ -654,7 +654,7 @@
         <section class="admin-page" id="tab-comments">
           <div class="page-head">
             <h2>রিভিউ স্ক্রিনশট</h2>
-            <p>ফোনের WhatsApp/রিভিউ স্ক্রিনশট আপলোড করুন। হোমপেজের স্লাইডারে সেগুলো ঘুরবে।</p>
+            <p>ফোনের WhatsApp/রিভিউ স্ক্রিনশট আপলোড করুন। হোমপেজের স্লাইডারে সেগুলো ঘুরবে। cloud-orders.gs নতুন করে Deploy করলে ওয়েবসাইটে যাবে।</p>
           </div>
           <form class="panel add-form" id="reviewUploadForm">
             <h3>নতুন স্ক্রিনশট</h3>
@@ -756,9 +756,9 @@
     </div>
 
     <div class="invoice-print" id="invoicePrint"></div>
-    <script src="site-config.js?v=20261006b"></script>
-    <script src="orders-api.js?v=20261006b"></script>
-    <script src="catalog.js?v=20261006b"></script>
+    <script src="site-config.js?v=20261006d"></script>
+    <script src="orders-api.js?v=20261006d"></script>
+    <script src="catalog.js?v=20261006d"></script>
     <script>
       const TOKEN_KEY = "jarnaz-admin-token";
       let offers = [];
@@ -1381,6 +1381,13 @@
         fillManualOrderForm();
         fillCloudForm();
         lastReviews = mergeReviewLists(catalog.reviews, lastReviews);
+        if (window.OrdersAPI && OrdersAPI.fetchReviewsList && OrdersAPI.hasCloudOrdersApi()) {
+          try {
+            const cloud = await OrdersAPI.fetchReviewsList();
+            lastReviews = mergeReviewLists(cloud, lastReviews);
+            writeLocal(LOCAL_KEYS.reviews, lastReviews);
+          } catch (err) {}
+        }
         renderComments();
         renderProducts();
         renderOffers();
@@ -1998,26 +2005,42 @@
         note.classList.remove("is-error");
         btn.disabled = true;
         try {
-          const data = new FormData(event.target);
           const image = event.target.image && event.target.image.files[0];
           if (!image) throw new Error("ফোন স্ক্রিনশট সিলেক্ট করুন");
-          data.set("image", await compressImage(image));
-          data.append("token", token());
-          try {
-            const savedPass = localStorage.getItem(LOCAL_KEYS.pass);
-            if (savedPass) data.append("password", savedPass);
-          } catch (err) {}
-          const saved = await api("admin/reviews", { method: "POST", headers: headers(), body: data });
-          if (!saved || !saved.image) throw new Error("স্ক্রিনশট সার্ভারে যায়নি। review-admin.php আপলোড করুন।");
+          const compressed = await compressImage(image, 1100);
+          let saved = null;
+          let via = "";
+          if (window.OrdersAPI && OrdersAPI.hasCloudOrdersApi() && OrdersAPI.createReviewRemote) {
+            try {
+              saved = await OrdersAPI.createReviewRemote({
+                name: String((event.target.name && event.target.name.value) || "").trim(),
+                file: compressed,
+              });
+              if (saved && saved.image) via = "cloud";
+            } catch (cloudErr) {
+              via = "";
+            }
+          }
+          if (!via) {
+            const data = new FormData(event.target);
+            data.set("image", compressed);
+            data.append("token", token());
+            try {
+              const savedPass = localStorage.getItem(LOCAL_KEYS.pass);
+              if (savedPass) data.append("password", savedPass);
+            } catch (err) {}
+            saved = await api("admin/reviews", { method: "POST", headers: headers(), body: data });
+            if (saved && saved.image && (API_MODE === "php" || API_MODE === "server")) via = "php";
+          }
+          if (!saved || !saved.image) throw new Error("স্ক্রিনশট ওয়েবসাইটে যায়নি। cloud-orders.gs নতুন করে Deploy করুন।");
           event.target.reset();
           lastReviews = mergeReviewLists([saved], lastReviews);
           try { writeLocal(LOCAL_KEYS.reviews, lastReviews); } catch (err) {}
           renderComments();
-          const onServer = API_MODE === "php" || API_MODE === "server";
-          note.classList.toggle("is-error", !onServer);
-          note.textContent = onServer
-            ? "স্ক্রিনশট হোমে যোগ হয়েছে। হোমপেজ রিফ্রেশ করলে দেখাবে।"
-            : "এই ফোনে সেভ হয়েছে, কিন্তু ওয়েবসাইটে যায়নি। review-admin.php আপলোড করে আবার আপলোড করুন।";
+          note.classList.toggle("is-error", !via);
+          note.textContent = via
+            ? "স্ক্রিনশট ওয়েবসাইটে যোগ হয়েছে। হোমপেজ রিফ্রেশ করলে দেখাবে।"
+            : "এই ফোনে সেভ হয়েছে, কিন্তু ওয়েবসাইটে যায়নি। cloud-orders.gs Deploy করুন।";
           try { await bootDash(); } catch (err) {}
           lastReviews = mergeReviewLists(lastReviews, [saved]);
           renderComments();
@@ -2033,7 +2056,13 @@
         const btn = event.target.closest("[data-del-review-id]");
         if (!btn || !confirm("রিভিউ ডিলিট করবেন?")) return;
         try {
+          if (window.OrdersAPI && OrdersAPI.deleteReviewRemote && OrdersAPI.hasCloudOrdersApi()) {
+            try { await OrdersAPI.deleteReviewRemote(btn.dataset.delReviewId); } catch (err) {}
+          }
           await api("admin/reviews/" + btn.dataset.delReviewId, { method: "DELETE", headers: headers() });
+          lastReviews = lastReviews.filter((item) => item.id !== btn.dataset.delReviewId);
+          try { writeLocal(LOCAL_KEYS.reviews, lastReviews); } catch (err) {}
+          renderComments();
           bootDash();
         } catch (err) {
           alert(err.message);

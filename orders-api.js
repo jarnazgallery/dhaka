@@ -124,6 +124,75 @@
     return parseJsonFromResponse(res);
   }
 
+  async function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = String(reader.result || "");
+        const comma = text.indexOf(",");
+        resolve(comma >= 0 ? text.slice(comma + 1) : text);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  function normalizeReview(item) {
+    if (!item || typeof item !== "object") return item;
+    return {
+      id: String(item.id || ""),
+      name: String(item.name || ""),
+      text: String(item.text || ""),
+      image: String(item.image || ""),
+      status: "confirmed",
+      createdAt: item.createdAt || "",
+    };
+  }
+
+  async function fetchReviewsList() {
+    if (!isCloudOrdersApi()) return [];
+    const url = getOrdersApiUrl();
+    try {
+      const res = await fetch(url + (url.includes("?") ? "&" : "?") + "action=reviews&_=" + Date.now(), {
+        method: "GET",
+        cache: "no-store",
+        redirect: "follow",
+        mode: "cors",
+      });
+      const json = await parseJsonFromResponse(res);
+      if (json && json.success && Array.isArray(json.reviews)) return json.reviews.map(normalizeReview);
+    } catch (err) {}
+    try {
+      const json = await cloudPost({ action: "reviewList" });
+      if (json && json.success && Array.isArray(json.reviews)) return json.reviews.map(normalizeReview);
+    } catch (err) {}
+    return [];
+  }
+
+  async function createReviewRemote(payload) {
+    if (!isCloudOrdersApi()) throw new Error("cloud not configured");
+    const file = payload && payload.file;
+    if (!file) throw new Error("স্ক্রিনশট দিন");
+    const imageBase64 = await blobToBase64(file);
+    const json = await cloudPost({
+      action: "reviewCreate",
+      name: payload.name || "",
+      text: payload.text || "",
+      imageBase64,
+      mimeType: file.type || "image/jpeg",
+      fileName: file.name || "review.jpg",
+    });
+    if (json && json.success && json.review && json.review.image) return normalizeReview(json.review);
+    throw new Error((json && json.error) || "ক্লাউডে রিভিউ সেভ হয়নি। cloud-orders.gs নতুন করে Deploy করুন।");
+  }
+
+  async function deleteReviewRemote(id) {
+    if (!isCloudOrdersApi()) throw new Error("cloud not configured");
+    const json = await cloudPost({ action: "reviewDelete", id: id });
+    if (json && json.success) return json;
+    throw new Error((json && json.error) || "ডিলিট হয়নি");
+  }
+
   async function fetchOrdersList() {
     if (!isCloudOrdersApi()) throw new Error("cloud not configured");
     const url = getOrdersApiUrl();
@@ -324,6 +393,9 @@
     sendOrderToSteadfast,
     steadfastConfigured,
     setSteadfastCredentials,
+    fetchReviewsList,
+    createReviewRemote,
+    deleteReviewRemote,
     downloadSiteConfig,
   };
 })();

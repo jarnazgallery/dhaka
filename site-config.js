@@ -4,5 +4,5 @@
  * হোস্টিংয়ে আপলোড করুন যাতে ফোন ও পিসি একই অর্ডার দেখে।
  */
 window.SITE_CONFIG = {
-  ordersApi: "https://script.google.com/macros/s/AKfycbxZCg7aq-lvehO4q6Q5KB8TXt17SAd_Xaz4rQbQi54cbDJBmNVxq2w1vNYiaj98xef6/exec"
+  ordersApi: "https://script.google.com/macros/s/AKfycbx-C-APWSjPV7Ntj7hK7RqsyVwYY2FY_mZndFHozAWwnUkcD-21pGfIJCrwnnSRgUcc/exec"
 };

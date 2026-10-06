@@ -728,9 +728,15 @@ function bindReviewSlider() {
 
 renderSizes();
 
-loadCatalog().then((data) => {
+loadCatalog().then(async (data) => {
   offers = data.offers || OFFERS || [];
   userReviews = data.reviews || [];
+  if (window.OrdersAPI && OrdersAPI.fetchReviewsList && OrdersAPI.hasCloudOrdersApi()) {
+    try {
+      const cloud = await OrdersAPI.fetchReviewsList();
+      userReviews = mergeReviewLists(cloud, userReviews);
+    } catch (err) {}
+  }
   renderProducts();
   bindOfferSlider();
   bindReviewSlider();
