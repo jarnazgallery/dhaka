@@ -645,7 +645,7 @@ function bindOfferSlider() {
 }
 
 function reviewList() {
-  return (userReviews || []).filter((item) => item && item.image);
+  return shotReviews(userReviews);
 }
 
 function renderReviewSlider() {
@@ -668,7 +668,7 @@ function renderReviewSlider() {
     .map(
       (item) => `
         <article class="review-slide is-shot">
-          <img src="${htmlEsc(item.image)}" alt="${htmlEsc(item.name || "কাস্টমার রিভিউ")}" />
+          <img src="${htmlEsc(item.image)}" alt="${htmlEsc(item.name || "কাস্টমার রিভিউ")}" loading="lazy" referrerpolicy="no-referrer" />
           ${item.name ? `<span>${htmlEsc(item.name)}</span>` : ""}
         </article>`
     )
@@ -730,11 +730,12 @@ renderSizes();
 
 loadCatalog().then(async (data) => {
   offers = data.offers || OFFERS || [];
-  userReviews = data.reviews || [];
+  userReviews = shotReviews(data.reviews);
   if (window.OrdersAPI && OrdersAPI.fetchReviewsList && OrdersAPI.hasCloudOrdersApi()) {
     try {
       const cloud = await OrdersAPI.fetchReviewsList();
-      userReviews = mergeReviewLists(cloud, userReviews);
+      userReviews = shotReviews(cloud);
+      try { writeLocal(LOCAL_KEYS.reviews, userReviews); } catch (err) {}
     } catch (err) {}
   }
   renderProducts();

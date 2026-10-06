@@ -72,11 +72,7 @@ const FALLBACK_SITE = {
     { title: "দ্রুত ডেলিভারি", text: "ঢাকা ১–২ দিন" },
     { title: "সহজ অর্ডার", text: "নম্বর দিয়ে কনফার্ম" },
   ],
-  reviews: [
-    { text: "SET-04 অর্ডার করেছিলাম, ছবি আর কাপড় একই। সাইজ ঠিক থাকায় পারফেক্ট হয়েছে।", name: "নাবিলা · ঢাকা" },
-    { text: "নম্বর দিয়ে অর্ডার করা খুব সহজ। হোয়াটসঅ্যাপে SET নম্বর চলে যায়, ভুল হয় না।", name: "সাদিয়া · চট্টগ্রাম" },
-    { text: "৩ পিস কম্বো নিয়েছি দুই বোনের জন্য। কাপড় নরম, কালার উজ্জ্বল।", name: "ফারজানা · সিলেট" },
-  ],
+  reviews: [],
   howto: [
     { title: "সেট বেছে নিন", text: "নিচের ছবি থেকে পছন্দের কম্বো দেখুন।" },
     { title: "নম্বর দেখুন", text: "SET-07-এর মতো নম্বর অ্যাডমিন বুঝবে।" },
@@ -126,7 +122,7 @@ function htmlEsc(value) {
 function mergeSite(extra) {
   const merged = Object.assign({}, FALLBACK_SITE, extra || {});
   merged.trust = extra && extra.trust && extra.trust.length ? extra.trust : FALLBACK_SITE.trust.slice();
-  merged.reviews = extra && extra.reviews && extra.reviews.length ? extra.reviews : FALLBACK_SITE.reviews.slice();
+  merged.reviews = extra && Array.isArray(extra.reviews) ? extra.reviews : [];
   merged.howto = extra && extra.howto && extra.howto.length ? extra.howto : FALLBACK_SITE.howto.slice();
   merged.offersEnabled = extra && extra.offersEnabled === false ? false : true;
   return merged;
@@ -460,11 +456,19 @@ function localCatalog() {
   };
 }
 
+function isPublicReviewImage(src) {
+  return /^https?:\/\//i.test(String(src || "").trim());
+}
+
+function shotReviews(list) {
+  return (Array.isArray(list) ? list : []).filter((item) => item && item.id && isPublicReviewImage(item.image));
+}
+
 function mergeReviewLists(server, local) {
   const list = [];
   const seen = new Set();
-  (Array.isArray(server) ? server : []).concat(Array.isArray(local) ? local : []).forEach((item) => {
-    if (!item || !item.id || seen.has(item.id)) return;
+  shotReviews(server).concat(shotReviews(local)).forEach((item) => {
+    if (seen.has(item.id)) return;
     seen.add(item.id);
     list.push(item);
   });
@@ -493,14 +497,9 @@ function applyCatalogData(data) {
       .filter(Boolean);
   }
   applySite(SITE);
-  const localReviews = readLocal(LOCAL_KEYS.reviews, []);
-  let reviews = Array.isArray(data.reviews) ? data.reviews.slice() : [];
-  const remoteShots = reviews.filter((item) => item && item.image);
-  if (fromSite && remoteShots.length) {
-    reviews = remoteShots;
+  const reviews = shotReviews(data.reviews);
+  if (reviews.length) {
     try { writeLocal(LOCAL_KEYS.reviews, reviews); } catch (err) {}
-  } else {
-    reviews = mergeReviewLists(remoteShots, localReviews);
   }
   return Object.assign({}, data, { products: PRODUCTS, offers: OFFERS, site: SITE, whatsapp: WHATSAPP, reviews });
 }
@@ -566,21 +565,7 @@ async function handleLocalAdmin(route, options) {
 
   if (route === "admin/me" && method === "GET") return { ok: true };
   if ((route === "admin/reviews" || route === "reviews") && method === "POST") {
-    const form = options.body;
-    const imageFile = form && form.get ? form.get("image") : null;
-    if (!imageFile || !imageFile.size) throw new Error("ফোন স্ক্রিনশট আপলোড করুন");
-    const review = {
-      id: "RV-" + String(Date.now()).slice(-8),
-      name: String(form.get("name") || "").trim(),
-      text: String(form.get("text") || "").trim(),
-      image: await fileToDataUrl(imageFile),
-      status: "confirmed",
-      createdAt: new Date().toISOString(),
-    };
-    const list = readLocal(LOCAL_KEYS.reviews, []);
-    list.unshift(review);
-    writeLocal(LOCAL_KEYS.reviews, list);
-    return review;
+    throw new Error("স্ক্রিনশট শুধু এই ফোনে রাখা যাবে না। Google Script ক্লাউডে আপলোড হলে সব ফোন ও পিসিতে দেখাবে।");
   }
 
   const reviewMatch = route.match(/^admin\/reviews\/(.+)$/);

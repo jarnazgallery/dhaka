@@ -13,7 +13,7 @@
       href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=20261006d" />
+    <link rel="stylesheet" href="styles.css?v=20261006e" />
     <style>
       body.admin-app { min-height: 100vh; }
       .admin-top .header-inner { width: min(1240px, calc(100% - 28px)); }
@@ -654,7 +654,7 @@
         <section class="admin-page" id="tab-comments">
           <div class="page-head">
             <h2>রিভিউ স্ক্রিনশট</h2>
-            <p>ফোনের WhatsApp/রিভিউ স্ক্রিনশট আপলোড করুন। হোমপেজের স্লাইডারে সেগুলো ঘুরবে। cloud-orders.gs নতুন করে Deploy করলে ওয়েবসাইটে যাবে।</p>
+            <p>ফোনের WhatsApp/রিভিউ স্ক্রিনশট এখানে আপলোড করুন। ক্লাউডে সেভ হলে <strong>সব ফোন ও পিসিতে</strong> একই ছবি দেখাবে। শুধু এই ডিভাইসে রাখা যাবে না।</p>
           </div>
           <form class="panel add-form" id="reviewUploadForm">
             <h3>নতুন স্ক্রিনশট</h3>
@@ -676,7 +676,7 @@
         <section class="admin-page" id="tab-website">
           <div class="page-head">
             <h2>ওয়েবসাইট এডিট</h2>
-            <p>হোমপেজের লেখা, লোগো, WhatsApp, রিভিউ — সব এখান থেকে বদলান। সেভ করলে ওয়েবসাইটে দেখাবে।</p>
+            <p>হোমপেজের লেখা, লোগো ও WhatsApp এখান থেকে বদলান। কাস্টমার রিভিউ স্ক্রিনশট আলাদা ট্যাব থেকে আপলোড করুন।</p>
           </div>
           <form class="panel" id="siteForm">
             <h3>দোকানের তথ্য</h3>
@@ -726,10 +726,6 @@
             <div id="trustEditor"></div>
             <button class="btn soft-btn" type="button" id="addTrust">আরেকটা বক্স</button>
 
-            <h3>কাস্টমার রিভিউ</h3>
-            <div id="reviewEditor"></div>
-            <button class="btn soft-btn" type="button" id="addReview">রিভিউ যোগ</button>
-
             <h3>কিভাবে অর্ডার</h3>
             <div id="howtoEditor"></div>
             <button class="btn soft-btn" type="button" id="addHowto">ধাপ যোগ</button>
@@ -756,9 +752,9 @@
     </div>
 
     <div class="invoice-print" id="invoicePrint"></div>
-    <script src="site-config.js?v=20261006d"></script>
-    <script src="orders-api.js?v=20261006d"></script>
-    <script src="catalog.js?v=20261006d"></script>
+    <script src="site-config.js?v=20261006e"></script>
+    <script src="orders-api.js?v=20261006e"></script>
+    <script src="catalog.js?v=20261006e"></script>
     <script>
       const TOKEN_KEY = "jarnaz-admin-token";
       let offers = [];
@@ -797,7 +793,6 @@
           preview.classList.add("is-hidden");
         }
         renderTrust();
-        renderReviews();
         renderHowto();
         const offersToggle = document.getElementById("offersEnabled");
         if (offersToggle) offersToggle.checked = siteDraft.offersEnabled !== false;
@@ -825,19 +820,6 @@
               <label>টাইটেল <input data-k="title" value="${esc(item.title)}" /></label>
               <label>লেখা <input data-k="text" value="${esc(item.text)}" /></label>
               ${siteDraft.trust.length > 2 ? `<button type="button" class="btn soft-btn" data-del-trust="${i}">বাদ</button>` : ""}
-            </div>`
-          )
-          .join("");
-      }
-
-      function renderReviews() {
-        document.getElementById("reviewEditor").innerHTML = siteDraft.reviews
-          .map(
-            (item, i) => `
-            <div class="repeat-row">
-              <label>রিভিউ <textarea data-k="text" rows="2">${esc(item.text)}</textarea></label>
-              <label>নাম <input data-k="name" value="${esc(item.name)}" /></label>
-              ${siteDraft.reviews.length > 1 ? `<button type="button" class="btn soft-btn" data-del-review="${i}">বাদ</button>` : ""}
             </div>`
           )
           .join("");
@@ -982,7 +964,7 @@
           .map(
             (r) => `
             <div class="product-admin-row review-shot-row">
-              ${r.image ? `<img src="${esc(r.image)}" alt="${esc(r.name || r.id)}" />` : "<div></div>"}
+              ${r.image ? `<img src="${esc(r.image)}" alt="${esc(r.name || r.id)}" referrerpolicy="no-referrer" />` : "<div></div>"}
               <div class="product-fields">
                 <span class="code-pill">${esc(r.id)}</span>
                 <strong>${esc(r.name || "স্ক্রিনশট রিভিউ")}</strong>
@@ -1380,11 +1362,11 @@
         fillWebsiteForm(catalog.site || SITE);
         fillManualOrderForm();
         fillCloudForm();
-        lastReviews = mergeReviewLists(catalog.reviews, lastReviews);
+        lastReviews = shotReviews(catalog.reviews);
         if (window.OrdersAPI && OrdersAPI.fetchReviewsList && OrdersAPI.hasCloudOrdersApi()) {
           try {
             const cloud = await OrdersAPI.fetchReviewsList();
-            lastReviews = mergeReviewLists(cloud, lastReviews);
+            lastReviews = shotReviews(cloud);
             writeLocal(LOCAL_KEYS.reviews, lastReviews);
           } catch (err) {}
         }
@@ -1480,20 +1462,6 @@
         renderTrust();
       });
 
-      document.getElementById("addReview").addEventListener("click", () => {
-        siteDraft.reviews = readRepeat("#reviewEditor .repeat-row", ["text", "name"]);
-        siteDraft.reviews.push({ text: "নতুন রিভিউ লিখুন", name: "নাম · শহর" });
-        renderReviews();
-      });
-      document.getElementById("reviewEditor").addEventListener("click", (event) => {
-        const btn = event.target.closest("[data-del-review]");
-        if (!btn) return;
-        siteDraft.reviews = readRepeat("#reviewEditor .repeat-row", ["text", "name"]);
-        if (siteDraft.reviews.length <= 1) return;
-        siteDraft.reviews.splice(Number(btn.dataset.delReview), 1);
-        renderReviews();
-      });
-
       document.getElementById("addHowto").addEventListener("click", () => {
         siteDraft.howto = readRepeat("#howtoEditor .repeat-row", ["title", "text"]);
         if (siteDraft.howto.length >= 6) return;
@@ -1533,7 +1501,7 @@
           if (form.elements[key]) site[key] = form.elements[key].value;
         });
         site.trust = readRepeat("#trustEditor .repeat-row", ["title", "text"]);
-        site.reviews = readRepeat("#reviewEditor .repeat-row", ["text", "name"]);
+        site.reviews = [];
         site.howto = readRepeat("#howtoEditor .repeat-row", ["title", "text"]);
         site.offersEnabled = siteDraft.offersEnabled !== false;
         if (siteDraft.logo) site.logo = siteDraft.logo;
@@ -2007,40 +1975,21 @@
         try {
           const image = event.target.image && event.target.image.files[0];
           if (!image) throw new Error("ফোন স্ক্রিনশট সিলেক্ট করুন");
-          const compressed = await compressImage(image, 1100);
-          let saved = null;
-          let via = "";
-          if (window.OrdersAPI && OrdersAPI.hasCloudOrdersApi() && OrdersAPI.createReviewRemote) {
-            try {
-              saved = await OrdersAPI.createReviewRemote({
-                name: String((event.target.name && event.target.name.value) || "").trim(),
-                file: compressed,
-              });
-              if (saved && saved.image) via = "cloud";
-            } catch (cloudErr) {
-              via = "";
-            }
+          const compressed = await compressImage(image, 900);
+          if (!window.OrdersAPI || !OrdersAPI.hasCloudOrdersApi() || !OrdersAPI.createReviewRemote) {
+            throw new Error("site-config.js-এ Script URL লাগবে। হোস্টিংয়ে নতুন ফাইল আপলোড করুন।");
           }
-          if (!via) {
-            const data = new FormData(event.target);
-            data.set("image", compressed);
-            data.append("token", token());
-            try {
-              const savedPass = localStorage.getItem(LOCAL_KEYS.pass);
-              if (savedPass) data.append("password", savedPass);
-            } catch (err) {}
-            saved = await api("admin/reviews", { method: "POST", headers: headers(), body: data });
-            if (saved && saved.image && (API_MODE === "php" || API_MODE === "server")) via = "php";
-          }
-          if (!saved || !saved.image) throw new Error("স্ক্রিনশট ওয়েবসাইটে যায়নি। cloud-orders.gs নতুন করে Deploy করুন।");
+          const saved = await OrdersAPI.createReviewRemote({
+            name: String((event.target.name && event.target.name.value) || "").trim(),
+            file: compressed,
+          });
+          if (!saved || !saved.image) throw new Error("স্ক্রিনশট ক্লাউডে যায়নি।");
           event.target.reset();
           lastReviews = mergeReviewLists([saved], lastReviews);
           try { writeLocal(LOCAL_KEYS.reviews, lastReviews); } catch (err) {}
           renderComments();
-          note.classList.toggle("is-error", !via);
-          note.textContent = via
-            ? "স্ক্রিনশট ওয়েবসাইটে যোগ হয়েছে। হোমপেজ রিফ্রেশ করলে দেখাবে।"
-            : "এই ফোনে সেভ হয়েছে, কিন্তু ওয়েবসাইটে যায়নি। cloud-orders.gs Deploy করুন।";
+          note.classList.remove("is-error");
+          note.textContent = "স্ক্রিনশট ওয়েবসাইটে সেভ হয়েছে। সব ফোন ও পিসিতে দেখাবে।";
           try { await bootDash(); } catch (err) {}
           lastReviews = mergeReviewLists(lastReviews, [saved]);
           renderComments();
@@ -2056,10 +2005,10 @@
         const btn = event.target.closest("[data-del-review-id]");
         if (!btn || !confirm("রিভিউ ডিলিট করবেন?")) return;
         try {
-          if (window.OrdersAPI && OrdersAPI.deleteReviewRemote && OrdersAPI.hasCloudOrdersApi()) {
-            try { await OrdersAPI.deleteReviewRemote(btn.dataset.delReviewId); } catch (err) {}
+          if (!window.OrdersAPI || !OrdersAPI.deleteReviewRemote || !OrdersAPI.hasCloudOrdersApi()) {
+            throw new Error("ক্লাউড URL নেই — ডিলিট হয়নি");
           }
-          await api("admin/reviews/" + btn.dataset.delReviewId, { method: "DELETE", headers: headers() });
+          await OrdersAPI.deleteReviewRemote(btn.dataset.delReviewId);
           lastReviews = lastReviews.filter((item) => item.id !== btn.dataset.delReviewId);
           try { writeLocal(LOCAL_KEYS.reviews, lastReviews); } catch (err) {}
           renderComments();

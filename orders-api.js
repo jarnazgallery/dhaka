@@ -174,6 +174,7 @@
     const file = payload && payload.file;
     if (!file) throw new Error("স্ক্রিনশট দিন");
     const imageBase64 = await blobToBase64(file);
+    if (!imageBase64) throw new Error("ছবি পড়া যায়নি");
     const json = await cloudPost({
       action: "reviewCreate",
       name: payload.name || "",
