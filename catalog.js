@@ -477,17 +477,17 @@ function mergeReviewLists(server, local) {
 
 function applyCatalogData(data) {
   data = data || {};
-  const fromSite = API_MODE === "server" || API_MODE === "php" || API_MODE === "file";
-  if (fromSite && Array.isArray(data.products)) {
+  const liveWrite = API_MODE === "server" || API_MODE === "php" || API_MODE === "cloud";
+  if (liveWrite && Array.isArray(data.products)) {
     PRODUCTS = sortProducts(data.products);
     try { writeLocal(LOCAL_KEYS.products, PRODUCTS); } catch (err) {}
   } else {
     const localProducts = readLocal(LOCAL_KEYS.products, null);
-    PRODUCTS = sortProducts(Array.isArray(localProducts) ? localProducts : (data.products || FALLBACK_PRODUCTS.slice()));
+    PRODUCTS = sortProducts(Array.isArray(localProducts) && localProducts.length ? localProducts : (data.products || FALLBACK_PRODUCTS.slice()));
   }
   SITE = mergeSite(data.site);
   WHATSAPP = SITE.whatsapp || data.whatsapp || WHATSAPP;
-  if (fromSite && Array.isArray(data.offers)) {
+  if (liveWrite && Array.isArray(data.offers)) {
     OFFERS = data.offers.map((o) => normalizeOffer(o, PRODUCTS)).filter(Boolean);
     try { writeLocal(LOCAL_KEYS.offers, OFFERS); } catch (err) {}
   } else {
@@ -504,14 +504,42 @@ function applyCatalogData(data) {
   return Object.assign({}, data, { products: PRODUCTS, offers: OFFERS, site: SITE, whatsapp: WHATSAPP, reviews });
 }
 
+function cloudCatalogItem(item) {
+  if (!item || typeof item !== "object") return item;
+  const out = Object.assign({}, item);
+  if (/^data:/i.test(String(out.image || ""))) delete out.image;
+  return out;
+}
+
+async function mergeCloudCatalog(base) {
+  if (!(window.OrdersAPI && OrdersAPI.fetchCatalogRemote && OrdersAPI.hasCloudOrdersApi())) return base;
+  try {
+    const cloud = await OrdersAPI.fetchCatalogRemote();
+    if (!cloud) return base;
+    const next = Object.assign({}, base || {});
+    if (Array.isArray(cloud.products) && cloud.products.length) {
+      next.products = cloud.products;
+      API_MODE = "cloud";
+    }
+    if (Array.isArray(cloud.offers) && cloud.offers.length) {
+      next.offers = cloud.offers;
+      if (API_MODE !== "cloud") API_MODE = "cloud";
+    }
+    if (cloud.site) next.site = Object.assign({}, next.site || {}, cloud.site);
+    return next;
+  } catch (err) {
+    return base;
+  }
+}
+
 async function loadCatalog() {
   try {
     const result = await apiCall("catalog");
     if (!result.ok || !result.data || !Array.isArray(result.data.products)) throw new Error("empty");
-    return applyCatalogData(result.data);
+    return applyCatalogData(await mergeCloudCatalog(result.data));
   } catch (err) {
     API_MODE = "local";
-    return applyCatalogData(localCatalog());
+    return applyCatalogData(await mergeCloudCatalog(localCatalog()));
   }
 }
 
@@ -520,22 +548,37 @@ function localNextCode(products) {
 }
 
 async function compressImage(file, maxEdge) {
-  if (!file || !/^image\//i.test(file.type || "")) return file;
+  if (!file) return file;
+  const looksImage = /^image\//i.test(file.type || "") || /\.(jpe?g|png|webp|gif|heic|heif|bmp)$/i.test(file.name || "");
+  if (!looksImage) return file;
   const max = Number(maxEdge) || 1400;
-  if (file.size < 80 * 1024) return file;
-  try {
-    const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+  const toJpeg = (source, width, height) => {
+    const scale = Math.min(1, max / Math.max(width, height));
     const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-    canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.78));
-    if (!blob) return file;
-    return new File([blob], String(file.name || "shot").replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
-  } catch (err) {
-    return file;
-  }
+    canvas.width = Math.max(1, Math.round(width * scale));
+    canvas.height = Math.max(1, Math.round(height * scale));
+    canvas.getContext("2d").drawImage(source, 0, 0, canvas.width, canvas.height);
+    return new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.76));
+  };
+  try {
+    if (typeof createImageBitmap === "function") {
+      const bitmap = await createImageBitmap(file);
+      const blob = await toJpeg(bitmap, bitmap.width, bitmap.height);
+      if (blob) return new File([blob], String(file.name || "shot").replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
+    }
+  } catch (err) {}
+  try {
+    const dataUrl = await fileToDataUrl(file);
+    const img = await new Promise((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = dataUrl;
+    });
+    const blob = await toJpeg(img, img.naturalWidth || img.width, img.naturalHeight || img.height);
+    if (blob) return new File([blob], String(file.name || "shot").replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
+  } catch (err) {}
+  return file;
 }
 
 function fileToDataUrl(file) {

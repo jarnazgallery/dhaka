@@ -13,7 +13,7 @@
       href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=20261006e" />
+    <link rel="stylesheet" href="styles.css?v=20261006h" />
     <style>
       body.admin-app { min-height: 100vh; }
       .admin-top .header-inner { width: min(1240px, calc(100% - 28px)); }
@@ -459,7 +459,7 @@
         <section class="admin-page" id="tab-products">
           <div class="page-head">
             <h2>প্রোডাক্ট</h2>
-            <p>সেট নম্বর নিজে বদলাতে পারবেন। ডিলিট করে গ্যাপ হলে খালি রাখলে নতুন সেট সেই গ্যাপ ভরবে। প্রায়োরিটি ১ = হোমে প্রথমে। এখন মোট <strong id="adminProductCount">0</strong> টা আছে।</p>
+            <p>নাম, দাম, বিবরণ বদলে <strong>সেভ</strong> চাপুন। ক্লাউডে গেলে হোমপেজেও আপডেট হবে। এখন মোট <strong id="adminProductCount">0</strong> টা আছে।</p>
             <p class="save-note" id="productSyncNote"></p>
           </div>
           <form class="panel add-form" id="addForm">
@@ -752,9 +752,9 @@
     </div>
 
     <div class="invoice-print" id="invoicePrint"></div>
-    <script src="site-config.js?v=20261006e"></script>
-    <script src="orders-api.js?v=20261006e"></script>
-    <script src="catalog.js?v=20261006e"></script>
+    <script src="site-config.js?v=20261006h"></script>
+    <script src="orders-api.js?v=20261006h"></script>
+    <script src="catalog.js?v=20261006h"></script>
     <script>
       const TOKEN_KEY = "jarnaz-admin-token";
       let offers = [];
@@ -856,23 +856,24 @@
         const note = document.getElementById("modeNote");
         const pill = document.getElementById("modePill");
         const local = API_MODE === "local" || API_MODE === "file";
+        const live = API_MODE === "cloud" || API_MODE === "php" || API_MODE === "server";
         if (note) {
           note.textContent = cloudOrdersOn()
-            ? "ক্লাউড সিঙ্ক চালু — ফোন, পিসি সব জায়গায় একই অর্ডার দেখা যাবে।"
+            ? "ক্লাউড সিঙ্ক চালু — ফোন, পিসি সব জায়গায় একই অর্ডার ও প্রোডাক্ট দেখা যাবে।"
             : (local
               ? "লোকাল মোড — ইউজারের অর্ডার আসবে না। অর্ডার সিঙ্ক ট্যাবে Google URL দিন, অথবা order.php আপলোড করুন।"
               : "ইউজার ওয়েবসাইট থেকে অর্ডার করলে এখানে নাম, মোবাইল ও ঠিকানা আসবে।");
         }
         const sync = document.getElementById("productSyncNote");
         if (sync) {
-          sync.classList.toggle("is-error", local);
-          sync.textContent = local
-            ? "ইউজার নতুন প্রোডাক্ট দেখবে না। সার্ভার মোড লাগবে — api.php, .htaccess আর data ফোল্ডার হোস্টিংয়ে আপলোড করুন, তারপর লগআউট করে আবার লগইন করুন।"
-            : "প্রোডাক্ট সার্ভারে সেভ হলে হোমপেজ রিফ্রেশ করলেই ইউজার দেখবে।";
+          sync.classList.toggle("is-error", !live);
+          sync.textContent = live
+            ? "প্রোডাক্ট সেভ হলে হোমপেজ রিফ্রেশ করলেই ইউজার নাম, দাম ও বিবরণ দেখবে।"
+            : "সেভ ক্লাউডে না গেলে পুরনো দাম ফিরে আসবে। cloud-orders.gs Deploy করে আবার সেভ করুন।";
         }
         if (pill) {
-          pill.textContent = cloudOrdersOn() ? "ক্লাউড সিঙ্ক" : (local ? "লোকাল মোড" : "সার্ভার মোড");
-          pill.classList.toggle("is-local", local && !cloudOrdersOn());
+          pill.textContent = API_MODE === "cloud" || cloudOrdersOn() ? "ক্লাউড সিঙ্ক" : (local ? "লোকাল মোড" : "সার্ভার মোড");
+          pill.classList.toggle("is-local", !live);
         }
       }
 
@@ -885,7 +886,11 @@
             showLogin();
             throw new Error((result.data && result.data.error) || "লগইন করুন");
           }
-          if (!result.ok) throw new Error((result.data && result.data.error) || "কাজ হয়নি");
+          if (!result.ok) {
+            if (result.status === 400) throw new Error((result.data && result.data.error) || "কাজ হয়নি");
+            API_MODE = "local";
+            return handleLocalAdmin(clean, opts || {});
+          }
           return result.data;
         } catch (err) {
           if (err.code === "NO_API") {
@@ -1355,7 +1360,7 @@
       }
 
       async function bootDash() {
-        const catalog = applyCatalogData(await api("catalog"));
+        const catalog = await loadCatalog();
         PRODUCTS = sortProducts(catalog.products || []);
         offers = catalog.offers || OFFERS || [];
         OFFERS = offers;
@@ -1563,25 +1568,88 @@
         note.classList.remove("is-error");
         btn.disabled = true;
         try {
-          const data = new FormData(event.target);
-          const image = event.target.image && event.target.image.files[0];
-          if (image) data.set("image", await compressImage(image));
-          data.append("token", token());
-          const product = await api("admin/products", { method: "POST", headers: headers(), body: data });
-          event.target.reset();
+          const form = event.target;
+          const image = form.image && form.image.files && form.image.files[0];
+          if (!image || !image.size) throw new Error("প্রোডাক্টের ছবি সিলেক্ট করুন");
+          const compressed = await compressImage(image, 1000);
+          const requested = String(form.code.value || "").trim();
+          const code = requested ? normalizeSetCode(requested) : firstFreeCode(PRODUCTS);
+          if (!code) throw new Error("সেট নম্বর ১ থেকে ৯৯৯ দিন, যেমন 13 বা SET-13");
+          if (PRODUCTS.some((p) => p.code === code)) throw new Error(code + " আগে থেকে আছে");
+          if (PRODUCTS.length >= 200) throw new Error("২০০টার বেশি প্রোডাক্ট রাখা যাবে না");
+          const priorityRaw = String(form.priority.value || "").trim();
+          const product = {
+            code,
+            priority: priorityRaw
+              ? Math.max(1, Number(priorityRaw) || 1)
+              : Number(code.replace(/\D/g, "")) || PRODUCTS.length + 1,
+            name: String(form.name.value || "নতুন সেট").trim(),
+            price: Number(form.price.value || 2040),
+            price36: Number(form.price36.value || form.price.value || 2040),
+            piece: Number(form.piece.value || 2),
+            description: String(form.description.value || "").trim(),
+            image: "",
+          };
+          let via = "";
+          if (window.OrdersAPI && OrdersAPI.saveProductRemote && OrdersAPI.hasCloudOrdersApi()) {
+            try {
+              const cloud = await OrdersAPI.saveProductRemote({
+                product,
+                file: compressed,
+                seedProducts: PRODUCTS.concat([product]),
+                seedOffers: OFFERS,
+              });
+              if (cloud && cloud.code) {
+                Object.assign(product, cloud);
+                via = "cloud";
+                API_MODE = "cloud";
+              }
+            } catch (err) {}
+          }
+          if (!via) {
+            try {
+              const data = new FormData();
+              data.append("name", product.name);
+              data.append("price", product.price);
+              data.append("price36", product.price36);
+              data.append("piece", product.piece);
+              data.append("code", product.code);
+              data.append("priority", product.priority);
+              data.append("description", product.description);
+              data.append("image", compressed);
+              data.append("token", token());
+              const saved = await api("admin/products", { method: "POST", headers: headers(), body: data });
+              if (saved && saved.code) Object.assign(product, saved);
+              if (API_MODE === "php" || API_MODE === "server") via = "php";
+              else via = via || "local";
+            } catch (err) {
+              if (!via) via = "local";
+            }
+          }
+          if (!product.image) {
+            try {
+              product.image = await fileToDataUrl(compressed);
+            } catch (err) {
+              product.image = "images/set-01.png";
+            }
+          }
+          if (!PRODUCTS.some((p) => p.code === product.code)) PRODUCTS.unshift(product);
+          PRODUCTS = sortProducts(PRODUCTS);
+          try { writeLocal(LOCAL_KEYS.products, PRODUCTS); } catch (err) {}
+          form.reset();
           switchTab("products");
-          await bootDash();
-          if (product && !PRODUCTS.some((p) => p.code === product.code)) PRODUCTS.unshift(product);
           renderProducts(product.code);
+          fillManualOrderForm();
+          setModeNote();
           const row = document.querySelector(`[data-code="${product.code}"]`);
           if (row) row.scrollIntoView({ behavior: "smooth", block: "center" });
-          note.classList.toggle("is-error", API_MODE === "local" || API_MODE === "file");
-          note.textContent = (API_MODE === "local" || API_MODE === "file")
-            ? `${product.code} শুধু এই ফোনে সেভ হয়েছে। ইউজার ওয়েবসাইটে দেখবে না। api.php আপলোড করে সার্ভার মোডে লগইন করুন।`
-            : `${product.code} ওয়েবসাইটে যোগ হয়েছে। হোমপেজ রিফ্রেশ করলে ইউজার দেখবে। এখন মোট ${PRODUCTS.length} টা প্রোডাক্ট।`;
+          note.classList.toggle("is-error", via !== "cloud" && via !== "php");
+          note.textContent = via === "cloud" || via === "php"
+            ? `${product.code} ওয়েবসাইটে যোগ হয়েছে। হোমপেজ রিফ্রেশ করলে ইউজার দেখবে। এখন মোট ${PRODUCTS.length} টা প্রোডাক্ট।`
+            : `${product.code} লিস্টে যোগ হয়েছে। হোমপেজে দেখাতে cloud-orders.gs Deploy করে আবার সেভ করুন।`;
         } catch (err) {
           note.classList.add("is-error");
-          note.textContent = err.message;
+          note.textContent = err.message || "প্রোডাক্ট যোগ হয়নি";
         } finally {
           btn.disabled = false;
         }
@@ -1592,22 +1660,71 @@
         const del = event.target.closest("[data-del-product]");
         if (save) {
           const row = save.closest(".product-admin-row");
-          const data = new FormData();
-          data.append("code", row.querySelector('[data-edit="code"]').value);
-          data.append("priority", row.querySelector('[data-edit="priority"]').value);
-          data.append("name", row.querySelector('[data-edit="name"]').value);
-          data.append("price", row.querySelector('[data-edit="price"]').value);
-          data.append("price36", row.querySelector('[data-edit="price36"]').value);
-          data.append("piece", row.querySelector('[data-edit="piece"]').value);
-          data.append("description", row.querySelector('[data-edit="description"]').value);
-          data.append("token", token());
+          const oldCode = save.dataset.save;
+          const product = PRODUCTS.find((p) => p.code === oldCode);
+          if (!product) return;
+          product.code = String(row.querySelector('[data-edit="code"]').value || oldCode).trim() || oldCode;
+          product.priority = Math.max(1, Number(row.querySelector('[data-edit="priority"]').value) || 1);
+          product.name = String(row.querySelector('[data-edit="name"]').value || "").trim();
+          product.price = Number(row.querySelector('[data-edit="price"]').value);
+          product.price36 = Number(row.querySelector('[data-edit="price36"]').value);
+          product.piece = Number(row.querySelector('[data-edit="piece"]').value);
+          product.description = String(row.querySelector('[data-edit="description"]').value || "").trim();
           const file = row.querySelector('[data-edit="image"]').files[0];
-          if (file) data.append("image", await compressImage(file));
+          const compressed = file ? await compressImage(file) : null;
+          if (compressed) product.image = await fileToDataUrl(compressed);
+          PRODUCTS = sortProducts(PRODUCTS);
+          try { writeLocal(LOCAL_KEYS.products, PRODUCTS); } catch (err) {}
+          const sync = document.getElementById("productSyncNote");
           try {
-            await api("admin/products/" + encodeURIComponent(save.dataset.save), { method: "POST", headers: headers(), body: data });
-            bootDash();
+            let via = "";
+            if (window.OrdersAPI && OrdersAPI.saveProductRemote && OrdersAPI.hasCloudOrdersApi()) {
+              const saved = await OrdersAPI.saveProductRemote({
+                product,
+                oldCode,
+                file: compressed,
+                seedProducts: PRODUCTS,
+                seedOffers: OFFERS,
+              });
+              if (saved && saved.code) {
+                Object.assign(product, saved);
+                via = "cloud";
+                API_MODE = "cloud";
+              }
+            }
+            if (!via) {
+              const data = new FormData();
+              data.append("code", product.code);
+              data.append("priority", product.priority);
+              data.append("name", product.name);
+              data.append("price", product.price);
+              data.append("price36", product.price36);
+              data.append("piece", product.piece);
+              data.append("description", product.description);
+              data.append("token", token());
+              if (compressed) data.append("image", compressed);
+              await api("admin/products/" + encodeURIComponent(oldCode), { method: "POST", headers: headers(), body: data });
+              if (API_MODE === "php" || API_MODE === "server") via = "php";
+            }
+            PRODUCTS = sortProducts(PRODUCTS);
+            try { writeLocal(LOCAL_KEYS.products, PRODUCTS); } catch (err) {}
+            renderProducts(product.code);
+            fillManualOrderForm();
+            setModeNote();
+            if (sync) {
+              sync.classList.toggle("is-error", !via);
+              sync.textContent = via
+                ? product.code + " সেভ হয়েছে। হোমপেজ রিফ্রেশ করলে নাম, দাম ও বিবরণ আপডেট দেখাবে।"
+                : "এই ডিভাইসে সেভ হয়েছে, ওয়েবসাইটে যায়নি। cloud-orders.gs Deploy করে আবার সেভ করুন।";
+            }
           } catch (err) {
-            alert(err.message);
+            renderProducts(product.code);
+            if (sync) {
+              sync.classList.add("is-error");
+              sync.textContent = err.message;
+            } else {
+              alert(err.message);
+            }
           }
         }
         const move = event.target.closest("[data-move]");
@@ -1625,6 +1742,10 @@
               body: JSON.stringify({ codes: sorted.map((p) => p.code) }),
             });
             PRODUCTS = sortProducts(sorted.map((p, idx) => Object.assign({}, p, { priority: idx + 1 })));
+            try { writeLocal(LOCAL_KEYS.products, PRODUCTS); } catch (err) {}
+            if (window.OrdersAPI && OrdersAPI.saveCatalogRemote && OrdersAPI.hasCloudOrdersApi()) {
+              try { await OrdersAPI.saveCatalogRemote({ products: PRODUCTS, offers: OFFERS }); API_MODE = "cloud"; } catch (err) {}
+            }
             renderProducts(move.dataset.move);
           } catch (err) {
             alert(err.message);
@@ -1639,6 +1760,9 @@
             });
             PRODUCTS = PRODUCTS.filter((p) => p.code !== del.dataset.delProduct);
             try { writeLocal(LOCAL_KEYS.products, PRODUCTS); } catch (err) {}
+            if (window.OrdersAPI && OrdersAPI.deleteProductRemote && OrdersAPI.hasCloudOrdersApi()) {
+              try { await OrdersAPI.deleteProductRemote(del.dataset.delProduct); API_MODE = "cloud"; } catch (err) {}
+            }
             renderProducts();
             fillManualOrderForm();
             renderStats();
@@ -1663,12 +1787,28 @@
           event.target.reset();
           if (offer && !OFFERS.some((o) => o.code === offer.code)) OFFERS.unshift(offer);
           offers = OFFERS;
+          try { writeLocal(LOCAL_KEYS.offers, OFFERS); } catch (err) {}
+          let via = API_MODE === "php" || API_MODE === "server" ? "php" : "";
+          if (window.OrdersAPI && OrdersAPI.saveOfferRemote && OrdersAPI.hasCloudOrdersApi()) {
+            try {
+              const cloud = await OrdersAPI.saveOfferRemote({
+                offer,
+                seedProducts: PRODUCTS,
+                seedOffers: OFFERS,
+              });
+              if (cloud && cloud.code) {
+                Object.assign(offer, cloud);
+                via = "cloud";
+                API_MODE = "cloud";
+              }
+            } catch (err) {}
+          }
           renderOffers(offer.code);
           fillManualOrderForm();
-          note.classList.toggle("is-error", API_MODE === "local" || API_MODE === "file");
-          note.textContent = (API_MODE === "local" || API_MODE === "file")
-            ? `${offer.code} শুধু এই ফোনে সেভ হয়েছে।`
-            : `${offer.code} কম্বো ওয়েবসাইটে যোগ হয়েছে। হোম রিফ্রেশ করলে স্লাইডারে দেখা যাবে।`;
+          note.classList.toggle("is-error", !via);
+          note.textContent = via
+            ? `${offer.code} কম্বো ওয়েবসাইটে যোগ হয়েছে। হোম রিফ্রেশ করলে স্লাইডারে দেখা যাবে।`
+            : `${offer.code} এই ডিভাইসে আছে, ওয়েবসাইটে যায়নি।`;
         } catch (err) {
           note.classList.add("is-error");
           note.textContent = err.message;
@@ -1682,26 +1822,48 @@
         const del = event.target.closest("[data-del-offer]");
         if (save) {
           const row = save.closest(".product-admin-row");
-          const data = new FormData();
-          data.append("title", row.querySelector('[data-offer-edit="title"]').value);
-          data.append("price", row.querySelector('[data-offer-edit="price"]').value);
-          data.append("price36", row.querySelector('[data-offer-edit="price36"]').value);
-          data.append("piece", row.querySelector('[data-offer-edit="piece"]').value);
-          data.append("description", row.querySelector('[data-offer-edit="description"]').value);
-          data.append("token", token());
+          const oldCode = save.dataset.saveOffer;
+          const offer = OFFERS.find((o) => o.code === oldCode);
+          if (!offer) return;
+          offer.title = String(row.querySelector('[data-offer-edit="title"]').value || "").trim();
+          offer.price = Number(row.querySelector('[data-offer-edit="price"]').value);
+          offer.price36 = Number(row.querySelector('[data-offer-edit="price36"]').value);
+          offer.piece = Number(row.querySelector('[data-offer-edit="piece"]').value);
+          offer.description = String(row.querySelector('[data-offer-edit="description"]').value || "").trim();
           const file = row.querySelector('[data-offer-edit="image"]').files[0];
-          if (file) data.append("image", await compressImage(file));
+          const compressed = file ? await compressImage(file) : null;
+          if (compressed) offer.image = await fileToDataUrl(compressed);
+          try { writeLocal(LOCAL_KEYS.offers, OFFERS); } catch (err) {}
           try {
-            await api("admin/offers/" + encodeURIComponent(save.dataset.saveOffer), {
-              method: "POST",
-              headers: headers(),
-              body: data,
-            });
-            const catalog = applyCatalogData(await api("catalog"));
-            offers = catalog.offers || OFFERS;
-            OFFERS = offers;
-            renderOffers(save.dataset.saveOffer);
+            if (window.OrdersAPI && OrdersAPI.saveOfferRemote && OrdersAPI.hasCloudOrdersApi()) {
+              const saved = await OrdersAPI.saveOfferRemote({
+                offer,
+                oldCode,
+                file: compressed,
+                seedProducts: PRODUCTS,
+                seedOffers: OFFERS,
+              });
+              if (saved && saved.code) Object.assign(offer, saved);
+              API_MODE = "cloud";
+            } else {
+              const data = new FormData();
+              data.append("title", offer.title);
+              data.append("price", offer.price);
+              data.append("price36", offer.price36);
+              data.append("piece", offer.piece);
+              data.append("description", offer.description);
+              data.append("token", token());
+              if (compressed) data.append("image", compressed);
+              await api("admin/offers/" + encodeURIComponent(oldCode), {
+                method: "POST",
+                headers: headers(),
+                body: data,
+              });
+            }
+            offers = OFFERS;
+            renderOffers(offer.code);
           } catch (err) {
+            renderOffers(offer.code);
             alert(err.message);
           }
         }
@@ -1715,6 +1877,9 @@
             OFFERS = OFFERS.filter((o) => o.code !== del.dataset.delOffer);
             offers = OFFERS;
             try { writeLocal(LOCAL_KEYS.offers, OFFERS); } catch (err) {}
+            if (window.OrdersAPI && OrdersAPI.deleteOfferRemote && OrdersAPI.hasCloudOrdersApi()) {
+              try { await OrdersAPI.deleteOfferRemote(del.dataset.delOffer); } catch (err) {}
+            }
             renderOffers();
             fillManualOrderForm();
           } catch (err) {

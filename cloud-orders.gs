@@ -16,6 +16,7 @@ function setup() {
   var sheet = getSheet_();
   getReviewSheet_();
   getReviewFolder_();
+  getCatalogFile_();
   Logger.log('OK sheet: ' + sheet.getParent().getUrl());
 }
 
@@ -301,12 +302,113 @@ function deleteReview_(id) {
   sheet.deleteRow(row);
 }
 
+var PROP_CATALOG_FILE = 'JARNAZ_CATALOG_FILE_ID';
+
+function getCatalogFile_() {
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty(PROP_CATALOG_FILE);
+  var file = null;
+  if (id) {
+    try {
+      file = DriveApp.getFileById(id);
+    } catch (e) {
+      file = null;
+    }
+  }
+  if (!file) {
+    file = getReviewFolder_().createFile(
+      'jarnaz-catalog.json',
+      '{"products":[],"offers":[],"site":null}',
+      MimeType.PLAIN_TEXT
+    );
+    props.setProperty(PROP_CATALOG_FILE, file.getId());
+  }
+  return file;
+}
+
+function readCatalog_() {
+  try {
+    var data = JSON.parse(getCatalogFile_().getBlob().getDataAsString() || '{}');
+    return {
+      products: data.products && data.products.length ? data.products : [],
+      offers: data.offers && data.offers.length ? data.offers : [],
+      site: data.site || null,
+      updatedAt: data.updatedAt || ''
+    };
+  } catch (err) {
+    return { products: [], offers: [], site: null, updatedAt: '' };
+  }
+}
+
+function writeCatalog_(data) {
+  var out = {
+    products: data.products || [],
+    offers: data.offers || [],
+    site: data.site || null,
+    updatedAt: new Date().toISOString()
+  };
+  getCatalogFile_().setContent(JSON.stringify(out));
+  return out;
+}
+
+function saveCatalogImage_(body) {
+  var raw = String(body.imageBase64 || '').replace(/^data:[^;]+;base64,/, '');
+  if (!raw) return '';
+  var bytes = Utilities.base64Decode(raw);
+  var blob = Utilities.newBlob(bytes, body.mimeType || 'image/jpeg', body.fileName || 'item.jpg');
+  var file = getReviewFolder_().createFile(blob);
+  try {
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  } catch (shareErr) {}
+  return 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w1200';
+}
+
+function seedCatalog_(cat, body) {
+  if ((!cat.products || !cat.products.length) && body.seedProducts && body.seedProducts.length) {
+    cat.products = body.seedProducts;
+  }
+  if ((!cat.offers || !cat.offers.length) && body.seedOffers && body.seedOffers.length) {
+    cat.offers = body.seedOffers;
+  }
+  return cat;
+}
+
+function upsertCatalogItem_(list, incoming, oldCode, imageUrl) {
+  var code = String((incoming && incoming.code) || oldCode || '');
+  if (!code) throw new Error('কোড লাগবে');
+  var found = -1;
+  var want = String(oldCode || code);
+  for (var i = 0; i < list.length; i++) {
+    if (String(list[i].code) === want) {
+      found = i;
+      break;
+    }
+  }
+  var item = found >= 0 ? list[found] : {};
+  item.code = code;
+  if (incoming.name != null) item.name = incoming.name;
+  if (incoming.title != null) item.title = incoming.title;
+  if (incoming.price != null && incoming.price !== '') item.price = Number(incoming.price);
+  if (incoming.price36 != null && incoming.price36 !== '') item.price36 = Number(incoming.price36);
+  if (incoming.piece != null && incoming.piece !== '') item.piece = Number(incoming.piece);
+  if (incoming.priority != null && incoming.priority !== '') item.priority = Number(incoming.priority);
+  if (incoming.description != null) item.description = incoming.description;
+  if (imageUrl) item.image = imageUrl;
+  else if (incoming.image && String(incoming.image).indexOf('data:') !== 0) item.image = incoming.image;
+  if (found >= 0) list[found] = item;
+  else list.unshift(item);
+  return item;
+}
+
 function doGet(e) {
   try {
     var action = (e && e.parameter && e.parameter.action) ? String(e.parameter.action) : '';
     var phone = (e && e.parameter && e.parameter.phone) ? String(e.parameter.phone) : '';
     if (action === 'reviews' || action === 'reviewList') {
       return jsonOut_({ success: true, reviews: rowsToReviews_(getReviewSheet_()) });
+    }
+    if (action === 'catalog' || action === 'catalogGet') {
+      return jsonOut_({ success: true, catalog: readCatalog_() });
     }
     var sheet = getSheet_();
     if (action === 'find' && phone) {
@@ -352,6 +454,64 @@ function doPost(e) {
       } catch (delErr) {
         return jsonOut_({ success: false, error: String(delErr.message || delErr) });
       }
+    }
+
+    if (action === 'catalog' || action === 'catalogGet') {
+      return jsonOut_({ success: true, catalog: readCatalog_() });
+    }
+
+    if (action === 'catalogSave') {
+      var cur = seedCatalog_(readCatalog_(), body);
+      if (body.products) cur.products = body.products;
+      if (body.offers) cur.offers = body.offers;
+      if (body.site) cur.site = body.site;
+      return jsonOut_({ success: true, catalog: writeCatalog_(cur) });
+    }
+
+    if (action === 'productUpsert') {
+      try {
+        var catP = seedCatalog_(readCatalog_(), body);
+        var imageP = body.imageBase64 ? saveCatalogImage_(body) : '';
+        var product = upsertCatalogItem_(catP.products, body.product || {}, body.oldCode, imageP);
+        writeCatalog_(catP);
+        return jsonOut_({ success: true, product: product, catalog: catP });
+      } catch (pErr) {
+        return jsonOut_({ success: false, error: String(pErr.message || pErr) });
+      }
+    }
+
+    if (action === 'productDelete') {
+      var catDel = seedCatalog_(readCatalog_(), body);
+      var delCode = String(body.code || '');
+      var nextP = [];
+      for (var pi = 0; pi < catDel.products.length; pi++) {
+        if (String(catDel.products[pi].code) !== delCode) nextP.push(catDel.products[pi]);
+      }
+      catDel.products = nextP;
+      return jsonOut_({ success: true, catalog: writeCatalog_(catDel) });
+    }
+
+    if (action === 'offerUpsert') {
+      try {
+        var catO = seedCatalog_(readCatalog_(), body);
+        var imageO = body.imageBase64 ? saveCatalogImage_(body) : '';
+        var offer = upsertCatalogItem_(catO.offers, body.offer || body.product || {}, body.oldCode, imageO);
+        writeCatalog_(catO);
+        return jsonOut_({ success: true, offer: offer, catalog: catO });
+      } catch (oErr) {
+        return jsonOut_({ success: false, error: String(oErr.message || oErr) });
+      }
+    }
+
+    if (action === 'offerDelete') {
+      var catOd = seedCatalog_(readCatalog_(), body);
+      var delOffer = String(body.code || '');
+      var nextO = [];
+      for (var oi = 0; oi < catOd.offers.length; oi++) {
+        if (String(catOd.offers[oi].code) !== delOffer) nextO.push(catOd.offers[oi]);
+      }
+      catOd.offers = nextO;
+      return jsonOut_({ success: true, catalog: writeCatalog_(catOd) });
     }
 
     if (action === 'create') {

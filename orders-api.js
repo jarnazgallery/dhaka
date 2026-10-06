@@ -365,6 +365,98 @@
     throw new Error((json && json.error) || "Failed to save Steadfast keys");
   }
 
+  async function fetchCatalogRemote() {
+    if (!isCloudOrdersApi()) return null;
+    const url = getOrdersApiUrl();
+    try {
+      const res = await fetch(url + (url.includes("?") ? "&" : "?") + "action=catalog&_=" + Date.now(), {
+        method: "GET",
+        cache: "no-store",
+        redirect: "follow",
+        mode: "cors",
+      });
+      const json = await parseJsonFromResponse(res);
+      if (json && json.success && json.catalog) return json.catalog;
+    } catch (err) {}
+    try {
+      const json = await cloudPost({ action: "catalogGet" });
+      if (json && json.success && json.catalog) return json.catalog;
+    } catch (err) {}
+    return null;
+  }
+
+  function cloudItemPayload(item) {
+    if (!item || typeof item !== "object") return item;
+    const out = Object.assign({}, item);
+    if (/^data:/i.test(String(out.image || ""))) delete out.image;
+    return out;
+  }
+
+  async function saveProductRemote(payload) {
+    if (!isCloudOrdersApi()) throw new Error("cloud not configured");
+    const body = {
+      action: "productUpsert",
+      product: cloudItemPayload(payload.product || {}),
+      oldCode: payload.oldCode || (payload.product && payload.product.code) || "",
+      seedProducts: (payload.seedProducts || []).map(cloudItemPayload),
+      seedOffers: (payload.seedOffers || []).map(cloudItemPayload),
+    };
+    if (payload.file) {
+      body.imageBase64 = await blobToBase64(payload.file);
+      body.mimeType = payload.file.type || "image/jpeg";
+      body.fileName = payload.file.name || "product.jpg";
+    }
+    const json = await cloudPost(body);
+    if (json && json.success && json.product) return json.product;
+    throw new Error((json && json.error) || "প্রোডাক্ট ক্লাউডে সেভ হয়নি। cloud-orders.gs নতুন করে Deploy করুন।");
+  }
+
+  async function saveOfferRemote(payload) {
+    if (!isCloudOrdersApi()) throw new Error("cloud not configured");
+    const body = {
+      action: "offerUpsert",
+      offer: cloudItemPayload(payload.offer || {}),
+      oldCode: payload.oldCode || (payload.offer && payload.offer.code) || "",
+      seedProducts: (payload.seedProducts || []).map(cloudItemPayload),
+      seedOffers: (payload.seedOffers || []).map(cloudItemPayload),
+    };
+    if (payload.file) {
+      body.imageBase64 = await blobToBase64(payload.file);
+      body.mimeType = payload.file.type || "image/jpeg";
+      body.fileName = payload.file.name || "offer.jpg";
+    }
+    const json = await cloudPost(body);
+    if (json && json.success && json.offer) return json.offer;
+    throw new Error((json && json.error) || "কম্বো ক্লাউডে সেভ হয়নি।");
+  }
+
+  async function saveCatalogRemote(payload) {
+    if (!isCloudOrdersApi()) throw new Error("cloud not configured");
+    const json = await cloudPost({
+      action: "catalogSave",
+      products: (payload.products || []).map(cloudItemPayload),
+      offers: (payload.offers || []).map(cloudItemPayload),
+      seedProducts: (payload.seedProducts || payload.products || []).map(cloudItemPayload),
+      seedOffers: (payload.seedOffers || payload.offers || []).map(cloudItemPayload),
+    });
+    if (json && json.success) return json.catalog || json;
+    throw new Error((json && json.error) || "ক্যাটালগ সেভ হয়নি");
+  }
+
+  async function deleteProductRemote(code) {
+    if (!isCloudOrdersApi()) throw new Error("cloud not configured");
+    const json = await cloudPost({ action: "productDelete", code: code });
+    if (json && json.success) return json;
+    throw new Error((json && json.error) || "ডিলিট হয়নি");
+  }
+
+  async function deleteOfferRemote(code) {
+    if (!isCloudOrdersApi()) throw new Error("cloud not configured");
+    const json = await cloudPost({ action: "offerDelete", code: code });
+    if (json && json.success) return json;
+    throw new Error((json && json.error) || "ডিলিট হয়নি");
+  }
+
   function downloadSiteConfig(cfg) {
     const data = Object.assign({}, window.SITE_CONFIG || {}, cfg || {});
     const text = "window.SITE_CONFIG = " + JSON.stringify(data, null, 2) + ";\n";
@@ -397,6 +489,12 @@
     fetchReviewsList,
     createReviewRemote,
     deleteReviewRemote,
+    fetchCatalogRemote,
+    saveProductRemote,
+    saveOfferRemote,
+    saveCatalogRemote,
+    deleteProductRemote,
+    deleteOfferRemote,
     downloadSiteConfig,
   };
 })();
