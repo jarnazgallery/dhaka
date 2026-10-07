@@ -3,9 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <title>Jarnaz Gallery — Kids Combo Sets</title>
+    <title>Jarnaz Gallery | বেবি-কিডস কম্বো | ক্যাশ অন ডেলিভারি</title>
     <meta
       name="description"
       content="Jarnaz Gallery বেবি-কিডস কম্বো সেট। Pallabi, Mirpur 11। Order Now চাপুন, সাইজ বেছে অর্ডার করুন। ক্যাশ অন ডেলিভারি।"
@@ -14,7 +12,7 @@
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="bn_BD" />
     <meta property="og:site_name" content="Jarnaz Gallery" />
-    <meta property="og:title" content="Jarnaz Gallery — Kids Combo Sets" />
+    <meta property="og:title" content="Jarnaz Gallery | বেবি-কিডস কম্বো | ক্যাশ অন ডেলিভারি" />
     <meta property="og:description" content="বেবি-কিডস কম্বো সেট। সাইজ সিলেক্ট করে সহজে অর্ডার। ক্যাশ অন ডেলিভারি।" />
     <meta property="og:url" content="https://jarnazgallery.com/" />
     <meta property="og:image" content="https://jarnazgallery.com/images/set-01.png" />
@@ -24,11 +22,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Noto+Sans+Bengali:wght@400;700&display=swap"
       rel="stylesheet"
     />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎀</text></svg>" />
-    <link rel="stylesheet" href="styles.css?v=20261006h" />
+    <link rel="stylesheet" href="styles.css?v=20261006n" />
+    <link rel="preload" href="catalog-data.json" as="fetch" crossorigin />
     <script type="application/ld+json" id="businessJson">
       {
         "@context": "https://schema.org",
@@ -56,6 +55,7 @@
           <a href="#track" id="navTrack">অর্ডার ট্র্যাক</a>
           <a class="nav-cta" href="#collection" id="navOrder">অর্ডার</a>
         </nav>
+        <a class="header-phone" id="headerPhone" href="https://wa.me/8801735943156" target="_blank" rel="noopener">01735943156</a>
       </div>
     </header>
 
@@ -72,7 +72,15 @@
           <h1 id="heroTitle">ছোটদের জন্য<br />নির্বাচিত কম্বো</h1>
           <p class="offer-title" id="offerTitle"></p>
           <p class="offer-price" id="offerPrice"></p>
-          <button class="btn btn-dark offer-order" type="button" id="offerOrderNow">Order Now</button>
+          <p class="hero-badges">
+            <span>ক্যাশ অন ডেলিভারি</span>
+            <span>ঢাকা ১–২ দিন</span>
+            <span>সাইজ সিলেক্ট</span>
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-dark offer-order" type="button" id="offerOrderNow">Order Now</button>
+            <a class="btn btn-ghost" id="heroWhatsapp" href="https://wa.me/8801735943156" target="_blank" rel="noopener">WhatsApp</a>
+          </div>
           <p class="hero-note" id="heroNote">অর্ডারের আগে সাইজ বেছে নিন · প্রোডাক্ট নম্বর অটো যাবে</p>
         </div>
       </div>
@@ -93,6 +101,7 @@
           <p id="collectionSubtitle">ছবির নিচের নম্বর ধরে অর্ডার করুন</p>
           <p class="product-count" id="productCount"></p>
         </div>
+        <p class="collection-help">Order Now চাপুন → সাইজ বাছুন → নাম, ফোন ও ঠিকানা দিন। ক্যাশ অন ডেলিভারি।</p>
         <div class="product-grid" id="productGrid">
           <article class="product-card skeleton" aria-hidden="true"></article>
           <article class="product-card skeleton" aria-hidden="true"></article>
@@ -108,7 +117,7 @@
         </div>
         <form class="track-form" id="trackForm">
           <label>মোবাইল নম্বর
-            <input type="tel" id="trackPhone" name="phone" required placeholder="01XXXXXXXXX" pattern="01[0-9]{9}" />
+            <input type="tel" id="trackPhone" name="phone" required placeholder="01XXXXXXXXX" inputmode="numeric" autocomplete="tel" />
           </label>
           <button class="btn btn-dark" type="submit" id="trackSubmit">স্ট্যাটাস দেখুন</button>
           <p class="form-error" id="trackError"></p>
@@ -127,7 +136,7 @@
           <button class="offer-arrow next" type="button" id="reviewNext" aria-label="পরের রিভিউ">›</button>
           <div class="offer-dots" id="reviewDots"></div>
         </div>
-        <p class="empty-pick" id="reviewEmpty">অ্যাডমিন ফোনের রিভিউ স্ক্রিনশট আপলোড করলে এখানে দেখাবে।</p>
+        <p class="empty-pick" id="reviewEmpty">কাস্টমারদের আসল WhatsApp রিভিউ এখানে দেখাবে।</p>
       </section>
 
       <section class="howto" id="howto">
@@ -158,20 +167,30 @@
             <strong>সাইজ হেল্প</strong>
             <p>অর্ডারের আগে সাইজ বেছে নিন। দ্বিধা থাকলে WhatsApp-এ জিজ্ঞেস করুন।</p>
           </article>
+          <article>
+            <strong>WhatsApp সাপোর্ট</strong>
+            <p>সাইজ বা অর্ডার নিয়ে প্রশ্ন থাকলে সরাসরি মেসেজ করুন।</p>
+          </article>
         </div>
       </section>
     </main>
 
     <footer class="site-footer">
-      <div>
+      <div class="footer-col">
         <p class="logo" id="footerBrand">Jarnaz <em>Gallery</em></p>
-        <p id="footerText">Kids fashion · Pallabi, Mirpur 11</p>
+        <p id="footerText">বেবি-কিডস ফ্যাশন · Pallabi, Mirpur 11</p>
         <p id="footerLocation">Pallabi, Mirpur 11</p>
         <div class="footer-links" id="footerLinks"></div>
       </div>
-      <div class="footer-aside">
+      <div class="footer-col">
+        <p class="footer-head">দোকান</p>
+        <p>ক্যাশ অন ডেলিভারি সারা বাংলাদেশে</p>
+        <p>ঢাকা ১–২ দিন · বাইরে ২–৪ দিন</p>
+        <p>প্রতিদিন সকাল ১০টা – রাত ১০টা</p>
+      </div>
+      <div class="footer-col footer-aside">
+        <p class="footer-head">যোগাযোগ</p>
         <a id="footerWhatsapp" href="https://wa.me/8801735943156" target="_blank" rel="noopener">WhatsApp: 01735943156</a>
-        <a class="admin-quiet" href="admin.html">অ্যাডমিন</a>
       </div>
     </footer>
     <a class="wa-float" id="waFloat" href="https://wa.me/8801735943156" target="_blank" rel="noopener" aria-label="WhatsApp-এ মেসেজ করুন">WhatsApp</a>
@@ -211,7 +230,7 @@
             </label>
             <label>
               মোবাইল নম্বর
-              <input type="tel" name="phone" required placeholder="01XXXXXXXXX" pattern="01[0-9]{9}" />
+              <input type="tel" name="phone" required placeholder="01XXXXXXXXX" inputmode="numeric" autocomplete="tel" />
             </label>
             <label>
               সম্পূর্ণ ঠিকানা
@@ -256,9 +275,9 @@
         </div>
       </div>
     </div>
-    <script src="site-config.js?v=20261006h"></script>
-    <script src="orders-api.js?v=20261006h"></script>
-    <script src="catalog.js?v=20261006h"></script>
-    <script src="script.js?v=20261006h"></script>
+    <script src="site-config.js?v=20261006k" defer></script>
+    <script src="orders-api.js?v=20261006m" defer></script>
+    <script src="catalog.js?v=20261006k" defer></script>
+    <script src="script.js?v=20261006n" defer></script>
   </body>
 </html>

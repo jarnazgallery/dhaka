@@ -35,14 +35,14 @@ const FALLBACK_OFFERS = [
 
 const FALLBACK_SITE = {
   brand: "Jarnaz Gallery",
-  tagline: "Kids Combo Sets",
+  tagline: "বেবি-কিডস কম্বো · ক্যাশ অন ডেলিভারি",
   whatsapp: "8801735943156",
   phone: "",
   facebook: "",
   instagram: "",
   location: "Pallabi, Mirpur 11",
-  footerText: "Kids fashion · Pallabi, Mirpur 11",
-  metaDescription: "Jarnaz Gallery বেবি-কিডস কম্বো সেট। প্রতিটি ছবির নিচে নম্বর আছে। Order Now ক্লিক করে সাইজ সিলেক্ট করুন।",
+  footerText: "বেবি-কিডস ফ্যাশন · Pallabi, Mirpur 11",
+  metaDescription: "Jarnaz Gallery বেবি-কিডস কম্বো সেট। Pallabi, Mirpur 11। Order Now চাপুন, সাইজ বেছে অর্ডার করুন। ক্যাশ অন ডেলিভারি সারা বাংলাদেশে।",
   topbar: "ক্যাশ অন ডেলিভারি · ঢাকায় ১–২ দিন · সাইজ সিলেক্ট করে অর্ডার",
   heroEyebrow: "Combo offer",
   heroTitle: "ছোটদের জন্য\nনির্বাচিত কম্বো",
@@ -64,7 +64,7 @@ const FALLBACK_SITE = {
   checkoutTitle: "অর্ডার করুন",
   checkoutHint: "Order Now চাপুন, সাইজ সিলেক্ট করলেই অর্ডার ফর্ম খুলবে।",
   payNote: "পেমেন্ট: ক্যাশ অন ডেলিভারি",
-  confirmHelp: "অ্যাডমিন এই প্রোডাক্ট নম্বর ও ছবি দেখেই বুঝবে কোন সেট অর্ডার হয়েছে।",
+  confirmHelp: "ধন্যবাদ। ক্যাশ অন ডেলিভারি · ঢাকায় সাধারণত ১–২ দিন।",
   logo: "",
   trust: [
     { title: "কটন ফ্যাব্রিক", text: "ত্বকের জন্য আরামদায়ক" },
@@ -194,8 +194,9 @@ function applySite(raw) {
 
   const trust = document.getElementById("trustRow");
   if (trust) {
+    const icons = ["🧵", "💵", "🚚", "✓"];
     trust.innerHTML = SITE.trust
-      .map((item) => `<div class="trust-item"><strong>${htmlEsc(item.title)}</strong><span>${htmlEsc(item.text)}</span></div>`)
+      .map((item, i) => `<div class="trust-item"><span class="trust-ico" aria-hidden="true">${icons[i] || "★"}</span><strong>${htmlEsc(item.title)}</strong><span>${htmlEsc(item.text)}</span></div>`)
       .join("");
   }
 
@@ -227,14 +228,21 @@ function applySite(raw) {
     footerWa.href = waHref;
     footerWa.textContent = shownPhone ? `WhatsApp: ${shownPhone}` : "WhatsApp";
   }
+  const heroWa = document.getElementById("heroWhatsapp");
+  if (heroWa) heroWa.href = waHref;
+  const headerPhone = document.getElementById("headerPhone");
+  if (headerPhone) {
+    headerPhone.href = waHref;
+    headerPhone.textContent = shownPhone || "WhatsApp";
+  }
   const footerLoc = document.getElementById("footerLocation");
   if (footerLoc) footerLoc.textContent = SITE.location || "";
 
-  if (SITE.brand) document.title = `${SITE.brand} — ${SITE.tagline || "Kids Combo Sets"}`;
+  if (SITE.brand) document.title = `${SITE.brand} | বেবি-কিডস কম্বো | ক্যাশ অন ডেলিভারি`;
   const meta = document.querySelector('meta[name="description"]');
   if (meta && SITE.metaDescription) meta.setAttribute("content", SITE.metaDescription);
   const ogTitle = document.querySelector('meta[property="og:title"]');
-  if (ogTitle && SITE.brand) ogTitle.setAttribute("content", `${SITE.brand} — ${SITE.tagline || "Kids Combo Sets"}`);
+  if (ogTitle && SITE.brand) ogTitle.setAttribute("content", `${SITE.brand} | বেবি-কিডস কম্বো | ক্যাশ অন ডেলিভারি`);
   const ogDesc = document.querySelector('meta[property="og:description"]');
   if (ogDesc && SITE.metaDescription) ogDesc.setAttribute("content", SITE.metaDescription);
 
@@ -242,12 +250,16 @@ function applySite(raw) {
   if (json) {
     json.textContent = JSON.stringify({
       "@context": "https://schema.org",
-      "@type": "Store",
+      "@type": "ClothingStore",
       name: SITE.brand || "Jarnaz Gallery",
       description: SITE.metaDescription || SITE.tagline || "",
       address: { "@type": "PostalAddress", addressLocality: SITE.location || "Pallabi, Mirpur 11", addressCountry: "BD" },
       telephone: WHATSAPP ? "+" + WHATSAPP : "",
       url: "https://jarnazgallery.com/",
+      priceRange: "৳৳",
+      currenciesAccepted: "BDT",
+      paymentAccepted: "Cash",
+      openingHours: "Mo-Su 10:00-22:00",
     });
   }
 
@@ -346,6 +358,16 @@ function parseJsonSafe(text) {
   return JSON.parse(trimmed);
 }
 
+async function fetchTimed(url, options, ms) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), Number(ms) || 2500);
+  try {
+    return await fetch(url, Object.assign({}, options || {}, { signal: ctrl.signal }));
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function apiCall(route, options = {}) {
   const clean = String(route).replace(/^\/+/, "").replace(/^api\//, "");
   const method = String((options && options.method) || "GET").toUpperCase();
@@ -355,8 +377,10 @@ async function apiCall(route, options = {}) {
   if (adminToken && !opts.headers["X-Admin-Token"]) {
     opts.headers["X-Admin-Token"] = String(adminToken).replace(/^Bearer\s+/i, "");
   }
-  const bust = clean === "catalog" && method === "GET" ? "t=" + Date.now() : "";
   const attempts = [];
+  if (clean === "catalog" && method === "GET") {
+    attempts.push({ url: "catalog-data.json", options: { method: "GET" } });
+  }
   if (clean === "orders" && method === "POST") {
     attempts.push({ url: "order.php", options: opts });
   }
@@ -379,13 +403,14 @@ async function apiCall(route, options = {}) {
       options: Object.assign({}, opts, { method: "POST" }),
     });
   }
-  attempts.push(
-    { url: "/api/" + clean + (bust ? "?" + bust : ""), options: opts },
-    { url: "api.php?route=" + encodeURIComponent(clean) + (bust ? "&" + bust : ""), options: opts }
-  );
+  if (!(clean === "catalog" && method === "GET")) {
+    attempts.push(
+      { url: "/api/" + clean, options: opts },
+      { url: "api.php?route=" + encodeURIComponent(clean), options: opts }
+    );
+  }
   if (clean === "catalog" && method === "GET") {
-    attempts.push({ url: "catalog.php?" + bust, options: { method: "GET" } });
-    attempts.push({ url: "catalog-data.json?" + bust, options: { method: "GET" } });
+    attempts.push({ url: "catalog.php", options: { method: "GET" } });
   }
   if (method !== "GET" && method !== "POST") {
     attempts.push({
@@ -398,7 +423,7 @@ async function apiCall(route, options = {}) {
   let lastFail = null;
   for (const attempt of attempts) {
     try {
-      const res = await fetch(attempt.url, attempt.options);
+      const res = await fetchTimed(attempt.url, attempt.options, clean === "catalog" ? 4000 : 3500);
       const text = await res.text();
       const data = parseJsonSafe(text);
       if (!res.ok && res.status !== 400 && res.status !== 401) {
@@ -536,11 +561,21 @@ async function loadCatalog() {
   try {
     const result = await apiCall("catalog");
     if (!result.ok || !result.data || !Array.isArray(result.data.products)) throw new Error("empty");
-    return applyCatalogData(await mergeCloudCatalog(result.data));
+    return applyCatalogData(result.data);
   } catch (err) {
     API_MODE = "local";
-    return applyCatalogData(await mergeCloudCatalog(localCatalog()));
+    return applyCatalogData(localCatalog());
   }
+}
+
+async function refreshCloudCatalog() {
+  const merged = await mergeCloudCatalog({
+    products: PRODUCTS,
+    offers: OFFERS,
+    site: SITE,
+  });
+  if (API_MODE !== "cloud") return null;
+  return applyCatalogData(merged);
 }
 
 function localNextCode(products) {

@@ -13,7 +13,7 @@
       href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=20261006h" />
+    <link rel="stylesheet" href="styles.css?v=20261006m" />
     <style>
       body.admin-app { min-height: 100vh; }
       .admin-top .header-inner { width: min(1240px, calc(100% - 28px)); }
@@ -244,7 +244,49 @@
       .field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
       .row-actions, .panel-actions { display: flex; gap: 8px; flex-wrap: wrap; }
       .save-note { min-height: 1.2em; color: #187a45; font-weight: 700; }
-      .save-note.is-error { color: #e2187a; }
+      .save-note.is-success {
+        color: #0f7a45;
+        background: #e8f8ee;
+        border: 1px solid #b6e6c6;
+        padding: 10px 14px;
+        border-radius: 14px;
+        min-height: 0;
+      }
+      .save-note.is-error {
+        color: #c01048;
+        background: #ffeaf4;
+        border: 1px solid #ffc1dc;
+        padding: 10px 14px;
+        border-radius: 14px;
+        min-height: 0;
+      }
+      .admin-toast {
+        position: fixed;
+        top: 18px;
+        left: 50%;
+        transform: translateX(-50%) translateY(-12px);
+        z-index: 300;
+        min-width: min(420px, calc(100% - 28px));
+        text-align: center;
+        background: #0f7a45;
+        color: #fff;
+        padding: 14px 22px;
+        border-radius: 999px;
+        font-weight: 800;
+        letter-spacing: 0.01em;
+        box-shadow: 0 16px 36px rgba(15, 122, 69, 0.28);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.22s ease, transform 0.22s ease;
+      }
+      .admin-toast.is-show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+      .admin-toast.is-error {
+        background: #e2187a;
+        box-shadow: 0 16px 36px rgba(226, 24, 122, 0.28);
+      }
       .order-table { width: 100%; background: white; }
       .order-table th, .order-table td { padding: 12px 10px; }
       .status-pill.is-cancelled { background: #fde8ee; color: #b42318; }
@@ -399,6 +441,7 @@
     </style>
   </head>
   <body class="admin-app">
+    <div id="adminToast" class="admin-toast" role="status" aria-live="polite"></div>
     <header class="site-header admin-top">
       <div class="header-inner">
         <div class="admin-brand">
@@ -752,9 +795,9 @@
     </div>
 
     <div class="invoice-print" id="invoicePrint"></div>
-    <script src="site-config.js?v=20261006h"></script>
-    <script src="orders-api.js?v=20261006h"></script>
-    <script src="catalog.js?v=20261006h"></script>
+    <script src="site-config.js?v=20261006k"></script>
+    <script src="orders-api.js?v=20261006m"></script>
+    <script src="catalog.js?v=20261006k"></script>
     <script>
       const TOKEN_KEY = "jarnaz-admin-token";
       let offers = [];
@@ -770,6 +813,25 @@
           .replace(/</g, "&lt;")
           .replace(/>/g, "&gt;")
           .replace(/"/g, "&quot;");
+      }
+
+      function notify(msg, ok) {
+        const el = document.getElementById("adminToast");
+        if (!el) return;
+        el.textContent = (ok ? "✓ " : "") + String(msg || "");
+        el.classList.toggle("is-error", !ok);
+        el.classList.add("is-show");
+        clearTimeout(window._toastTimer);
+        window._toastTimer = setTimeout(() => el.classList.remove("is-show"), 3200);
+      }
+
+      function setNote(el, msg, ok) {
+        if (el) {
+          el.classList.toggle("is-error", !ok);
+          el.classList.toggle("is-success", !!ok);
+          el.textContent = msg;
+        }
+        notify(msg, ok);
       }
 
       function fillWebsiteForm(site) {
@@ -1151,7 +1213,7 @@
         if (window._orderPoll) clearInterval(window._orderPoll);
         window._orderPoll = setInterval(() => {
           loadServerOrders().catch(() => {});
-        }, 10000);
+        }, 25000);
       }
 
       function filteredOrders() {
@@ -1368,19 +1430,33 @@
         fillManualOrderForm();
         fillCloudForm();
         lastReviews = shotReviews(catalog.reviews);
-        if (window.OrdersAPI && OrdersAPI.fetchReviewsList && OrdersAPI.hasCloudOrdersApi()) {
-          try {
-            const cloud = await OrdersAPI.fetchReviewsList();
-            lastReviews = shotReviews(cloud);
-            writeLocal(LOCAL_KEYS.reviews, lastReviews);
-          } catch (err) {}
-        }
         renderComments();
         renderProducts();
         renderOffers();
-        await loadServerOrders();
-        startOrderPoll();
         setModeNote();
+        loadServerOrders().catch(() => {});
+        startOrderPoll();
+        Promise.all([
+          typeof refreshCloudCatalog === "function" ? refreshCloudCatalog() : Promise.resolve(null),
+          window.OrdersAPI && OrdersAPI.fetchReviewsList && OrdersAPI.hasCloudOrdersApi()
+            ? OrdersAPI.fetchReviewsList().catch(() => [])
+            : Promise.resolve([]),
+        ]).then(([cloud, reviews]) => {
+          if (cloud) {
+            PRODUCTS = sortProducts(cloud.products || PRODUCTS);
+            offers = cloud.offers || OFFERS;
+            OFFERS = offers;
+            renderProducts();
+            renderOffers();
+            fillManualOrderForm();
+            setModeNote();
+          }
+          if (Array.isArray(reviews) && reviews.length) {
+            lastReviews = shotReviews(reviews);
+            try { writeLocal(LOCAL_KEYS.reviews, lastReviews); } catch (err) {}
+            renderComments();
+          }
+        });
       }
 
       document.getElementById("adminNav").addEventListener("click", (event) => {
@@ -1392,7 +1468,7 @@
         try {
           await loadServerOrders();
         } catch (err) {
-          alert(err.message);
+          notify(err.message, false);
         }
       });
 
@@ -1444,7 +1520,7 @@
           form.qty.value = 1;
           if (form.confirmNow) form.confirmNow.checked = true;
           updateManualTotal();
-          note.textContent = "অর্ডার যোগ হয়েছে।";
+          setNote(note, "অর্ডার যোগ হয়েছে ✓", true);
           bootDash();
         } catch (err) {
           note.classList.add("is-error");
@@ -1518,10 +1594,9 @@
         try {
           const saved = await api("admin/site", { method: "POST", headers: headers(), body: data });
           fillWebsiteForm(saved);
-          note.textContent = "ওয়েবসাইট সেভ হয়েছে। হোমপেজ রিফ্রেশ করুন।";
+          setNote(note, "ওয়েবসাইট সেভ হয়েছে ✓", true);
         } catch (err) {
-          note.classList.add("is-error");
-          note.textContent = err.message;
+          setNote(note, err.message, false);
         }
       });
 
@@ -1643,13 +1718,9 @@
           setModeNote();
           const row = document.querySelector(`[data-code="${product.code}"]`);
           if (row) row.scrollIntoView({ behavior: "smooth", block: "center" });
-          note.classList.toggle("is-error", via !== "cloud" && via !== "php");
-          note.textContent = via === "cloud" || via === "php"
-            ? `${product.code} ওয়েবসাইটে যোগ হয়েছে। হোমপেজ রিফ্রেশ করলে ইউজার দেখবে। এখন মোট ${PRODUCTS.length} টা প্রোডাক্ট।`
-            : `${product.code} লিস্টে যোগ হয়েছে। হোমপেজে দেখাতে cloud-orders.gs Deploy করে আবার সেভ করুন।`;
+          setNote(note, `${product.code} যোগ হয়েছে ✓`, true);
         } catch (err) {
-          note.classList.add("is-error");
-          note.textContent = err.message || "প্রোডাক্ট যোগ হয়নি";
+          setNote(note, err.message || "প্রোডাক্ট যোগ হয়নি", false);
         } finally {
           btn.disabled = false;
         }
@@ -1659,10 +1730,17 @@
         const save = event.target.closest("[data-save]");
         const del = event.target.closest("[data-del-product]");
         if (save) {
+          const prevLabel = save.textContent;
+          save.disabled = true;
+          save.textContent = "সেভ হচ্ছে...";
           const row = save.closest(".product-admin-row");
           const oldCode = save.dataset.save;
           const product = PRODUCTS.find((p) => p.code === oldCode);
-          if (!product) return;
+          if (!product) {
+            save.disabled = false;
+            save.textContent = prevLabel;
+            return;
+          }
           product.code = String(row.querySelector('[data-edit="code"]').value || oldCode).trim() || oldCode;
           product.priority = Math.max(1, Number(row.querySelector('[data-edit="priority"]').value) || 1);
           product.name = String(row.querySelector('[data-edit="name"]').value || "").trim();
@@ -1711,20 +1789,13 @@
             renderProducts(product.code);
             fillManualOrderForm();
             setModeNote();
-            if (sync) {
-              sync.classList.toggle("is-error", !via);
-              sync.textContent = via
-                ? product.code + " সেভ হয়েছে। হোমপেজ রিফ্রেশ করলে নাম, দাম ও বিবরণ আপডেট দেখাবে।"
-                : "এই ডিভাইসে সেভ হয়েছে, ওয়েবসাইটে যায়নি। cloud-orders.gs Deploy করে আবার সেভ করুন।";
-            }
+            setNote(sync, product.code + " সেভ হয়েছে ✓", true);
           } catch (err) {
             renderProducts(product.code);
-            if (sync) {
-              sync.classList.add("is-error");
-              sync.textContent = err.message;
-            } else {
-              alert(err.message);
-            }
+            setNote(sync, err.message, false);
+          } finally {
+            save.disabled = false;
+            save.textContent = prevLabel || "সেভ";
           }
         }
         const move = event.target.closest("[data-move]");
@@ -1747,8 +1818,9 @@
               try { await OrdersAPI.saveCatalogRemote({ products: PRODUCTS, offers: OFFERS }); API_MODE = "cloud"; } catch (err) {}
             }
             renderProducts(move.dataset.move);
+            notify("অর্ডার ঠিক হয়েছে ✓", true);
           } catch (err) {
-            alert(err.message);
+            notify(err.message, false);
           }
         }
         if (del && confirm("এই প্রোডাক্ট ডিলিট করবেন?")) {
@@ -1766,8 +1838,9 @@
             renderProducts();
             fillManualOrderForm();
             renderStats();
+            notify("প্রোডাক্ট ডিলিট হয়েছে ✓", true);
           } catch (err) {
-            alert(err.message);
+            notify(err.message, false);
           }
         }
       });
@@ -1805,13 +1878,9 @@
           }
           renderOffers(offer.code);
           fillManualOrderForm();
-          note.classList.toggle("is-error", !via);
-          note.textContent = via
-            ? `${offer.code} কম্বো ওয়েবসাইটে যোগ হয়েছে। হোম রিফ্রেশ করলে স্লাইডারে দেখা যাবে।`
-            : `${offer.code} এই ডিভাইসে আছে, ওয়েবসাইটে যায়নি।`;
+          setNote(note, `${offer.code} যোগ হয়েছে ✓`, true);
         } catch (err) {
-          note.classList.add("is-error");
-          note.textContent = err.message;
+          setNote(note, err.message, false);
         } finally {
           btn.disabled = false;
         }
@@ -1862,9 +1931,10 @@
             }
             offers = OFFERS;
             renderOffers(offer.code);
+            notify("কম্বো সেভ হয়েছে ✓", true);
           } catch (err) {
             renderOffers(offer.code);
-            alert(err.message);
+            notify(err.message, false);
           }
         }
         if (del && confirm("এই কম্বো ডিলিট করবেন?")) {
@@ -1882,8 +1952,9 @@
             }
             renderOffers();
             fillManualOrderForm();
+            notify("কম্বো ডিলিট হয়েছে ✓", true);
           } catch (err) {
-            alert(err.message);
+            notify(err.message, false);
           }
         }
       });
@@ -1905,9 +1976,7 @@
         note.classList.remove("is-error");
         try {
           await persistSiteDraft();
-          note.textContent = enabled
-            ? "কম্বো অফার হোমে চালু আছে।"
-            : "কম্বো অফার হোম থেকে অফ করা আছে।";
+          setNote(note, enabled ? "কম্বো অফার চালু ✓" : "কম্বো অফার অফ ✓", true);
         } catch (err) {
           event.target.checked = !enabled;
           siteDraft.offersEnabled = event.target.checked;
@@ -1933,9 +2002,9 @@
           if (!confirm("এই অর্ডার Steadfast-এ পাঠাবেন?")) return;
           try {
             const result = await sendSteadfast(sfBtn.dataset.steadfastOrder);
-            alert((result && result.message) || "Steadfast-এ পাঠানো হয়েছে");
+            notify((result && result.message) || "Steadfast-এ পাঠানো হয়েছে", true);
           } catch (err) {
-            alert(err.message);
+            notify(err.message, false);
           }
           return;
         }
@@ -1946,7 +2015,7 @@
         try {
           await patchOrder(statusBtn.dataset.statusOrder, { status });
         } catch (err) {
-          alert(err.message);
+          notify(err.message, false);
         }
       });
 
@@ -1976,7 +2045,7 @@
           document.getElementById("orderEditNote").textContent = event.target.checked ? "ফোন করা মার্ক হয়েছে।" : "ফোন মার্ক সরানো হয়েছে।";
         } catch (err) {
           event.target.checked = !event.target.checked;
-          alert(err.message);
+          notify(err.message, false);
         }
       });
 
@@ -2009,7 +2078,7 @@
             total: Number(form.total.value),
             note: form.note.value.trim(),
           });
-          note.textContent = "অর্ডার আপডেট হয়েছে।";
+          setNote(note, "অর্ডার আপডেট হয়েছে ✓", true);
           openOrderDrawer(saved.id);
         } catch (err) {
           note.classList.add("is-error");
@@ -2026,7 +2095,7 @@
         note.classList.remove("is-error");
         try {
           const saved = await patchOrder(currentOrderId, { status });
-          note.textContent = "স্ট্যাটাস: " + statusLabel(orderStatus(saved));
+          setNote(note, "স্ট্যাটাস আপডেট হয়েছে ✓ " + statusLabel(orderStatus(saved)), true);
           openOrderDrawer(saved.id);
         } catch (err) {
           note.classList.add("is-error");
@@ -2043,7 +2112,7 @@
           closeOrderDrawer();
           renderOrders();
         } catch (err) {
-          alert(err.message);
+          notify(err.message, false);
         }
       });
 
@@ -2053,7 +2122,7 @@
         note.classList.remove("is-error");
         try {
           const result = await sendSteadfast(currentOrderId);
-          note.textContent = (result && result.message) || "Steadfast-এ পাঠানো হয়েছে";
+          setNote(note, (result && result.message) || "Steadfast-এ পাঠানো হয়েছে ✓", true);
           if (result && result.order) openOrderDrawer(result.order.id);
         } catch (err) {
           note.classList.add("is-error");
@@ -2112,7 +2181,7 @@
           );
           document.getElementById("steadfastApiKey").value = "";
           document.getElementById("steadfastSecretKey").value = "";
-          note.textContent = "Steadfast কি সেভ হয়েছে।";
+          setNote(note, "Steadfast কি সেভ হয়েছে ✓", true);
         } catch (err) {
           note.classList.add("is-error");
           note.textContent = err.message;
@@ -2153,9 +2222,7 @@
           lastReviews = mergeReviewLists([saved], lastReviews);
           try { writeLocal(LOCAL_KEYS.reviews, lastReviews); } catch (err) {}
           renderComments();
-          note.classList.remove("is-error");
-          note.textContent = "স্ক্রিনশট ওয়েবসাইটে সেভ হয়েছে। সব ফোন ও পিসিতে দেখাবে।";
-          try { await bootDash(); } catch (err) {}
+          setNote(note, "স্ক্রিনশট সেভ হয়েছে ✓", true);
           lastReviews = mergeReviewLists(lastReviews, [saved]);
           renderComments();
         } catch (err) {
@@ -2177,9 +2244,9 @@
           lastReviews = lastReviews.filter((item) => item.id !== btn.dataset.delReviewId);
           try { writeLocal(LOCAL_KEYS.reviews, lastReviews); } catch (err) {}
           renderComments();
-          bootDash();
+          notify("রিভিউ ডিলিট হয়েছে ✓", true);
         } catch (err) {
-          alert(err.message);
+          notify(err.message, false);
         }
       });
 
@@ -2194,7 +2261,7 @@
             headers: headers(true),
             body: JSON.stringify({ password }),
           });
-          note.textContent = "পাসওয়ার্ড বদলেছে। আবার লগইন করুন।";
+          setNote(note, "পাসওয়ার্ড বদলেছে ✓ আবার লগইন করুন", true);
           localStorage.removeItem(TOKEN_KEY);
           setTimeout(showLogin, 800);
         } catch (err) {

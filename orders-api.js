@@ -64,6 +64,7 @@
   function normalizeBdPhone(phone) {
     let digits = String(phone || "").replace(/[^0-9]/g, "");
     if (digits.indexOf("880") === 0 && digits.length >= 13) digits = digits.slice(-11);
+    else if (digits.indexOf("88") === 0 && digits.length >= 12) digits = "0" + digits.slice(-10);
     if (digits.length === 10) digits = "0" + digits;
     return digits;
   }
@@ -90,6 +91,16 @@
     });
   }
 
+  async function fetchWithTimeout(url, options, ms) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), Number(ms) || 8000);
+    try {
+      return await fetch(url, Object.assign({}, options || {}, { signal: ctrl.signal }));
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   async function parseJsonFromResponse(res) {
     const text = await res.text();
     if (looksLikeLoginHtml(text, res.url || "")) throw cloudAccessError();
@@ -102,25 +113,25 @@
 
   async function cloudGetList(url) {
     const target = (url || getOrdersApiUrl()).replace(/\/$/, "");
-    const res = await fetch(target + (target.includes("?") ? "&" : "?") + "action=list&_=" + Date.now(), {
+    const res = await fetchWithTimeout(target + (target.includes("?") ? "&" : "?") + "action=list&_=" + Date.now(), {
       method: "GET",
       cache: "no-store",
       redirect: "follow",
       mode: "cors",
-    });
+    }, 6000);
     return parseJsonFromResponse(res);
   }
 
-  async function cloudPost(body) {
+  async function cloudPost(body, ms) {
     const url = getOrdersApiUrl();
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(body),
       redirect: "follow",
       cache: "no-store",
       mode: "cors",
-    });
+    }, Number(ms) || 18000);
     return parseJsonFromResponse(res);
   }
 
@@ -153,12 +164,12 @@
     if (!isCloudOrdersApi()) return [];
     const url = getOrdersApiUrl();
     try {
-      const res = await fetch(url + (url.includes("?") ? "&" : "?") + "action=reviews&_=" + Date.now(), {
+      const res = await fetchWithTimeout(url + (url.includes("?") ? "&" : "?") + "action=reviews&_=" + Date.now(), {
         method: "GET",
         cache: "no-store",
         redirect: "follow",
         mode: "cors",
-      });
+      }, 4000);
       const json = await parseJsonFromResponse(res);
       if (json && json.success && Array.isArray(json.reviews)) return json.reviews.map(normalizeReview);
     } catch (err) {}
@@ -216,7 +227,7 @@
 
   async function findOrdersByPhone(phone) {
     const want = normalizeBdPhone(phone);
-    if (want.length < 10) throw new Error("সঠিক মোবাইল দিন, যেমন 017XXXXXXXX");
+    if (!/^01[0-9]{9}$/.test(want)) throw new Error("সঠিক মোবাইল দিন, যেমন 017XXXXXXXX");
     const merged = [];
     const seen = new Set();
     function addAll(list) {
@@ -229,27 +240,42 @@
       });
     }
     if (isCloudOrdersApi()) {
+      const url = getOrdersApiUrl();
       try {
-        const json = await cloudPost({ action: "find", phone: want });
+        const res = await fetchWithTimeout(
+          url + (url.includes("?") ? "&" : "?") + "action=find&phone=" + encodeURIComponent(want) + "&_=" + Date.now(),
+          { method: "GET", cache: "no-store", redirect: "follow", mode: "cors" },
+          5000
+        );
+        const json = await parseJsonFromResponse(res);
         if (json && json.success && Array.isArray(json.orders)) addAll(json.orders);
       } catch (err) {}
-    }
-    const lookupBodies = [
-      { url: "order-lookup.php" },
-      { url: "/api/orders/lookup" },
-      { url: "api.php?route=" + encodeURIComponent("orders/lookup") },
-    ];
-    for (const item of lookupBodies) {
-      try {
-        const res = await fetch(item.url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: want }),
-          cache: "no-store",
-        });
-        const json = await res.json();
-        addAll(Array.isArray(json) ? json : json && json.orders);
-      } catch (err) {}
+      if (!merged.length) {
+        try {
+          const json = await cloudPost({ action: "find", phone: want }, 7000);
+          if (json && json.success && Array.isArray(json.orders)) addAll(json.orders);
+        } catch (err) {}
+      }
+    } else {
+      const lookupBodies = [
+        { url: "order-lookup.php" },
+        { url: "/api/orders/lookup" },
+        { url: "api.php?route=" + encodeURIComponent("orders/lookup") },
+      ];
+      await Promise.all(
+        lookupBodies.map(async (item) => {
+          try {
+            const res = await fetchWithTimeout(item.url, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ phone: want }),
+              cache: "no-store",
+            }, 1500);
+            const json = await res.json();
+            addAll(Array.isArray(json) ? json : json && json.orders);
+          } catch (err) {}
+        })
+      );
     }
     try {
       addAll(JSON.parse(localStorage.getItem("jarnaz-local-orders") || "[]"));
@@ -369,12 +395,12 @@
     if (!isCloudOrdersApi()) return null;
     const url = getOrdersApiUrl();
     try {
-      const res = await fetch(url + (url.includes("?") ? "&" : "?") + "action=catalog&_=" + Date.now(), {
+      const res = await fetchWithTimeout(url + (url.includes("?") ? "&" : "?") + "action=catalog&_=" + Date.now(), {
         method: "GET",
         cache: "no-store",
         redirect: "follow",
         mode: "cors",
-      });
+      }, 4000);
       const json = await parseJsonFromResponse(res);
       if (json && json.success && json.catalog) return json.catalog;
     } catch (err) {}
@@ -477,6 +503,7 @@
     isCloudOrdersApi,
     hasCloudOrdersApi,
     normalizeOrder,
+    normalizeBdPhone,
     fetchOrdersList,
     findOrdersByPhone,
     createOrderRemote,

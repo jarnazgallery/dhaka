@@ -10,11 +10,12 @@ let userReviews = [];
 let reviewIndex = 0;
 let reviewTimer = null;
 
-function visualHTML(product) {
-  return `<div class="set-visual"><img src="${htmlEsc(product.image)}" alt="${htmlEsc(product.code)} ${htmlEsc(product.name)}" loading="lazy" decoding="async" /></div>`;
+function visualHTML(product, index) {
+  const eager = Number(index) < 2;
+  return `<div class="set-visual"><img src="${htmlEsc(product.image)}" alt="${htmlEsc(product.code)} ${htmlEsc(product.name)}" ${eager ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} decoding="async" width="480" height="480" /><span class="set-chip">${htmlEsc(product.code)}</span></div>`;
 }
 
-function cardHTML(product) {
+function cardHTML(product, index) {
   const desc = product.description
     ? `<p class="product-desc">${htmlEsc(product.description)}</p>`
     : "";
@@ -23,7 +24,7 @@ function cardHTML(product) {
     : `<p class="price-alt">৩–৬ বছর ${taka(product.price36 || product.price)}</p>`;
   return `
     <article class="product-card" data-code="${htmlEsc(product.code)}" id="card-${htmlEsc(product.code)}">
-      ${visualHTML(product)}
+      ${visualHTML(product, index)}
       <div class="product-body">
         <p class="product-code">${htmlEsc(product.code)}</p>
         <p class="product-name">${htmlEsc(product.name)}</p>
@@ -31,6 +32,7 @@ function cardHTML(product) {
         <p class="product-price">${taka(product.price)}</p>
         <p class="price-age">০–৩ বছর</p>
         ${older}
+        <p class="cod-pill">ক্যাশ অন ডেলিভারি</p>
         <button class="order-now" type="button" data-order="${htmlEsc(product.code)}">Order Now</button>
       </div>
     </article>
@@ -43,7 +45,7 @@ function renderProducts() {
   if (!PRODUCTS.length) {
     grid.innerHTML = '<p class="empty-pick">এখনো প্রোডাক্ট নেই। একটু পরে আবার দেখুন।</p>';
   } else {
-    grid.innerHTML = PRODUCTS.map(cardHTML).join("");
+    grid.innerHTML = PRODUCTS.map((product, index) => cardHTML(product, index)).join("");
   }
   const count = document.getElementById("productCount");
   if (count) count.textContent = PRODUCTS.length ? `মোট ${PRODUCTS.length} টা সেট` : "এখনো প্রোডাক্ট নেই";
@@ -238,7 +240,10 @@ async function saveOrder(order) {
 }
 
 function validBdPhone(phone) {
-  return /^01[0-9]{9}$/.test(String(phone || "").replace(/\s/g, ""));
+  const n = window.OrdersAPI && OrdersAPI.normalizeBdPhone
+    ? OrdersAPI.normalizeBdPhone(phone)
+    : String(phone || "").replace(/[^0-9]/g, "");
+  return /^01[0-9]{9}$/.test(n);
 }
 
 function setOrderError(message) {
@@ -360,7 +365,10 @@ document.getElementById("orderForm").addEventListener("submit", (event) => {
   }
 
   const name = form.get("name").trim();
-  const phone = form.get("phone").trim();
+  const rawPhone = form.get("phone").trim();
+  const phone = window.OrdersAPI && OrdersAPI.normalizeBdPhone
+    ? OrdersAPI.normalizeBdPhone(rawPhone)
+    : rawPhone;
   const address = form.get("address").trim();
   const note = String(form.get("note") || "").trim();
   if (!name || !address) {
@@ -422,6 +430,29 @@ document.getElementById("checkoutBack").addEventListener("click", () => {
   if (onDetails) showStep(1);
   else closeSizeModal();
 });
+
+function bindAdminSecret(el) {
+  if (!el) return;
+  let taps = 0;
+  let timer = 0;
+  el.addEventListener("pointerdown", (event) => {
+    if (event.isPrimary === false) return;
+    taps += 1;
+    clearTimeout(timer);
+    if (taps >= 3) {
+      event.preventDefault();
+      event.stopPropagation();
+      taps = 0;
+      window.location.href = "admin.html";
+      return;
+    }
+    timer = setTimeout(() => {
+      taps = 0;
+    }, 2200);
+  });
+}
+bindAdminSecret(document.getElementById("brandLogo"));
+bindAdminSecret(document.getElementById("footerBrand"));
 
 const navToggle = document.getElementById("navToggle");
 const siteNav = document.getElementById("siteNav");
@@ -506,7 +537,10 @@ function trackCard(order) {
 }
 
 async function lookupCustomerOrders() {
-  const phone = document.getElementById("trackPhone").value.trim();
+  const raw = document.getElementById("trackPhone").value.trim();
+  const phone = window.OrdersAPI && OrdersAPI.normalizeBdPhone
+    ? OrdersAPI.normalizeBdPhone(raw)
+    : raw;
   const err = document.getElementById("trackError");
   const out = document.getElementById("trackResults");
   const submit = document.getElementById("trackSubmit");
@@ -515,6 +549,8 @@ async function lookupCustomerOrders() {
     err.textContent = "সঠিক মোবাইল দিন, যেমন 017XXXXXXXX";
     return;
   }
+  const trackInput = document.getElementById("trackPhone");
+  if (trackInput && phone) trackInput.value = phone;
   if (submit) {
     submit.disabled = true;
     submit.textContent = "খোঁজা হচ্ছে...";
@@ -567,9 +603,9 @@ function renderOfferSlider() {
   const dots = document.getElementById("offerDots");
   track.innerHTML = offers
     .map(
-      (offer) => `
+      (offer, i) => `
         <div class="offer-slide">
-          <img src="${htmlEsc(offer.image)}" alt="${htmlEsc(offer.title || offer.code)}" />
+          <img src="${htmlEsc(offer.image)}" alt="${htmlEsc(offer.title || offer.code)}" ${i === 0 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} decoding="async" width="640" height="640" />
         </div>
       `
     )
@@ -727,19 +763,38 @@ function bindReviewSlider() {
 }
 
 renderSizes();
+renderProducts();
+offers = (OFFERS || []).slice();
+bindOfferSlider();
+bindReviewSlider();
+updateTotal();
 
-loadCatalog().then(async (data) => {
+loadCatalog().then((data) => {
   offers = data.offers || OFFERS || [];
   userReviews = shotReviews(data.reviews);
-  if (window.OrdersAPI && OrdersAPI.fetchReviewsList && OrdersAPI.hasCloudOrdersApi()) {
-    try {
-      const cloud = await OrdersAPI.fetchReviewsList();
-      userReviews = shotReviews(cloud);
-      try { writeLocal(LOCAL_KEYS.reviews, userReviews); } catch (err) {}
-    } catch (err) {}
-  }
   renderProducts();
-  bindOfferSlider();
-  bindReviewSlider();
+  renderOfferSlider();
+  renderReviewSlider();
   updateTotal();
+  const later = window.requestIdleCallback || ((fn) => setTimeout(fn, 1600));
+  later(() => {
+    Promise.all([
+      typeof refreshCloudCatalog === "function" ? refreshCloudCatalog() : Promise.resolve(null),
+      window.OrdersAPI && OrdersAPI.fetchReviewsList && OrdersAPI.hasCloudOrdersApi()
+        ? OrdersAPI.fetchReviewsList().catch(() => [])
+        : Promise.resolve([]),
+    ]).then(([cloud, reviews]) => {
+      if (cloud) {
+        offers = cloud.offers || OFFERS || offers;
+        renderProducts();
+        renderOfferSlider();
+      }
+      if (Array.isArray(reviews) && reviews.length) {
+        userReviews = shotReviews(reviews);
+        try { writeLocal(LOCAL_KEYS.reviews, userReviews); } catch (err) {}
+        renderReviewSlider();
+        startReviewTimer();
+      }
+    });
+  });
 });

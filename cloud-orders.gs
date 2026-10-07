@@ -119,7 +119,8 @@ function orderToRow_(order) {
 
 function normalizeBdPhone_(phone) {
   var digits = String(phone || '').replace(/[^0-9]/g, '');
-  if (digits.indexOf('88') === 0 && digits.length >= 13) digits = digits.substring(digits.length - 11);
+  if (digits.indexOf('880') === 0 && digits.length >= 13) digits = digits.substring(digits.length - 11);
+  else if (digits.indexOf('88') === 0 && digits.length >= 12) digits = '0' + digits.substring(digits.length - 10);
   if (digits.length === 10) digits = '0' + digits;
   return digits;
 }
