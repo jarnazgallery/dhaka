@@ -29,7 +29,7 @@ html {
 }
 
 body {
-  font-family: "Noto Sans Bengali", system-ui, sans-serif;
+  font-family: "Noto Sans Bengali", "Nirmala UI", "Segoe UI", system-ui, sans-serif;
   color: var(--ink);
   background:
     radial-gradient(circle at 10% 10%, #ffe3f3 0%, transparent 32%),
@@ -72,7 +72,7 @@ h2,
 .offer-price,
 .selected-code,
 .receipt-code {
-  font-family: "Fredoka", "Noto Sans Bengali", system-ui, sans-serif;
+  font-family: "Fredoka", "Noto Sans Bengali", "Nirmala UI", "Segoe UI", system-ui, sans-serif;
   font-weight: 600;
 }
 
@@ -490,6 +490,8 @@ h1 {
   overflow: hidden;
   text-align: center;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  content-visibility: auto;
+  contain-intrinsic-size: 360px 520px;
 }
 
 .product-card:hover {
@@ -627,7 +629,7 @@ h1 {
 }
 
 .review-slide p {
-  font-family: "Fredoka", "Noto Sans Bengali", system-ui, sans-serif;
+  font-family: "Fredoka", "Noto Sans Bengali", "Nirmala UI", "Segoe UI", system-ui, sans-serif;
   font-size: 1.1rem;
   max-width: 520px;
 }
@@ -1372,9 +1374,17 @@ thead {
 }
 
 .status-pill.is-new { background: #fff4e5; color: #9a5b00; }
+.status-pill.is-pending { background: #fff7e8; color: #9a5b00; }
 .status-pill.is-confirmed { background: #e6f8ed; color: #146c36; }
+.status-pill.is-processing { background: #e8f1ff; color: #175cd3; }
+.status-pill.is-ready_to_ship { background: #f3e8ff; color: #6941c6; }
+.status-pill.is-shipped { background: #e6f4ff; color: #026aa2; }
+.status-pill.is-out_for_delivery { background: #e8fff4; color: #146c36; }
 .status-pill.is-delivered { background: #e8f1ff; color: #175cd3; }
 .status-pill.is-cancelled { background: #fde8ee; color: #b42318; }
+.status-pill.is-return_requested,
+.status-pill.is-returned,
+.status-pill.is-refunded { background: #fff4e5; color: #b54708; }
 
 .next-steps {
   margin: 12px 0 0;

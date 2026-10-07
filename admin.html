@@ -9,11 +9,14 @@
     <meta name="robots" content="noindex, nofollow" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://script.google.com" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Noto+Sans+Bengali:wght@400;700&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
-    <link rel="stylesheet" href="styles.css?v=20261006m" />
+    <link rel="stylesheet" href="styles.css?v=20261007e" />
     <style>
       body.admin-app { min-height: 100vh; }
       .admin-top .header-inner { width: min(1240px, calc(100% - 28px)); }
@@ -411,6 +414,186 @@
       .desk-stats strong { font-size: 1.35rem; }
       .order-card.is-called { border-color: #b7ebc8; }
       .called-tag { color: #146c36; font-weight: 800; font-size: 0.78rem; }
+      .desk-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .desk-stat { display: grid; gap: 2px; }
+      .desk-stat.is-new { background: #fff4e5; }
+      .desk-stat.is-pending { background: #fffbeb; }
+      .desk-stat.is-processing { background: #eef6ff; }
+      .desk-stat.is-ready { background: #f6f0ff; }
+      .desk-stat.is-shipped { background: #eef9ff; }
+      .desk-stat.is-ofd { background: #eefbf3; }
+      .desk-stat.is-delivered { background: #eef4ff; }
+      .desk-stat.is-cancelled { background: #fff1f3; }
+      .order-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: end;
+        margin-bottom: 12px;
+      }
+      .order-toolbar label { margin: 0; flex: 1; min-width: min(220px, 100%); }
+      .order-toolbar select, .order-toolbar input { margin-top: 6px; }
+      .order-card {
+        gap: 10px;
+        padding: 16px 18px;
+      }
+      .order-card.is-fresh {
+        border-color: #ffb26a;
+        box-shadow: 0 10px 24px rgba(255, 140, 60, 0.12);
+      }
+      .order-id { font-weight: 800; color: #7a5a8a; font-size: 0.86rem; letter-spacing: 0.02em; }
+      .new-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #fff4e5;
+        color: #b86a00;
+        font-size: 0.72rem;
+        font-weight: 800;
+        padding: 4px 9px;
+        border-radius: 999px;
+      }
+      .wait-tag { color: #b86a00; font-weight: 700; font-size: 0.78rem; }
+      .order-kv { display: grid; gap: 3px; font-size: 0.92rem; color: #5b3d5e; }
+      .order-kv strong { color: var(--ink); }
+      .order-progress {
+        display: flex;
+        gap: 0;
+        overflow-x: auto;
+        padding: 6px 0 4px;
+        list-style: none;
+        margin: 0;
+        scrollbar-width: thin;
+      }
+      .order-progress li {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: 0 0 auto;
+        color: #b9a4bc;
+        font-size: 0.72rem;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+      .order-progress li + li::before {
+        content: "→";
+        margin: 0 8px 0 2px;
+        color: #ead5e6;
+        font-weight: 700;
+      }
+      .order-progress .dot {
+        width: 9px; height: 9px; border-radius: 50%;
+        background: #ead5e6; display: inline-block;
+      }
+      .order-progress li.is-done { color: #187a45; }
+      .order-progress li.is-done .dot { background: #187a45; }
+      .order-progress li.is-current { color: #e2187a; }
+      .order-progress li.is-current .dot {
+        background: #e2187a;
+        box-shadow: 0 0 0 4px rgba(226, 24, 122, 0.16);
+      }
+      .order-progress.is-compact li .lbl { max-width: 88px; overflow: hidden; text-overflow: ellipsis; }
+      .order-exception {
+        background: #fff4e5;
+        color: #b54708;
+        border: 1px solid #f9dbaf;
+        border-radius: 14px;
+        padding: 10px 12px;
+        font-weight: 800;
+        font-size: 0.86rem;
+      }
+      .order-exception.is-cancelled { background: #fde8ee; color: #b42318; border-color: #fecdcd; }
+      .status-menu-wrap { position: relative; }
+      .status-menu {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 6px);
+        z-index: 20;
+        min-width: 240px;
+        background: #fff;
+        border: 1px solid #ffd6ec;
+        border-radius: 16px;
+        box-shadow: 0 16px 40px rgba(80, 20, 50, 0.14);
+        padding: 6px;
+        display: none;
+      }
+      .status-menu.is-open { display: grid; }
+      .status-menu button {
+        width: 100%;
+        text-align: left;
+        border: 0;
+        background: transparent;
+        font: inherit;
+        font-weight: 700;
+        padding: 10px 12px;
+        border-radius: 12px;
+        cursor: pointer;
+      }
+      .status-menu button:hover { background: #fff4fa; }
+      .status-menu button.is-danger { color: #b42318; }
+      .order-drawer-card { width: min(860px, 100%); }
+      .order-sections { display: grid; gap: 12px; }
+      .order-section {
+        background: #fffafd;
+        border: 1px solid #ffd6ec;
+        border-radius: 18px;
+        padding: 14px 16px;
+      }
+      .order-section h4 { margin: 0 0 10px; font-size: 0.95rem; }
+      .order-section .meta-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 14px;
+        font-size: 0.92rem;
+      }
+      .order-section .meta-grid span { color: #7a5a8a; display: block; font-size: 0.78rem; font-weight: 700; }
+      .timeline-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+      .timeline-list li {
+        display: grid;
+        grid-template-columns: 18px 1fr;
+        gap: 10px;
+        align-items: start;
+      }
+      .timeline-list .tl-dot {
+        width: 10px; height: 10px; border-radius: 50%;
+        background: #e2187a; margin-top: 6px;
+      }
+      .timeline-list small { color: #7a5a8a; display: block; }
+      .courier-ok {
+        background: #e8f8ee;
+        border: 1px solid #b6e6c6;
+        color: #146c36;
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-weight: 700;
+      }
+      .admin-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(40, 12, 28, 0.45);
+        z-index: 120;
+        display: none;
+        padding: 16px;
+        overflow: auto;
+      }
+      .admin-modal.is-open { display: grid; place-items: center; }
+      .admin-modal-card {
+        width: min(460px, 100%);
+        background: #fff;
+        border-radius: 22px;
+        padding: 22px;
+        display: grid;
+        gap: 12px;
+        box-shadow: 0 20px 50px rgba(80, 20, 50, 0.18);
+      }
+      .status-pill.is-pending { background: #fff7e8; color: #9a5b00; }
+      .status-pill.is-processing { background: #e8f1ff; color: #175cd3; }
+      .status-pill.is-ready_to_ship { background: #f3e8ff; color: #6941c6; }
+      .status-pill.is-shipped { background: #e6f4ff; color: #026aa2; }
+      .status-pill.is-out_for_delivery { background: #e8fff4; color: #146c36; }
+      .status-pill.is-return_requested,
+      .status-pill.is-returned,
+      .status-pill.is-refunded { background: #fff4e5; color: #b54708; }
       .invoice-print { display: none; }
       @media print {
         body.printing-invoice * { visibility: hidden; }
@@ -434,6 +617,7 @@
         }
         .stat-grid { grid-template-columns: repeat(4, 1fr); }
         .desk-stats { grid-template-columns: repeat(4, 1fr); }
+        .order-section .meta-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         .add-grid { grid-template-columns: repeat(3, minmax(140px, 1fr)); align-items: end; }
         .product-admin { grid-template-columns: 1fr 1fr; }
         .site-grid { grid-template-columns: 1fr 1fr; }
@@ -562,16 +746,20 @@
 
         <section class="admin-page" id="tab-orders">
           <div class="page-head">
-            <h2>অর্ডার ডেস্ক</h2>
-            <p id="modeNote">নতুন অর্ডার এলে এখানে আসবে। ফোন করে কনফার্ম করুন, তারপর ডেলিভারি মার্ক করুন।</p>
+            <h2>অর্ডার ম্যানেজমেন্ট</h2>
+            <p id="modeNote">নতুন অর্ডার এলে এখানে আসবে। স্ট্যাটাস, কুরিয়ার ও পেমেন্ট আলাদা রাখা হয়েছে।</p>
             <span class="mode-pill" id="modePill">সার্ভার মোড</span>
             <button class="btn soft-btn" type="button" id="refreshOrders">অর্ডার রিফ্রেশ</button>
           </div>
           <div class="desk-stats" id="orderDesk">
-            <article><span>নতুন</span><strong id="deskNew">0</strong></article>
-            <article><span>কনফার্ম</span><strong id="deskConfirmed">0</strong></article>
-            <article><span>ডেলিভারি</span><strong id="deskDelivered">0</strong></article>
-            <article><span>মোট সেল</span><strong id="deskRevenue">৳০</strong></article>
+            <article class="desk-stat is-new"><span>New</span><strong id="deskNew">0</strong></article>
+            <article class="desk-stat is-pending"><span>Pending</span><strong id="deskPending">0</strong></article>
+            <article class="desk-stat is-processing"><span>Processing</span><strong id="deskProcessing">0</strong></article>
+            <article class="desk-stat is-ready"><span>Ready to Ship</span><strong id="deskReady">0</strong></article>
+            <article class="desk-stat is-shipped"><span>Shipped</span><strong id="deskShipped">0</strong></article>
+            <article class="desk-stat is-ofd"><span>Out for Delivery</span><strong id="deskOfd">0</strong></article>
+            <article class="desk-stat is-delivered"><span>Delivered</span><strong id="deskDelivered">0</strong></article>
+            <article class="desk-stat is-cancelled"><span>Cancelled</span><strong id="deskCancelled">0</strong></article>
           </div>
           <form class="panel add-form" id="manualOrderForm">
             <h3>ম্যানুয়াল অর্ডার যোগ</h3>
@@ -593,15 +781,39 @@
             <p class="save-note" id="manualOrderNote"></p>
           </form>
           <div class="panel">
-            <label>খুঁজুন
-              <input class="search-box" id="orderSearch" type="search" placeholder="নাম, মোবাইল বা SET নম্বর" />
-            </label>
+            <div class="order-toolbar">
+              <label>খুঁজুন
+                <input class="search-box" id="orderSearch" type="search" placeholder="Order ID, নাম, মোবাইল, ট্র্যাকিং" />
+              </label>
+              <label>তারিখ
+                <select id="orderDateFilter">
+                  <option value="all">সব তারিখ</option>
+                  <option value="today">Today</option>
+                  <option value="yesterday">Yesterday</option>
+                  <option value="7">Last 7 Days</option>
+                  <option value="30">Last 30 Days</option>
+                  <option value="custom">Custom Date</option>
+                </select>
+              </label>
+              <label id="orderDateFromWrap" class="is-hidden">From
+                <input id="orderDateFrom" type="date" />
+              </label>
+              <label id="orderDateToWrap" class="is-hidden">To
+                <input id="orderDateTo" type="date" />
+              </label>
+            </div>
             <div class="filter-pills" id="orderFilters">
-              <button class="admin-nav-btn is-active" type="button" data-filter="all" data-label="সব">সব</button>
-              <button class="admin-nav-btn" type="button" data-filter="new" data-label="নতুন">নতুন</button>
-              <button class="admin-nav-btn" type="button" data-filter="confirmed" data-label="কনফার্ম">কনফার্ম</button>
-              <button class="admin-nav-btn" type="button" data-filter="delivered" data-label="ডেলিভারি">ডেলিভারি</button>
-              <button class="admin-nav-btn" type="button" data-filter="cancelled" data-label="ক্যান্সেল">ক্যান্সেল</button>
+              <button class="admin-nav-btn is-active" type="button" data-filter="all" data-label="All">All</button>
+              <button class="admin-nav-btn" type="button" data-filter="new" data-label="New">New</button>
+              <button class="admin-nav-btn" type="button" data-filter="pending" data-label="Pending">Pending</button>
+              <button class="admin-nav-btn" type="button" data-filter="confirmed" data-label="Confirmed">Confirmed</button>
+              <button class="admin-nav-btn" type="button" data-filter="processing" data-label="Processing">Processing</button>
+              <button class="admin-nav-btn" type="button" data-filter="ready_to_ship" data-label="Ready to Ship">Ready to Ship</button>
+              <button class="admin-nav-btn" type="button" data-filter="shipped" data-label="Shipped">Shipped</button>
+              <button class="admin-nav-btn" type="button" data-filter="out_for_delivery" data-label="Out for Delivery">Out for Delivery</button>
+              <button class="admin-nav-btn" type="button" data-filter="delivered" data-label="Delivered">Delivered</button>
+              <button class="admin-nav-btn" type="button" data-filter="cancelled" data-label="Cancelled">Cancelled</button>
+              <button class="admin-nav-btn" type="button" data-filter="returned" data-label="Returned">Returned</button>
             </div>
             <div id="list"></div>
           </div>
@@ -615,31 +827,38 @@
                 <button class="btn soft-btn" type="button" id="closeOrderDrawer">বন্ধ</button>
               </div>
               <p id="orderDrawerMeta"></p>
+              <div id="orderProgressBox"></div>
+              <div class="order-sections" id="orderDetailSections"></div>
               <form id="orderEditForm">
                 <input type="hidden" name="orderId" />
-                <div class="site-grid">
-                  <label>কাস্টমার নাম <input name="name" required placeholder="নাম" /></label>
-                  <label>মোবাইল <input name="phone" required placeholder="01XXXXXXXXX" /></label>
+                <div class="order-section">
+                  <h4>A. Order & customer edit</h4>
+                  <div class="site-grid">
+                    <label>কাস্টমার নাম <input name="name" required placeholder="নাম" /></label>
+                    <label>মোবাইল <input name="phone" required placeholder="01XXXXXXXXX" /></label>
+                  </div>
+                  <label>ঠিকানা / লোকেশন <textarea name="address" rows="3" required placeholder="বাসা, রোড, থানা, জেলা"></textarea></label>
+                  <div class="site-grid">
+                    <label>প্রোডাক্ট <select name="productCode" id="editProduct" required></select></label>
+                    <label>সাইজ <select name="size" id="editSize" required></select></label>
+                    <label>পরিমাণ <input name="qty" type="number" min="1" max="20" required /></label>
+                    <label>মোট (৳) <input name="total" type="number" min="1" required /></label>
+                  </div>
+                  <label>নোট <textarea name="note" rows="2" placeholder="ডেলিভারি নোট, কাস্টমার কমেন্ট..."></textarea></label>
+                  <label class="check-row"><input type="checkbox" id="orderCalled" /> ফোন করেছি / কল করা হয়েছে</label>
                 </div>
-                <label>ঠিকানা / লোকেশন <textarea name="address" rows="3" required placeholder="বাসা, রোড, থানা, জেলা"></textarea></label>
-                <div class="site-grid">
-                  <label>প্রোডাক্ট <select name="productCode" id="editProduct" required></select></label>
-                  <label>সাইজ <select name="size" id="editSize" required></select></label>
-                  <label>পরিমাণ <input name="qty" type="number" min="1" max="20" required /></label>
-                  <label>মোট (৳) <input name="total" type="number" min="1" required /></label>
-                </div>
-                <label>নোট <textarea name="note" rows="2" placeholder="ডেলিভারি নোট, কাস্টমার কমেন্ট..."></textarea></label>
-                <label class="check-row"><input type="checkbox" id="orderCalled" /> ফোন করেছি / কল করা হয়েছে</label>
+                <div class="order-section" id="orderCourierSection"></div>
                 <div class="order-links" id="orderQuickLinks"></div>
                 <p class="save-note" id="orderCourierNote"></p>
                 <div class="panel-actions" style="margin-top: 16px;">
                   <button class="btn btn-dark" type="submit">ডিটেইলস সেভ</button>
                   <button class="btn soft-btn" type="button" id="copyAddressBtn">ঠিকানা কপি</button>
                   <button class="btn soft-btn" type="button" id="printInvoiceBtn">ইনভয়েস প্রিন্ট</button>
-                  <button class="btn ok-btn" type="button" data-status-action="confirmed">কনফার্ম</button>
-                  <button class="btn soft-btn" type="button" data-status-action="delivered">ডেলিভারি হয়েছে</button>
-                  <button class="btn ok-btn is-hidden" type="button" id="steadfastSendBtn">Steadfast-এ পাঠান</button>
-                  <button class="btn danger" type="button" data-status-action="cancelled">ক্যান্সেল</button>
+                  <div class="status-menu-wrap">
+                    <button class="btn ok-btn" type="button" id="drawerStatusBtn">Update Status ▼</button>
+                    <div class="status-menu" id="drawerStatusMenu"></div>
+                  </div>
+                  <button class="btn ok-btn is-hidden" type="button" id="steadfastSendBtn">Send to Courier</button>
                   <button class="btn danger" type="button" id="deleteOrderBtn">মুছে ফেলুন</button>
                 </div>
                 <p class="save-note" id="orderEditNote"></p>
@@ -794,18 +1013,78 @@
       </div>
     </div>
 
+    <div class="admin-modal" id="orderConfirmModal" aria-hidden="true">
+      <div class="admin-modal-card">
+        <h3>Confirm this order?</h3>
+        <p id="confirmModalBody"></p>
+        <div class="panel-actions">
+          <button class="btn soft-btn" type="button" data-close-modal="orderConfirmModal">Keep</button>
+          <button class="btn ok-btn" type="button" id="confirmModalYes">Confirm Order</button>
+        </div>
+      </div>
+    </div>
+    <div class="admin-modal" id="orderCancelModal" aria-hidden="true">
+      <div class="admin-modal-card">
+        <h3>Cancel this order?</h3>
+        <p id="cancelModalBody"></p>
+        <label>Cancellation reason
+          <select id="cancelReason">
+            <option value="Customer requested">Customer requested</option>
+            <option value="Out of stock">Out of stock</option>
+            <option value="Wrong information">Wrong information</option>
+            <option value="Duplicate order">Duplicate order</option>
+            <option value="Other">Other</option>
+          </select>
+        </label>
+        <div class="panel-actions">
+          <button class="btn soft-btn" type="button" data-close-modal="orderCancelModal">Keep Order</button>
+          <button class="btn danger" type="button" id="cancelModalYes">Confirm Cancellation</button>
+        </div>
+      </div>
+    </div>
+    <div class="admin-modal" id="orderReturnModal" aria-hidden="true">
+      <div class="admin-modal-card">
+        <h3>Return / Refund</h3>
+        <p id="returnModalBody"></p>
+        <label>Status
+          <select id="returnNextStatus">
+            <option value="return_requested">Return Requested</option>
+            <option value="returned">Returned</option>
+            <option value="refunded">Refunded</option>
+          </select>
+        </label>
+        <label>Return reason <input id="returnReason" placeholder="কারণ" /></label>
+        <label>Refund amount <input id="refundAmount" type="number" min="0" placeholder="৳" /></label>
+        <label>Refund method
+          <select id="refundMethod">
+            <option value="">Select</option>
+            <option value="COD adjustment">COD adjustment</option>
+            <option value="bKash">bKash</option>
+            <option value="Nagad">Nagad</option>
+            <option value="Bank">Bank</option>
+          </select>
+        </label>
+        <label>Refund note <textarea id="refundNote" rows="2"></textarea></label>
+        <div class="panel-actions">
+          <button class="btn soft-btn" type="button" data-close-modal="orderReturnModal">Close</button>
+          <button class="btn ok-btn" type="button" id="returnModalYes">Save</button>
+        </div>
+      </div>
+    </div>
     <div class="invoice-print" id="invoicePrint"></div>
-    <script src="site-config.js?v=20261006k"></script>
-    <script src="orders-api.js?v=20261006m"></script>
-    <script src="catalog.js?v=20261006k"></script>
+    <script src="site-config.js?v=20261007g"></script>
+    <script src="orders-api.js?v=20261007f"></script>
+    <script src="catalog.js?v=20261007f"></script>
     <script>
       const TOKEN_KEY = "jarnaz-admin-token";
       let offers = [];
       let lastOrders = [];
       let siteDraft = mergeSite();
       let orderFilter = "all";
+      let orderDateFilter = "all";
       let currentOrderId = "";
       let lastReviews = [];
+      let pendingStatusOrderId = "";
 
       function esc(value) {
         return String(value ?? "")
@@ -993,18 +1272,101 @@
       }
 
       function orderStatus(order) {
-        const status = order && order.status ? String(order.status) : "new";
-        if (["confirmed", "cancelled", "delivered"].includes(status)) return status;
-        return "new";
+        const raw = order && order.status ? String(order.status) : "new";
+        return window.OrdersAPI && OrdersAPI.canonicalStatus ? OrdersAPI.canonicalStatus(raw) : raw;
       }
 
       function statusLabel(status) {
-        return {
-          new: "নতুন",
-          confirmed: "কনফার্ম",
-          delivered: "ডেলিভারি",
-          cancelled: "ক্যান্সেল",
-        }[status] || "নতুন";
+        const s = orderStatus({ status });
+        if (s === "new") return "New";
+        const pipe = ((OrdersAPI.ORDER_PIPELINE || []).concat(OrdersAPI.ORDER_EXCEPTIONS || []));
+        const found = pipe.find((item) => item.id === s);
+        return found ? found.label : s;
+      }
+
+      function waitLabel(iso) {
+        const ms = Date.now() - new Date(iso).getTime();
+        if (!iso || Number.isNaN(ms) || ms < 0) return "";
+        const h = Math.floor(ms / 3600000);
+        const m = Math.floor((ms % 3600000) / 60000);
+        if (h >= 48) return Math.floor(h / 24) + "d";
+        if (h) return h + "h " + m + "m";
+        return Math.max(1, m) + "m";
+      }
+
+      function statusActionsFor(status) {
+        const s = orderStatus({ status });
+        const items = [];
+        const add = (next, icon, label, kind) => items.push({ status: next, icon, label, kind: kind || "next" });
+        if (s === "new" || s === "pending") {
+          if (s === "new") add("pending", "🟡", "Mark Pending");
+          add("confirmed", "📞", "Confirm Order", "confirm");
+          add("cancelled", "❌", "Cancel Order", "cancel");
+        } else if (s === "confirmed") {
+          add("processing", "📦", "Start Processing");
+          add("cancelled", "❌", "Cancel Order", "cancel");
+        } else if (s === "processing") {
+          add("ready_to_ship", "🏷️", "Mark Ready to Ship");
+          add("cancelled", "❌", "Cancel Order", "cancel");
+        } else if (s === "ready_to_ship") {
+          add("shipped", "🚚", "Mark as Shipped");
+          add("cancelled", "❌", "Cancel Order", "cancel");
+        } else if (s === "shipped") {
+          add("out_for_delivery", "🏠", "Mark Out for Delivery");
+        } else if (s === "out_for_delivery") {
+          add("delivered", "✅", "Mark as Delivered");
+        } else if (s === "delivered") {
+          add("return_requested", "↩️", "Return / Refund", "return");
+        } else if (s === "return_requested") {
+          add("returned", "↩️", "Mark Returned", "return");
+          add("refunded", "↩️", "Mark Refunded", "return");
+        } else if (s === "returned") {
+          add("refunded", "↩️", "Mark Refunded", "return");
+        }
+        return items;
+      }
+
+      function progressHtml(order, compact) {
+        const status = orderStatus(order);
+        if (OrdersAPI.isExceptionStatus && OrdersAPI.isExceptionStatus(status)) {
+          const extra = order.cancelReason || order.returnReason || "";
+          return `<div class="order-exception is-${esc(status)}">${esc(statusLabel(status))}${extra ? " · " + esc(extra) : ""}</div>`;
+        }
+        const idx = OrdersAPI.pipelineIndex ? OrdersAPI.pipelineIndex(status) : 0;
+        return `<ol class="order-progress${compact ? " is-compact" : ""}">${
+          (OrdersAPI.ORDER_PIPELINE || []).map((step, i) => {
+            const state = i < idx ? "is-done" : i === idx ? "is-current" : "is-todo";
+            return `<li class="${state}"><span class="dot"></span><span class="lbl">${esc(step.label)}</span></li>`;
+          }).join("")
+        }</ol>`;
+      }
+
+      function timelineNoteFor(next, extra) {
+        extra = extra || {};
+        const notes = {
+          pending: "Moved to pending",
+          confirmed: "Order confirmed by Admin",
+          processing: "Order processing started",
+          ready_to_ship: "Order marked Ready to Ship",
+          shipped: "Order marked as Shipped",
+          out_for_delivery: "Out for Delivery",
+          delivered: "Order Delivered",
+          cancelled: "Order cancelled" + (extra.cancelReason ? " · " + extra.cancelReason : ""),
+          return_requested: "Return requested",
+          returned: "Order returned",
+          refunded: "Order refunded",
+        };
+        return extra.timelineNote || notes[next] || ("Status → " + next);
+      }
+
+      function closeStatusMenus() {
+        document.querySelectorAll(".status-menu.is-open").forEach((el) => el.classList.remove("is-open"));
+      }
+
+      function statusMenuHtml(orderId, status) {
+        return statusActionsFor(status).map((item) =>
+          `<button type="button" class="${item.kind === "cancel" ? "is-danger" : ""}" data-status-order="${esc(orderId)}" data-status="${esc(item.status)}" data-kind="${esc(item.kind)}">${item.icon} ${esc(item.label)}</button>`
+        ).join("");
       }
 
       function formatOrderTime(iso) {
@@ -1066,33 +1428,38 @@
         document.getElementById("statOrders").textContent = lastOrders.length;
         document.getElementById("statOffers").textContent = offers.length;
         const revenue = lastOrders
-          .filter((order) => orderStatus(order) !== "cancelled")
+          .filter((order) => !["cancelled", "refunded"].includes(orderStatus(order)))
           .reduce((sum, order) => sum + Number(order.total || 0), 0);
         document.getElementById("statRevenue").textContent = taka(revenue);
         const count = document.getElementById("adminProductCount");
         if (count) count.textContent = PRODUCTS.length;
-        const news = lastOrders.filter((o) => orderStatus(o) === "new").length;
-        const confirmed = lastOrders.filter((o) => orderStatus(o) === "confirmed").length;
-        const delivered = lastOrders.filter((o) => orderStatus(o) === "delivered").length;
+        const countBy = (id) => lastOrders.filter((o) => orderStatus(o) === id).length;
+        const news = countBy("new");
         const badge = document.getElementById("newOrderBadge");
         if (badge) {
           badge.textContent = news;
           badge.classList.toggle("is-hidden", news === 0);
         }
-        const deskNew = document.getElementById("deskNew");
-        if (deskNew) deskNew.textContent = news;
-        const deskConfirmed = document.getElementById("deskConfirmed");
-        if (deskConfirmed) deskConfirmed.textContent = confirmed;
-        const deskDelivered = document.getElementById("deskDelivered");
-        if (deskDelivered) deskDelivered.textContent = delivered;
-        const deskRevenue = document.getElementById("deskRevenue");
-        if (deskRevenue) deskRevenue.textContent = taka(revenue);
+        const setDesk = (id, value) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = value;
+        };
+        setDesk("deskNew", news);
+        setDesk("deskPending", countBy("pending"));
+        setDesk("deskProcessing", countBy("processing"));
+        setDesk("deskReady", countBy("ready_to_ship"));
+        setDesk("deskShipped", countBy("shipped"));
+        setDesk("deskOfd", countBy("out_for_delivery"));
+        setDesk("deskDelivered", countBy("delivered"));
+        setDesk("deskCancelled", countBy("cancelled"));
       }
 
       function renderRecent() {
         const root = document.getElementById("recentOrders");
         if (!lastOrders.length) {
-          root.innerHTML = '<p class="empty">এখনো কোনো অর্ডার নেই।</p>';
+          root.innerHTML = ordersLoading
+            ? '<p class="empty">অর্ডার লোড হচ্ছে...</p>'
+            : '<p class="empty">এখনো কোনো অর্ডার নেই।</p>';
           return;
         }
         root.innerHTML = lastOrders
@@ -1117,7 +1484,7 @@
         document.getElementById("productAdmin").innerHTML = PRODUCTS.map(
           (p) => `
             <div class="product-admin-row${p.code === highlightCode ? " is-new" : ""}" data-code="${esc(p.code)}">
-              <img src="${esc(p.image)}" alt="${esc(p.code)}" />
+              <img src="${esc(typeof fastSrc === "function" ? fastSrc(p.image) : p.image)}" alt="${esc(p.code)}" />
               <div class="product-fields">
                 <span class="code-pill">${esc(p.code)} · প্রায়োরিটি ${esc(productPriority(p))}</span>
                 <div class="field-pair">
@@ -1156,7 +1523,7 @@
           .map(
             (offer) => `
             <div class="product-admin-row${offer.code === highlightCode ? " is-new" : ""}" data-code="${esc(offer.code)}">
-              <img src="${esc(offer.image)}" alt="${esc(offer.code)}" />
+              <img src="${esc(typeof fastSrc === "function" ? fastSrc(offer.image) : offer.image)}" alt="${esc(offer.code)}" />
               <div class="product-fields">
                 <span class="code-pill">${esc(offer.code)}</span>
                 <label>টাইটেল <input data-offer-edit="title" value="${esc(offer.title || "")}" /></label>
@@ -1188,18 +1555,29 @@
         return list.sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
       }
 
+      let ordersLoading = false;
+
       async function loadServerOrders() {
         if (cloudOrdersOn()) {
           try {
             const orders = await OrdersAPI.fetchOrdersList();
+            ordersLoading = false;
             renderOrders(Array.isArray(orders) ? orders : []);
             try { writeLocal(LOCAL_KEYS.orders, lastOrders); } catch (err) {}
             setModeNote();
             return;
-          } catch (cloudErr) {}
+          } catch (cloudErr) {
+            ordersLoading = false;
+            const cached = readLocal(LOCAL_KEYS.orders, []);
+            if (cached.length) renderOrders(cached);
+            else renderOrders(lastOrders);
+            setModeNote();
+            return;
+          }
         }
         const orders = await api("admin/orders", { headers: headers() });
         const serverOk = API_MODE === "php" || API_MODE === "server";
+        ordersLoading = false;
         if (serverOk && Array.isArray(orders)) {
           renderOrders(orders);
           try { writeLocal(LOCAL_KEYS.orders, orders); } catch (err) {}
@@ -1216,13 +1594,41 @@
         }, 25000);
       }
 
+      function orderInDateRange(order) {
+        if (orderDateFilter === "all") return true;
+        const t = new Date(order.createdAt).getTime();
+        if (Number.isNaN(t)) return true;
+        const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+        const now = new Date();
+        const today = startOfDay(now);
+        const dayMs = 86400000;
+        if (orderDateFilter === "today") return t >= today;
+        if (orderDateFilter === "yesterday") return t >= today - dayMs && t < today;
+        if (orderDateFilter === "7") return t >= today - 6 * dayMs;
+        if (orderDateFilter === "30") return t >= today - 29 * dayMs;
+        if (orderDateFilter === "custom") {
+          const from = document.getElementById("orderDateFrom").value;
+          const to = document.getElementById("orderDateTo").value;
+          if (from && t < new Date(from).getTime()) return false;
+          if (to && t > new Date(to).getTime() + dayMs - 1) return false;
+        }
+        return true;
+      }
+
       function filteredOrders() {
         const q = (document.getElementById("orderSearch").value || "").trim().toLowerCase();
         return lastOrders.filter((o) => {
-          const statusOk = orderFilter === "all" || orderStatus(o) === orderFilter;
+          const status = orderStatus(o);
+          const statusOk = orderFilter === "all"
+            || status === orderFilter
+            || (orderFilter === "returned" && (status === "returned" || status === "return_requested" || status === "refunded"));
           if (!statusOk) return false;
+          if (!orderInDateRange(o)) return false;
           if (!q) return true;
-          return [o.productCode, o.name, o.phone, o.address, o.id, o.size, orderStatus(o)]
+          const tracking = (window.OrdersAPI && OrdersAPI.orderTrackingId)
+            ? OrdersAPI.orderTrackingId(o)
+            : (o.consignmentNo || o.steadfastTracking || "");
+          return [o.productCode, o.name, o.phone, o.address, o.id, o.size, status, tracking]
             .join(" ")
             .toLowerCase()
             .includes(q);
@@ -1308,7 +1714,9 @@
         const rows = filteredOrders();
         const root = document.getElementById("list");
         if (!rows.length) {
-          root.innerHTML = '<p class="empty">এই ফিল্টারে কোনো অর্ডার নেই।</p>';
+          root.innerHTML = ordersLoading
+            ? '<p class="empty">অর্ডার লোড হচ্ছে...</p>'
+            : '<p class="empty">এই ফিল্টারে কোনো অর্ডার নেই।</p>';
           return;
         }
         root.innerHTML = `<div class="order-list">${rows
@@ -1316,25 +1724,40 @@
             const status = orderStatus(o);
             const product = findProduct(o.productCode);
             const called = o.called === "yes" || o.called === true;
+            const isNew = status === "new";
+            const wait = (isNew || status === "pending") ? waitLabel(o.createdAt) : "";
+            const courier = (OrdersAPI.orderCourierName && OrdersAPI.orderCourierName(o)) || o.courierName || "Not selected";
+            const pay = o.paymentMethod || "COD";
             return `
-              <article class="order-card${called ? " is-called" : ""}">
+              <article class="order-card${called ? " is-called" : ""}${isNew ? " is-fresh" : ""}">
                 <div class="order-card-top">
-                  <span class="status-pill is-${status}">${statusLabel(status)}</span>
-                  <strong>${taka(o.total)}</strong>
+                  <div>
+                    ${isNew ? '<span class="new-badge">🟠 NEW</span> ' : ""}
+                    <span class="status-pill is-${status}">${statusLabel(status)}</span>
+                    ${wait ? `<span class="wait-tag">Waiting: ${esc(wait)}</span>` : ""}
+                  </div>
+                  <span class="order-id">${esc(o.id)}</span>
                 </div>
-                <h4>${esc(o.name || "নাম নেই")} · ${esc(o.productCode)}</h4>
-                <p>মোবাইল: <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>${called ? ' <span class="called-tag">ফোন হয়েছে</span>' : ""}</p>
-                <p class="addr">ঠিকানা: ${esc(o.address || "—")}</p>
-                <p>সাইজ ${esc(o.size)} · ${esc(o.qty)} সেট${product ? " · " + esc(product.name) : ""}</p>
+                <div class="order-kv">
+                  <div><span>Customer</span><strong>${esc(o.name || "—")}</strong></div>
+                  <div>Phone: <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>${called ? ' <span class="called-tag">Called</span>' : ""}</div>
+                  <div>Address: ${esc(o.address || "—")}</div>
+                  <div>Product: <strong>${esc(o.productCode)} × ${esc(o.qty)}</strong>${product ? " · " + esc(product.name) : ""}</div>
+                </div>
                 <div class="order-card-meta">
-                  <small>${esc(o.id)} · ${formatOrderTime(o.createdAt)}</small>
+                  <strong>${taka(o.total)}</strong>
+                  <span>Payment: ${esc(pay)} · ${esc(o.paymentStatus || "pending")}</span>
+                  <span>Courier: ${esc(courier)}</span>
+                </div>
+                ${progressHtml(o, true)}
+                <div class="order-card-meta">
+                  <small>${formatOrderTime(o.createdAt)}</small>
                   <div class="row-actions">
-                    <button class="btn soft-btn" type="button" data-open-order="${esc(o.id)}">ডিটেইলস</button>
-                    <button class="btn soft-btn" type="button" data-copy-address="${esc(o.id)}">ঠিকানা</button>
-                    ${status === "new" ? `<button class="btn ok-btn" type="button" data-status-order="${esc(o.id)}" data-status="confirmed">কনফার্ম</button>` : ""}
-                    ${status === "confirmed" ? `<button class="btn ok-btn" type="button" data-status-order="${esc(o.id)}" data-status="delivered">ডেলিভারি</button>` : ""}
-                    ${status === "confirmed" && cloudOrdersOn() ? `<button class="btn soft-btn" type="button" data-steadfast-order="${esc(o.id)}">Steadfast</button>` : ""}
-                    ${status === "new" || status === "confirmed" ? `<button class="btn danger" type="button" data-status-order="${esc(o.id)}" data-status="cancelled">ক্যান্সেল</button>` : ""}
+                    <button class="btn soft-btn" type="button" data-open-order="${esc(o.id)}">View Order</button>
+                    <div class="status-menu-wrap">
+                      <button class="btn btn-dark" type="button" data-status-toggle="${esc(o.id)}">Update Status ▼</button>
+                      <div class="status-menu" id="menu-${esc(o.id)}">${statusMenuHtml(o.id, status)}</div>
+                    </div>
                   </div>
                 </div>
               </article>`;
@@ -1349,15 +1772,77 @@
         currentOrderId = "";
       }
 
+      function timelineHtml(order) {
+        const list = OrdersAPI.parseTimeline ? OrdersAPI.parseTimeline(order.timeline) : [];
+        if (!list.length) return '<p class="empty">এখনো হিস্ট্রি নেই।</p>';
+        return `<ol class="timeline-list">${list.map((item) => `
+          <li>
+            <span class="tl-dot"></span>
+            <div>
+              <small>🕐 ${esc(formatOrderTime(item.at))}${item.by ? " · " + esc(item.by) : ""}</small>
+              <strong>${esc(item.note || statusLabel(item.status))}</strong>
+            </div>
+          </li>`).join("")}</ol>`;
+      }
+
       function openOrderDrawer(id) {
         const order = lastOrders.find((o) => o.id === id);
         if (!order) return;
         currentOrderId = order.id;
         const status = orderStatus(order);
         const form = document.getElementById("orderEditForm");
+        const product = findProduct(order.productCode);
         document.getElementById("orderDrawerTitle").textContent = `${order.id} · ${statusLabel(status)}`;
         document.getElementById("orderDrawerMeta").textContent =
           `${formatOrderTime(order.createdAt)} · ${order.source === "admin" ? "ম্যানুয়াল অর্ডার" : "ওয়েবসাইট অর্ডার"}`;
+        document.getElementById("orderProgressBox").innerHTML =
+          `<div class="order-section"><h4>F. Order status</h4>${progressHtml(order, false)}</div>`;
+        const tracking = OrdersAPI.orderTrackingId ? OrdersAPI.orderTrackingId(order) : (order.consignmentNo || order.steadfastTracking || "");
+        const courier = order.courierName || "";
+        document.getElementById("orderDetailSections").innerHTML = `
+          <div class="order-section">
+            <h4>A. Order information</h4>
+            <div class="meta-grid">
+              <div><span>Order ID</span><strong>${esc(order.id)}</strong></div>
+              <div><span>Status</span><strong>${esc(statusLabel(status))}</strong></div>
+              <div><span>Created</span><strong>${esc(formatOrderTime(order.createdAt))}</strong></div>
+              <div><span>Source</span><strong>${esc(order.source || "web")}</strong></div>
+            </div>
+          </div>
+          <div class="order-section">
+            <h4>B. Customer information</h4>
+            <div class="meta-grid">
+              <div><span>Name</span><strong>${esc(order.name || "—")}</strong></div>
+              <div><span>Phone</span><strong>${esc(order.phone || "—")}</strong></div>
+              <div><span>Address</span><strong>${esc(order.address || "—")}</strong></div>
+            </div>
+          </div>
+          <div class="order-section">
+            <h4>C. Product information</h4>
+            <div class="meta-grid">
+              <div><span>Code</span><strong>${esc(order.productCode)}</strong></div>
+              <div><span>Name</span><strong>${esc(product ? product.name : "—")}</strong></div>
+              <div><span>Size</span><strong>${esc(order.size)}</strong></div>
+              <div><span>Qty</span><strong>${esc(order.qty)}</strong></div>
+            </div>
+          </div>
+          <div class="order-section">
+            <h4>D. Payment information</h4>
+            <div class="meta-grid">
+              <div><span>Total</span><strong>${taka(order.total)}</strong></div>
+              <div><span>Method</span><strong>${esc(order.paymentMethod || "COD")}</strong></div>
+              <div><span>Payment status</span><strong>${esc(order.paymentStatus || "pending")}</strong></div>
+            </div>
+          </div>
+          <div class="order-section">
+            <h4>E. Courier information</h4>
+            ${tracking ? `<div class="courier-ok">✅ Courier consignment created<br />Tracking ID: ${esc(tracking)}</div>` : `<p>Courier: ${esc(courier || "Not selected")}</p>`}
+          </div>
+          <div class="order-section">
+            <h4>G. Order timeline / history</h4>
+            ${timelineHtml(order)}
+          </div>
+        `;
         form.orderId.value = order.id;
         form.name.value = order.name || "";
         form.phone.value = order.phone || "";
@@ -1372,19 +1857,90 @@
         const digits = adminPhoneDigits(order.phone);
         const calledBox = document.getElementById("orderCalled");
         if (calledBox) calledBox.checked = order.called === "yes" || order.called === true;
+        const trackUrl = tracking && String(courier).toLowerCase() === "steadfast"
+          ? "https://steadfast.com.bd/t/" + encodeURIComponent(tracking)
+          : "";
         document.getElementById("orderQuickLinks").innerHTML = `
-          <a class="btn soft-btn" href="tel:${esc(order.phone)}">কল করুন</a>
-          ${digits ? `<a class="btn ok-btn" href="https://wa.me/${digits}" target="_blank" rel="noopener">WhatsApp</a>` : ""}
-          ${order.steadfastTracking ? `<span class="save-note">ট্র্যাকিং: ${esc(order.steadfastTracking)}</span>` : ""}
+          <a class="btn soft-btn" href="tel:${esc(order.phone)}">📞 Call</a>
+          ${digits ? `<a class="btn ok-btn" href="https://wa.me/${digits}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ""}
+          ${trackUrl ? `<a class="btn soft-btn" href="${esc(trackUrl)}" target="_blank" rel="noopener">Track Shipment</a>` : ""}
+        `;
+        document.getElementById("orderCourierSection").innerHTML = `
+          <h4>Courier</h4>
+          <div class="site-grid">
+            <label>Courier
+              <select id="orderCourierSelect">
+                <option value="">Not Selected</option>
+                <option value="Steadfast"${courier === "Steadfast" ? " selected" : ""}>Steadfast</option>
+                <option value="Pathao"${courier === "Pathao" ? " selected" : ""}>Pathao</option>
+                <option value="RedX"${courier === "RedX" ? " selected" : ""}>RedX</option>
+                <option value="Manual Courier"${courier === "Manual Courier" || (courier && courier !== "Steadfast" && courier !== "Pathao" && courier !== "RedX") ? " selected" : ""}>Manual Courier</option>
+              </select>
+            </label>
+            <label>Tracking / Consignment ID <input id="orderTrackingInput" value="${esc(tracking)}" placeholder="Tracking ID" /></label>
+            <label>Courier phone <input id="orderCourierPhone" value="${esc(order.courierPhone || "")}" placeholder="Optional" /></label>
+            <label>Courier note <input id="orderCourierNoteInput" value="${esc(order.shippingNote || "")}" /></label>
+          </div>
+          <div class="panel-actions" style="margin-top:10px">
+            <button class="btn soft-btn" type="button" id="saveCourierBtn">কুরিয়ার সেভ</button>
+          </div>
         `;
         document.getElementById("orderEditNote").textContent = "";
         const courierNote = document.getElementById("orderCourierNote");
-        if (courierNote) courierNote.textContent = order.consignmentNo ? ("কুরিয়ার: " + order.consignmentNo) : "";
+        if (courierNote) courierNote.textContent = tracking ? ("Tracking: " + tracking) : "";
         const sfBtn = document.getElementById("steadfastSendBtn");
-        if (sfBtn) sfBtn.classList.toggle("is-hidden", !cloudOrdersOn() || status === "cancelled");
+        const showSend = cloudOrdersOn() && status !== "cancelled" && (courier === "Steadfast" || !courier);
+        if (sfBtn) {
+          sfBtn.classList.toggle("is-hidden", !showSend);
+          sfBtn.textContent = tracking ? "Send again to Steadfast" : "Send to Courier";
+        }
+        const drawerMenu = document.getElementById("drawerStatusMenu");
+        if (drawerMenu) drawerMenu.innerHTML = statusMenuHtml(order.id, status);
         const drawer = document.getElementById("orderDrawer");
         drawer.classList.add("is-open");
         drawer.setAttribute("aria-hidden", "false");
+      }
+
+      function openAdminModal(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.add("is-open");
+        el.setAttribute("aria-hidden", "false");
+      }
+
+      function closeAdminModal(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.remove("is-open");
+        el.setAttribute("aria-hidden", "true");
+      }
+
+      async function applyStatusChange(id, next, extra) {
+        extra = extra || {};
+        const current = lastOrders.find((o) => o.id === id);
+        if (!current) throw new Error("অর্ডার নেই");
+        const note = timelineNoteFor(next, extra);
+        const timeline = OrdersAPI.appendTimeline
+          ? OrdersAPI.appendTimeline(current, {
+              status: next,
+              action: extra.action || ("status_" + next),
+              by: "Admin",
+              note,
+            })
+          : [];
+        const patch = Object.assign({
+          status: next,
+          timeline,
+          updatedBy: "Admin",
+          timelineNote: note,
+        }, extra);
+        if (next === "delivered" && (!current.paymentStatus || current.paymentStatus === "pending")) {
+          patch.paymentStatus = "paid";
+        }
+        const saved = await patchOrder(id, patch);
+        notify(statusLabel(next) + " ✓", true);
+        if (currentOrderId === id) openOrderDrawer(id);
+        return saved;
       }
 
       async function patchOrder(id, body) {
@@ -1422,37 +1978,42 @@
       }
 
       async function bootDash() {
-        const catalog = await loadCatalog();
-        PRODUCTS = sortProducts(catalog.products || []);
-        offers = catalog.offers || OFFERS || [];
-        OFFERS = offers;
-        fillWebsiteForm(catalog.site || SITE);
-        fillManualOrderForm();
-        fillCloudForm();
-        lastReviews = shotReviews(catalog.reviews);
-        renderComments();
-        renderProducts();
-        renderOffers();
-        setModeNote();
-        loadServerOrders().catch(() => {});
+        const cachedOrders = readLocal(LOCAL_KEYS.orders, []);
+        if (cachedOrders.length) {
+          renderOrders(cachedOrders);
+        } else {
+          ordersLoading = true;
+          renderOrders([]);
+        }
         startOrderPoll();
+        loadServerOrders().catch(() => {});
+        const catalogP = loadCatalog().then((catalog) => {
+          PRODUCTS = sortProducts(catalog.products || []);
+          offers = catalog.offers || OFFERS || [];
+          OFFERS = offers;
+          fillWebsiteForm(catalog.site || SITE);
+          fillManualOrderForm();
+          fillCloudForm();
+          lastReviews = shotReviews(catalog.reviews);
+          renderComments();
+          renderProducts();
+          renderOffers();
+          setModeNote();
+        });
         Promise.all([
+          catalogP.catch(() => {}),
           typeof refreshCloudCatalog === "function" ? refreshCloudCatalog() : Promise.resolve(null),
-          window.OrdersAPI && OrdersAPI.fetchReviewsList && OrdersAPI.hasCloudOrdersApi()
-            ? OrdersAPI.fetchReviewsList().catch(() => [])
-            : Promise.resolve([]),
-        ]).then(([cloud, reviews]) => {
-          if (cloud) {
-            PRODUCTS = sortProducts(cloud.products || PRODUCTS);
-            offers = cloud.offers || OFFERS;
-            OFFERS = offers;
-            renderProducts();
-            renderOffers();
-            fillManualOrderForm();
-            setModeNote();
-          }
-          if (Array.isArray(reviews) && reviews.length) {
-            lastReviews = shotReviews(reviews);
+        ]).then(([, cloud]) => {
+          if (!cloud) return;
+          PRODUCTS = sortProducts(cloud.products || PRODUCTS);
+          offers = cloud.offers || OFFERS;
+          OFFERS = offers;
+          renderProducts();
+          renderOffers();
+          fillManualOrderForm();
+          setModeNote();
+          if (Array.isArray(cloud.reviews)) {
+            lastReviews = shotReviews(cloud.reviews);
             try { writeLocal(LOCAL_KEYS.reviews, lastReviews); } catch (err) {}
             renderComments();
           }
@@ -1473,6 +2034,15 @@
       });
 
       document.getElementById("orderSearch").addEventListener("input", () => renderOrders());
+      document.getElementById("orderDateFilter").addEventListener("change", (event) => {
+        orderDateFilter = event.target.value;
+        const custom = orderDateFilter === "custom";
+        document.getElementById("orderDateFromWrap").classList.toggle("is-hidden", !custom);
+        document.getElementById("orderDateToWrap").classList.toggle("is-hidden", !custom);
+        renderOrders();
+      });
+      document.getElementById("orderDateFrom").addEventListener("change", () => renderOrders());
+      document.getElementById("orderDateTo").addEventListener("change", () => renderOrders());
       document.getElementById("orderFilters").addEventListener("click", (event) => {
         const btn = event.target.closest("[data-filter]");
         if (!btn) return;
@@ -1506,6 +2076,9 @@
             status: form.confirmNow.checked ? "confirmed" : "new",
             source: "admin",
             createdAt: new Date().toISOString(),
+            paymentMethod: "COD",
+            paymentStatus: "pending",
+            updatedBy: "Admin",
           };
           if (cloudOrdersOn()) {
             await OrdersAPI.createOrderRemote(manualOrder);
@@ -1607,23 +2180,24 @@
         errorEl.textContent = "";
         try {
           let data;
-          try {
-            const result = await apiCall("login", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ password }),
-            });
-            if (!result.ok) throw new Error((result.data && result.data.error) || "লগইন হয়নি");
-            data = result.data;
-          } catch (err) {
-            if (err.code !== "NO_API") throw err;
+          if (cloudOrdersOn()) {
             data = await localLogin(password);
+          } else {
+            try {
+              const result = await apiCall("login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password }),
+              });
+              if (!result.ok) throw new Error((result.data && result.data.error) || "লগইন হয়নি");
+              data = result.data;
+            } catch (err) {
+              if (err.code !== "NO_API") throw err;
+              data = await localLogin(password);
+            }
           }
           localStorage.setItem(TOKEN_KEY, data.token);
           try { localStorage.setItem(LOCAL_KEYS.pass, String(password)); } catch (err) {}
-          if (data.token === "local") {
-            errorEl.textContent = "সার্ভার লগইন হয়নি। login.php আপলোড করে আবার লগইন করুন, নাহলে ফোনের অর্ডার দেখা যাবে না।";
-          }
           showDash();
           bootDash();
         } catch (err) {
@@ -1705,7 +2279,7 @@
             try {
               product.image = await fileToDataUrl(compressed);
             } catch (err) {
-              product.image = "images/set-01.png";
+              product.image = "images/set-01.jpg";
             }
           }
           if (!PRODUCTS.some((p) => p.code === product.code)) PRODUCTS.unshift(product);
@@ -1985,37 +2559,57 @@
         }
       });
 
+      async function handleStatusMenuClick(statusBtn) {
+        const id = statusBtn.dataset.statusOrder;
+        const status = statusBtn.dataset.status;
+        const kind = statusBtn.dataset.kind || "";
+        closeStatusMenus();
+        const order = lastOrders.find((o) => o.id === id);
+        if (!order) return;
+        pendingStatusOrderId = id;
+        if (kind === "confirm" || status === "confirmed") {
+          document.getElementById("confirmModalBody").innerHTML =
+            `<strong>${esc(order.name)}</strong><br />Phone: ${esc(order.phone)}<br />Total: ${taka(order.total)}<br />Payment: ${esc(order.paymentMethod || "COD")}`;
+          openAdminModal("orderConfirmModal");
+          return;
+        }
+        if (kind === "cancel" || status === "cancelled") {
+          document.getElementById("cancelModalBody").textContent = `Order: ${order.id} · ${order.name}`;
+          openAdminModal("orderCancelModal");
+          return;
+        }
+        if (kind === "return" || status === "return_requested" || status === "returned" || status === "refunded") {
+          document.getElementById("returnModalBody").textContent = `Order: ${order.id} · ${order.name}`;
+          document.getElementById("returnNextStatus").value = status === "delivered" ? "return_requested" : status;
+          document.getElementById("refundAmount").value = order.total || "";
+          openAdminModal("orderReturnModal");
+          return;
+        }
+        try {
+          await applyStatusChange(id, status);
+        } catch (err) {
+          notify(err.message, false);
+        }
+      }
+
       document.getElementById("list").addEventListener("click", async (event) => {
         const openBtn = event.target.closest("[data-open-order]");
         if (openBtn) {
+          closeStatusMenus();
           openOrderDrawer(openBtn.dataset.openOrder);
           return;
         }
-        const copyBtn = event.target.closest("[data-copy-address]");
-        if (copyBtn) {
-          const order = lastOrders.find((o) => o.id === copyBtn.dataset.copyAddress);
-          if (order) copyText([order.name, order.phone, order.address].filter(Boolean).join("\n"));
-          return;
-        }
-        const sfBtn = event.target.closest("[data-steadfast-order]");
-        if (sfBtn) {
-          if (!confirm("এই অর্ডার Steadfast-এ পাঠাবেন?")) return;
-          try {
-            const result = await sendSteadfast(sfBtn.dataset.steadfastOrder);
-            notify((result && result.message) || "Steadfast-এ পাঠানো হয়েছে", true);
-          } catch (err) {
-            notify(err.message, false);
-          }
+        const toggle = event.target.closest("[data-status-toggle]");
+        if (toggle) {
+          const menu = document.getElementById("menu-" + toggle.dataset.statusToggle);
+          const wasOpen = menu && menu.classList.contains("is-open");
+          closeStatusMenus();
+          if (menu && !wasOpen) menu.classList.add("is-open");
           return;
         }
         const statusBtn = event.target.closest("[data-status-order]");
-        if (!statusBtn) return;
-        const status = statusBtn.dataset.status;
-        if (status === "cancelled" && !confirm("এই অর্ডার ক্যান্সেল করবেন?")) return;
-        try {
-          await patchOrder(statusBtn.dataset.statusOrder, { status });
-        } catch (err) {
-          notify(err.message, false);
+        if (statusBtn) {
+          await handleStatusMenuClick(statusBtn);
         }
       });
 
@@ -2087,19 +2681,40 @@
       });
 
       document.getElementById("orderEditForm").addEventListener("click", async (event) => {
-        const statusBtn = event.target.closest("[data-status-action]");
-        if (!statusBtn || !currentOrderId) return;
-        const status = statusBtn.dataset.statusAction;
-        if (status === "cancelled" && !confirm("এই অর্ডার ক্যান্সেল করবেন?")) return;
-        const note = document.getElementById("orderEditNote");
-        note.classList.remove("is-error");
-        try {
-          const saved = await patchOrder(currentOrderId, { status });
-          setNote(note, "স্ট্যাটাস আপডেট হয়েছে ✓ " + statusLabel(orderStatus(saved)), true);
-          openOrderDrawer(saved.id);
-        } catch (err) {
-          note.classList.add("is-error");
-          note.textContent = err.message;
+        const toggle = event.target.closest("#drawerStatusBtn");
+        if (toggle) {
+          const menu = document.getElementById("drawerStatusMenu");
+          const wasOpen = menu && menu.classList.contains("is-open");
+          closeStatusMenus();
+          if (menu && !wasOpen) menu.classList.add("is-open");
+          return;
+        }
+        const statusBtn = event.target.closest("[data-status-order]");
+        if (statusBtn) {
+          await handleStatusMenuClick(statusBtn);
+          return;
+        }
+        const saveCourier = event.target.closest("#saveCourierBtn");
+        if (saveCourier && currentOrderId) {
+          event.preventDefault();
+          try {
+            const courierName = document.getElementById("orderCourierSelect").value;
+            const consignmentNo = document.getElementById("orderTrackingInput").value.trim();
+            const courierPhone = document.getElementById("orderCourierPhone").value.trim();
+            const shippingNote = document.getElementById("orderCourierNoteInput").value.trim();
+            await patchOrder(currentOrderId, {
+              courierName,
+              consignmentNo,
+              courierPhone,
+              shippingNote,
+              courierStatus: consignmentNo ? "manual" : (courierName ? "selected" : ""),
+              updatedBy: "Admin",
+            });
+            notify("কুরিয়ার সেভ হয়েছে ✓", true);
+            openOrderDrawer(currentOrderId);
+          } catch (err) {
+            notify(err.message, false);
+          }
         }
       });
 
@@ -2116,17 +2731,85 @@
         }
       });
 
+      document.getElementById("confirmModalYes").addEventListener("click", async () => {
+        try {
+          await applyStatusChange(pendingStatusOrderId || currentOrderId, "confirmed", { action: "confirmed_by_admin" });
+          closeAdminModal("orderConfirmModal");
+        } catch (err) {
+          notify(err.message, false);
+        }
+      });
+      document.getElementById("cancelModalYes").addEventListener("click", async () => {
+        const reason = document.getElementById("cancelReason").value;
+        try {
+          await applyStatusChange(pendingStatusOrderId || currentOrderId, "cancelled", {
+            cancelReason: reason,
+            action: "cancelled_by_admin",
+          });
+          closeAdminModal("orderCancelModal");
+        } catch (err) {
+          notify(err.message, false);
+        }
+      });
+      document.getElementById("returnModalYes").addEventListener("click", async () => {
+        const next = document.getElementById("returnNextStatus").value;
+        const returnReason = document.getElementById("returnReason").value.trim();
+        const refundAmount = document.getElementById("refundAmount").value;
+        const refundMethod = document.getElementById("refundMethod").value;
+        const refundNote = document.getElementById("refundNote").value.trim();
+        try {
+          await applyStatusChange(pendingStatusOrderId || currentOrderId, next, {
+            returnStatus: next,
+            returnReason,
+            refundAmount,
+            refundMethod,
+            refundNote,
+            returnDate: new Date().toISOString(),
+            refundStatus: next === "refunded" ? "refunded" : "",
+            action: "return_refund",
+          });
+          closeAdminModal("orderReturnModal");
+        } catch (err) {
+          notify(err.message, false);
+        }
+      });
+      document.querySelectorAll("[data-close-modal]").forEach((btn) => {
+        btn.addEventListener("click", () => closeAdminModal(btn.dataset.closeModal));
+      });
+      ["orderConfirmModal", "orderCancelModal", "orderReturnModal"].forEach((id) => {
+        document.getElementById(id).addEventListener("click", (event) => {
+          if (event.target.id === id) closeAdminModal(id);
+        });
+      });
+      document.addEventListener("click", (event) => {
+        if (!event.target.closest(".status-menu-wrap")) closeStatusMenus();
+      });
+
       document.getElementById("steadfastSendBtn").addEventListener("click", async () => {
+        const selected = document.getElementById("orderCourierSelect");
+        const courier = selected ? selected.value : "Steadfast";
+        if (courier && courier !== "Steadfast") {
+          notify("এই কুরিয়ারের API নেই — ম্যানুয়াল ট্র্যাকিং সেভ করুন", false);
+          return;
+        }
         if (!currentOrderId || !confirm("এই অর্ডার Steadfast-এ পাঠাবেন?")) return;
         const note = document.getElementById("orderEditNote");
+        const btn = document.getElementById("steadfastSendBtn");
         note.classList.remove("is-error");
+        note.textContent = "Steadfast-এ পাঠানো হচ্ছে...";
+        if (btn) btn.disabled = true;
         try {
           const result = await sendSteadfast(currentOrderId);
           setNote(note, (result && result.message) || "Steadfast-এ পাঠানো হয়েছে ✓", true);
+          if (result && result.tracking) {
+            note.textContent = (result.message || "পাঠানো হয়েছে") + " · ট্র্যাকিং: " + result.tracking;
+          }
           if (result && result.order) openOrderDrawer(result.order.id);
         } catch (err) {
           note.classList.add("is-error");
           note.textContent = err.message;
+        } finally {
+          if (btn) btn.disabled = false;
         }
       });
 
@@ -2271,12 +2954,8 @@
       });
 
       if (token()) {
-        api("admin/me", { headers: headers() })
-          .then(() => {
-            showDash();
-            bootDash();
-          })
-          .catch(showLogin);
+        showDash();
+        bootDash();
       } else {
         showLogin();
       }

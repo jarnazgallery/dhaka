@@ -7,7 +7,7 @@
     "price": 2040,
     "price36": 2040,
     "description": "২ পিস কম্বো। ফ্লোরাল টপ ও ডেইজি শর্টস। নরম কটন।",
-    "image": "images/set-01.png"
+    "image": "images/set-.jpg"
   },
   {
     "code": "SET-02",
@@ -17,7 +17,7 @@
     "price": 2040,
     "price36": 2040,
     "description": "২ পিস কম্বো। নেভি পোলকা টপ ও পার্ল শর্টস।",
-    "image": "images/set-02.png"
+    "image": "images/set-.jpg"
   },
   {
     "code": "SET-03",
@@ -27,7 +27,7 @@
     "price": 2040,
     "price36": 2040,
     "description": "২ পিস কম্বো। ব্লু ফ্লোরাল টপ ও পার্ল শর্টস।",
-    "image": "images/set-03.png"
+    "image": "images/set-.jpg"
   },
   {
     "code": "SET-04",
@@ -37,7 +37,7 @@
     "price": 2040,
     "price36": 2040,
     "description": "২ পিস কম্বো। স্ট্রবেরি টপ ও ডেইজি শর্টস।",
-    "image": "images/set-04.png"
+    "image": "images/set-.jpg"
   },
   {
     "code": "SET-05",
@@ -47,7 +47,7 @@
     "price": 2040,
     "price36": 2040,
     "description": "২ পিস কম্বো। নেভি ফ্লোরাল টপ ও পার্ল শর্টস।",
-    "image": "images/set-05.png"
+    "image": "images/set-.jpg"
   },
   {
     "code": "SET-06",
@@ -57,7 +57,7 @@
     "price": 2040,
     "price36": 2040,
     "description": "২ পিস কম্বো। পিঙ্ক বো টপ ও পার্ল শর্টস।",
-    "image": "images/set-06.png"
+    "image": "images/set-.jpg"
   },
   {
     "code": "SET-07",
@@ -67,7 +67,7 @@
     "price": 2040,
     "price36": 2040,
     "description": "২ পিস কম্বো। পিঙ্ক চেক টপ ও ডেইজি শর্টস।",
-    "image": "images/set-07.png"
+    "image": "images/set-.jpg"
   },
   {
     "code": "SET-08",
@@ -77,7 +77,7 @@
     "price": 2040,
     "price36": 2040,
     "description": "২ পিস কম্বো। রেড চেক টপ ও ডেইজি শর্টস।",
-    "image": "images/set-08.png"
+    "image": "images/set-.jpg"
   },
   {
     "code": "SET-09",
@@ -87,7 +87,7 @@
     "price": 2040,
     "price36": 2040,
     "description": "২ পিস কম্বো। লাইলাক চেক টপ ও পার্ল শর্টস।",
-    "image": "images/set-09.png"
+    "image": "images/set-.jpg"
   },
   {
     "code": "SET-10",
@@ -97,7 +97,7 @@
     "price": 2040,
     "price36": 2040,
     "description": "২ পিস কম্বো। হার্ট টপ ও ডেইজি শর্টস।",
-    "image": "images/set-10.png"
+    "image": "images/set-.jpg"
   },
   {
     "code": "SET-11",
@@ -107,7 +107,7 @@
     "price": 2040,
     "price36": 2040,
     "description": "২ পিস কম্বো। ব্ল্যাক চেক টপ ও ডেইজি শর্টস।",
-    "image": "images/set-11.png"
+    "image": "images/set-.jpg"
   },
   {
     "code": "SET-12",
@@ -117,6 +117,6 @@
     "price": 2040,
     "price36": 2040,
     "description": "২ পিস কম্বো। হোয়াইট বো টপ ও পার্ল শর্টস।",
-    "image": "images/set-12.png"
+    "image": "images/set-.jpg"
   }
 ]

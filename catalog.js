@@ -11,26 +11,26 @@ const SIZES = [
 ];
 
 const FALLBACK_PRODUCTS = [
-  { code: "SET-01", priority: 1, piece: 2, name: "Floral Top + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। ফ্লোরাল টপ ও ডেইজি শর্টস। নরম কটন।", image: "images/set-01.png" },
-  { code: "SET-02", priority: 2, piece: 2, name: "Navy Polka + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। নেভি পোলকা টপ ও পার্ল শর্টস।", image: "images/set-02.png" },
-  { code: "SET-03", priority: 3, piece: 2, name: "Blue Floral + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। ব্লু ফ্লোরাল টপ ও পার্ল শর্টস।", image: "images/set-03.png" },
-  { code: "SET-04", priority: 4, piece: 2, name: "Strawberry Top + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। স্ট্রবেরি টপ ও ডেইজি শর্টস।", image: "images/set-04.png" },
-  { code: "SET-05", priority: 5, piece: 2, name: "Navy Floral + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। নেভি ফ্লোরাল টপ ও পার্ল শর্টস।", image: "images/set-05.png" },
-  { code: "SET-06", priority: 6, piece: 2, name: "Pink Bow Top + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। পিঙ্ক বো টপ ও পার্ল শর্টস।", image: "images/set-06.png" },
-  { code: "SET-07", priority: 7, piece: 2, name: "Pink Check + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। পিঙ্ক চেক টপ ও ডেইজি শর্টস।", image: "images/set-07.png" },
-  { code: "SET-08", priority: 8, piece: 2, name: "Red Check + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। রেড চেক টপ ও ডেইজি শর্টস।", image: "images/set-08.png" },
-  { code: "SET-09", priority: 9, piece: 2, name: "Lilac Check + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। লাইলাক চেক টপ ও পার্ল শর্টস।", image: "images/set-09.png" },
-  { code: "SET-10", priority: 10, piece: 2, name: "Heart Top + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। হার্ট টপ ও ডেইজি শর্টস।", image: "images/set-10.png" },
-  { code: "SET-11", priority: 11, piece: 2, name: "Black Check + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। ব্ল্যাক চেক টপ ও ডেইজি শর্টস।", image: "images/set-11.png" },
-  { code: "SET-12", priority: 12, piece: 2, name: "White Bow Top + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। হোয়াইট বো টপ ও পার্ল শর্টস।", image: "images/set-12.png" },
+  { code: "SET-01", priority: 1, piece: 2, name: "Floral Top + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। ফ্লোরাল টপ ও ডেইজি শর্টস। নরম কটন।", image: "images/set-01.jpg" },
+  { code: "SET-02", priority: 2, piece: 2, name: "Navy Polka + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। নেভি পোলকা টপ ও পার্ল শর্টস।", image: "images/set-02.jpg" },
+  { code: "SET-03", priority: 3, piece: 2, name: "Blue Floral + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। ব্লু ফ্লোরাল টপ ও পার্ল শর্টস।", image: "images/set-03.jpg" },
+  { code: "SET-04", priority: 4, piece: 2, name: "Strawberry Top + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। স্ট্রবেরি টপ ও ডেইজি শর্টস।", image: "images/set-04.jpg" },
+  { code: "SET-05", priority: 5, piece: 2, name: "Navy Floral + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। নেভি ফ্লোরাল টপ ও পার্ল শর্টস।", image: "images/set-05.jpg" },
+  { code: "SET-06", priority: 6, piece: 2, name: "Pink Bow Top + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। পিঙ্ক বো টপ ও পার্ল শর্টস।", image: "images/set-06.jpg" },
+  { code: "SET-07", priority: 7, piece: 2, name: "Pink Check + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। পিঙ্ক চেক টপ ও ডেইজি শর্টস।", image: "images/set-07.jpg" },
+  { code: "SET-08", priority: 8, piece: 2, name: "Red Check + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। রেড চেক টপ ও ডেইজি শর্টস।", image: "images/set-08.jpg" },
+  { code: "SET-09", priority: 9, piece: 2, name: "Lilac Check + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। লাইলাক চেক টপ ও পার্ল শর্টস।", image: "images/set-09.jpg" },
+  { code: "SET-10", priority: 10, piece: 2, name: "Heart Top + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। হার্ট টপ ও ডেইজি শর্টস।", image: "images/set-10.jpg" },
+  { code: "SET-11", priority: 11, piece: 2, name: "Black Check + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। ব্ল্যাক চেক টপ ও ডেইজি শর্টস।", image: "images/set-11.jpg" },
+  { code: "SET-12", priority: 12, piece: 2, name: "White Bow Top + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। হোয়াইট বো টপ ও পার্ল শর্টস।", image: "images/set-12.jpg" },
 ];
 
 const FALLBACK_OFFERS = [
-  { code: "COMBO-01", title: "কম্বো অফার ১", price: 2040, price36: 2040, piece: 2, image: "images/set-01.png", description: "" },
-  { code: "COMBO-02", title: "কম্বো অফার ২", price: 2040, price36: 2040, piece: 2, image: "images/set-02.png", description: "" },
-  { code: "COMBO-03", title: "কম্বো অফার ৩", price: 2040, price36: 2040, piece: 2, image: "images/set-04.png", description: "" },
-  { code: "COMBO-04", title: "কম্বো অফার ৪", price: 2040, price36: 2040, piece: 2, image: "images/set-07.png", description: "" },
-  { code: "COMBO-05", title: "কম্বো অফার ৫", price: 2690, price36: 2690, piece: 3, image: "images/set-10.png", description: "" },
+  { code: "COMBO-01", title: "কম্বো অফার ১", price: 2040, price36: 2040, piece: 2, image: "images/set-01.jpg", description: "" },
+  { code: "COMBO-02", title: "কম্বো অফার ২", price: 2040, price36: 2040, piece: 2, image: "images/set-02.jpg", description: "" },
+  { code: "COMBO-03", title: "কম্বো অফার ৩", price: 2040, price36: 2040, piece: 2, image: "images/set-04.jpg", description: "" },
+  { code: "COMBO-04", title: "কম্বো অফার ৪", price: 2040, price36: 2040, piece: 2, image: "images/set-07.jpg", description: "" },
+  { code: "COMBO-05", title: "কম্বো অফার ৫", price: 2690, price36: 2690, piece: 3, image: "images/set-10.jpg", description: "" },
 ];
 
 const FALLBACK_SITE = {
@@ -87,6 +87,10 @@ let OFFERS = FALLBACK_OFFERS.slice();
 let WHATSAPP = "8801735943156";
 let API_MODE = "unknown";
 
+function cloudSyncOn() {
+  return !!(window.OrdersAPI && OrdersAPI.hasCloudOrdersApi && OrdersAPI.hasCloudOrdersApi());
+}
+
 const LOCAL_KEYS = {
   products: "jarnaz-local-products",
   offers: "jarnaz-local-offers",
@@ -99,6 +103,12 @@ const DEFAULT_ADMIN_PASSWORD = "jarnaz123";
 
 function taka(n) {
   return `৳${Number(n).toLocaleString("bn-BD")}`;
+}
+
+function fastSrc(src) {
+  const s = String(src || "").trim();
+  if (/images\/set-\d+\.png$/i.test(s)) return s.replace(/\.png$/i, ".jpg");
+  return s;
 }
 
 function isOlderSize(sizeValue) {
@@ -377,53 +387,56 @@ async function apiCall(route, options = {}) {
   if (adminToken && !opts.headers["X-Admin-Token"]) {
     opts.headers["X-Admin-Token"] = String(adminToken).replace(/^Bearer\s+/i, "");
   }
+  const skipDeadPhp = cloudSyncOn();
   const attempts = [];
   if (clean === "catalog" && method === "GET") {
     attempts.push({ url: "catalog-data.json", options: { method: "GET" } });
   }
-  if (clean === "orders" && method === "POST") {
-    attempts.push({ url: "order.php", options: opts });
-  }
-  if (clean === "orders/lookup" && method === "POST") {
-    attempts.push({ url: "order-lookup.php", options: opts });
-  }
-  if (clean === "login" && method === "POST") {
-    attempts.push({ url: "login.php", options: opts });
-  }
-  if (clean === "admin/orders" && method === "GET") {
-    attempts.push({ url: "admin-orders.php?t=" + Date.now(), options: opts });
-  }
-  if (clean === "admin/reviews" && method === "POST") {
-    attempts.unshift({ url: "review-admin.php", options: opts });
-  }
-  const reviewDel = clean.match(/^admin\/reviews\/(.+)$/);
-  if (reviewDel && (method === "DELETE" || method === "POST")) {
-    attempts.unshift({
-      url: "review-admin.php?action=delete&id=" + encodeURIComponent(reviewDel[1]),
-      options: Object.assign({}, opts, { method: "POST" }),
-    });
-  }
-  if (!(clean === "catalog" && method === "GET")) {
-    attempts.push(
-      { url: "/api/" + clean, options: opts },
-      { url: "api.php?route=" + encodeURIComponent(clean), options: opts }
-    );
-  }
-  if (clean === "catalog" && method === "GET") {
-    attempts.push({ url: "catalog.php", options: { method: "GET" } });
-  }
-  if (method !== "GET" && method !== "POST") {
-    attempts.push({
-      url: "api.php?route=" + encodeURIComponent(clean) + "&_method=" + method,
-      options: Object.assign({}, opts, { method: "POST" }),
-    });
+  if (!skipDeadPhp) {
+    if (clean === "orders" && method === "POST") {
+      attempts.push({ url: "order.php", options: opts });
+    }
+    if (clean === "orders/lookup" && method === "POST") {
+      attempts.push({ url: "order-lookup.php", options: opts });
+    }
+    if (clean === "login" && method === "POST") {
+      attempts.push({ url: "login.php", options: opts });
+    }
+    if (clean === "admin/orders" && method === "GET") {
+      attempts.push({ url: "admin-orders.php?t=" + Date.now(), options: opts });
+    }
+    if (clean === "admin/reviews" && method === "POST") {
+      attempts.unshift({ url: "review-admin.php", options: opts });
+    }
+    const reviewDel = clean.match(/^admin\/reviews\/(.+)$/);
+    if (reviewDel && (method === "DELETE" || method === "POST")) {
+      attempts.unshift({
+        url: "review-admin.php?action=delete&id=" + encodeURIComponent(reviewDel[1]),
+        options: Object.assign({}, opts, { method: "POST" }),
+      });
+    }
+    if (!(clean === "catalog" && method === "GET")) {
+      attempts.push(
+        { url: "/api/" + clean, options: opts },
+        { url: "api.php?route=" + encodeURIComponent(clean), options: opts }
+      );
+    }
+    if (clean === "catalog" && method === "GET") {
+      attempts.push({ url: "catalog.php", options: { method: "GET" } });
+    }
+    if (method !== "GET" && method !== "POST") {
+      attempts.push({
+        url: "api.php?route=" + encodeURIComponent(clean) + "&_method=" + method,
+        options: Object.assign({}, opts, { method: "POST" }),
+      });
+    }
   }
 
   let sawHtml = false;
   let lastFail = null;
   for (const attempt of attempts) {
     try {
-      const res = await fetchTimed(attempt.url, attempt.options, clean === "catalog" ? 4000 : 3500);
+      const res = await fetchTimed(attempt.url, attempt.options, clean === "catalog" ? 1800 : 2500);
       const text = await res.text();
       const data = parseJsonSafe(text);
       if (!res.ok && res.status !== 400 && res.status !== 401) {
@@ -502,12 +515,12 @@ function mergeReviewLists(server, local) {
 
 function applyCatalogData(data) {
   data = data || {};
-  const liveWrite = API_MODE === "server" || API_MODE === "php" || API_MODE === "cloud";
+  const liveWrite = API_MODE === "server" || API_MODE === "php" || API_MODE === "cloud" || cloudSyncOn();
   if (liveWrite && Array.isArray(data.products)) {
     PRODUCTS = sortProducts(data.products);
     try { writeLocal(LOCAL_KEYS.products, PRODUCTS); } catch (err) {}
   } else {
-    const localProducts = readLocal(LOCAL_KEYS.products, null);
+    const localProducts = cloudSyncOn() ? null : readLocal(LOCAL_KEYS.products, null);
     PRODUCTS = sortProducts(Array.isArray(localProducts) && localProducts.length ? localProducts : (data.products || FALLBACK_PRODUCTS.slice()));
   }
   SITE = mergeSite(data.site);
@@ -516,17 +529,21 @@ function applyCatalogData(data) {
     OFFERS = data.offers.map((o) => normalizeOffer(o, PRODUCTS)).filter(Boolean);
     try { writeLocal(LOCAL_KEYS.offers, OFFERS); } catch (err) {}
   } else {
-    const localOffers = readLocal(LOCAL_KEYS.offers, null);
+    const localOffers = cloudSyncOn() ? null : readLocal(LOCAL_KEYS.offers, null);
     OFFERS = (Array.isArray(localOffers) ? localOffers : (data.offers || FALLBACK_OFFERS))
       .map((o) => normalizeOffer(o, PRODUCTS))
       .filter(Boolean);
   }
   applySite(SITE);
   const reviews = shotReviews(data.reviews);
-  if (reviews.length) {
-    try { writeLocal(LOCAL_KEYS.reviews, reviews); } catch (err) {}
+  if (Array.isArray(data.reviews)) {
+    if (cloudSyncOn() || reviews.length) {
+      try { writeLocal(LOCAL_KEYS.reviews, reviews); } catch (err) {}
+    }
   }
-  return Object.assign({}, data, { products: PRODUCTS, offers: OFFERS, site: SITE, whatsapp: WHATSAPP, reviews });
+  const out = Object.assign({}, data, { products: PRODUCTS, offers: OFFERS, site: SITE, whatsapp: WHATSAPP });
+  if (Array.isArray(data.reviews)) out.reviews = reviews;
+  return out;
 }
 
 function cloudCatalogItem(item) {
@@ -558,17 +575,41 @@ async function mergeCloudCatalog(base) {
 }
 
 async function loadCatalog() {
+  const snap = window.OrdersAPI && OrdersAPI.readStorefrontSnap && OrdersAPI.readStorefrontSnap(true);
+  if (snap && snap.catalog && Array.isArray(snap.catalog.products) && snap.catalog.products.length) {
+    API_MODE = "cloud";
+    const data = Object.assign({}, snap.catalog);
+    if (Array.isArray(snap.reviews)) data.reviews = snap.reviews;
+    return applyCatalogData(data);
+  }
   try {
     const result = await apiCall("catalog");
     if (!result.ok || !result.data || !Array.isArray(result.data.products)) throw new Error("empty");
     return applyCatalogData(result.data);
   } catch (err) {
+    if (cloudSyncOn()) {
+      const merged = await mergeCloudCatalog({
+        products: FALLBACK_PRODUCTS.slice(),
+        offers: FALLBACK_OFFERS.slice(),
+        site: FALLBACK_SITE,
+        reviews: [],
+      });
+      return applyCatalogData(merged);
+    }
     API_MODE = "local";
     return applyCatalogData(localCatalog());
   }
 }
 
 async function refreshCloudCatalog() {
+  if (window.OrdersAPI && OrdersAPI.fetchStorefront && OrdersAPI.hasCloudOrdersApi()) {
+    const store = await OrdersAPI.fetchStorefront();
+    if (!store || !store.catalog) return null;
+    API_MODE = "cloud";
+    const payload = Object.assign({}, store.catalog);
+    if (Array.isArray(store.reviews)) payload.reviews = store.reviews;
+    return applyCatalogData(payload);
+  }
   const merged = await mergeCloudCatalog({
     products: PRODUCTS,
     offers: OFFERS,
@@ -807,7 +848,7 @@ async function handleLocalAdmin(route, options) {
       price36: Number(form.get("price36") || form.get("price") || 2040),
       piece: Number(form.get("piece") || 2),
       description: String(form.get("description") || "").trim(),
-      image: compact ? await fileToDataUrl(compact) : "images/set-01.png",
+      image: compact ? await fileToDataUrl(compact) : "images/set-01.jpg",
     };
     if (products.length >= 200) throw new Error("২০০টার বেশি প্রোডাক্ট রাখা যাবে না");
     products.unshift(product);
@@ -859,7 +900,11 @@ async function handleLocalAdmin(route, options) {
     const body = JSON.parse(options.body || "{}");
     const order = orders.find((o) => o.id === id);
     if (!order) throw new Error("অর্ডার নেই");
-    const allowed = ["new", "confirmed", "cancelled", "delivered"];
+    const allowed = (window.OrdersAPI && OrdersAPI.ALL_ORDER_STATUSES) || [
+      "new", "pending", "confirmed", "processing", "ready_to_ship",
+      "shipped", "out_for_delivery", "delivered",
+      "cancelled", "return_requested", "returned", "refunded",
+    ];
     if (body.status && !allowed.includes(body.status)) throw new Error("স্ট্যাটাস ভুল");
     ["name", "phone", "address", "size", "note"].forEach((key) => {
       if (body[key] != null) order[key] = String(body[key]).trim();
@@ -875,7 +920,24 @@ async function handleLocalAdmin(route, options) {
       }
     }
     if (body.total != null && body.total !== "") order.total = Number(body.total);
-    if (body.status) order.status = body.status;
+    [
+      "called", "courierName", "consignmentNo", "courierCharge", "shippingNote",
+      "courierStatus", "courierPhone", "paymentMethod", "paymentStatus",
+      "cancelReason", "returnStatus", "returnReason", "refundStatus",
+      "refundMethod", "refundNote", "returnDate", "updatedBy",
+      "steadfastTracking", "steadfastConsignmentId",
+    ].forEach((key) => {
+      if (body[key] != null) order[key] = body[key];
+    });
+    if (body.refundAmount != null && body.refundAmount !== "") order.refundAmount = Number(body.refundAmount);
+    if (body.timeline != null) order.timeline = body.timeline;
+    if (body.status) {
+      order.status = body.status;
+      if (body.status === "delivered" && (!order.paymentStatus || order.paymentStatus === "pending")) {
+        order.paymentStatus = "paid";
+      }
+      if (body.status === "refunded") order.paymentStatus = "refunded";
+    }
     if (!order.name || !order.phone || !order.address || !order.size) throw new Error("নাম, মোবাইল, ঠিকানা ও সাইজ দিন");
     order.updatedAt = new Date().toISOString();
     writeLocal(LOCAL_KEYS.orders, orders);

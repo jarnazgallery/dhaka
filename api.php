@@ -491,7 +491,11 @@ if (preg_match("#^admin/orders/(.+)$#", $route, $m) && ($method === "POST" || $m
   require_auth();
   $id = $m[1];
   $body = json_input();
-  $allowed = array("new", "confirmed", "cancelled", "delivered");
+  $allowed = array(
+    "new", "pending", "confirmed", "processing", "ready_to_ship",
+    "shipped", "out_for_delivery", "delivered",
+    "cancelled", "return_requested", "returned", "refunded"
+  );
   if (isset($body["status"]) && $body["status"] !== "" && !in_array($body["status"], $allowed, true)) {
     fail(400, "স্ট্যাটাস ভুল");
   }
@@ -515,7 +519,23 @@ if (preg_match("#^admin/orders/(.+)$#", $route, $m) && ($method === "POST" || $m
       }
     }
     if (isset($body["total"]) && $body["total"] !== "") $orders[$i]["total"] = intval($body["total"]);
-    if (!empty($body["status"])) $orders[$i]["status"] = $body["status"];
+    foreach (array(
+      "called", "courierName", "consignmentNo", "courierCharge", "shippingNote",
+      "courierStatus", "courierPhone", "paymentMethod", "paymentStatus",
+      "cancelReason", "returnStatus", "returnReason", "refundStatus",
+      "refundMethod", "refundNote", "returnDate", "updatedBy",
+      "steadfastTracking", "steadfastConsignmentId", "timeline"
+    ) as $extraKey) {
+      if (isset($body[$extraKey])) $orders[$i][$extraKey] = $body[$extraKey];
+    }
+    if (isset($body["refundAmount"]) && $body["refundAmount"] !== "") $orders[$i]["refundAmount"] = floatval($body["refundAmount"]);
+    if (!empty($body["status"])) {
+      $orders[$i]["status"] = $body["status"];
+      if ($body["status"] === "delivered" && (empty($orders[$i]["paymentStatus"]) || $orders[$i]["paymentStatus"] === "pending")) {
+        $orders[$i]["paymentStatus"] = "paid";
+      }
+      if ($body["status"] === "refunded") $orders[$i]["paymentStatus"] = "refunded";
+    }
     if (trim((string)(isset($orders[$i]["name"]) ? $orders[$i]["name"] : "")) === "" ||
         trim((string)(isset($orders[$i]["phone"]) ? $orders[$i]["phone"] : "")) === "" ||
         trim((string)(isset($orders[$i]["address"]) ? $orders[$i]["address"] : "")) === "" ||

@@ -55,7 +55,11 @@ var ORDER_HEADERS = [
   'id', 'createdAt', 'formattedTime', 'name', 'phone', 'address', 'note',
   'productCode', 'size', 'qty', 'combo', 'total', 'status', 'source',
   'confirmedAt', 'steadfastTracking', 'steadfastConsignmentId',
-  'courierName', 'consignmentNo', 'courierCharge', 'shippingNote', 'called'
+  'courierName', 'consignmentNo', 'courierCharge', 'shippingNote', 'called',
+  'paymentMethod', 'paymentStatus', 'courierStatus', 'courierPhone',
+  'cancelReason', 'returnStatus', 'returnReason', 'refundStatus',
+  'refundAmount', 'refundMethod', 'refundNote', 'returnDate',
+  'timeline', 'updatedAt', 'updatedBy'
 ];
 
 function getSheet_() {
@@ -93,14 +97,56 @@ function getSheet_() {
 
 function ensureOrderHeaders_(sheet) {
   var needed = ORDER_HEADERS.length;
-  var lastCol = Math.max(sheet.getLastColumn(), needed);
+  var lastCol = Math.max(sheet.getLastColumn(), 1);
   var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-  for (var i = 0; i < needed; i++) {
-    if (String(headers[i] || '') !== ORDER_HEADERS[i]) {
-      sheet.getRange(1, 1, 1, needed).setValues([ORDER_HEADERS]);
+  var prefixOk = true;
+  var oldLen = 22;
+  for (var p = 0; p < Math.min(oldLen, headers.length); p++) {
+    if (String(headers[p] || '') && String(headers[p]) !== ORDER_HEADERS[p]) {
+      prefixOk = false;
       break;
     }
   }
+  if (prefixOk) {
+    try {
+      if (lastCol < needed) sheet.insertColumnsAfter(Math.max(lastCol, 1), needed - lastCol);
+    } catch (colErr) {}
+    sheet.getRange(1, 1, 1, needed).setValues([ORDER_HEADERS]);
+    return;
+  }
+  sheet.getRange(1, 1, 1, needed).setValues([ORDER_HEADERS]);
+}
+
+function stringifyTimeline_(raw) {
+  if (Object.prototype.toString.call(raw) === '[object Array]') {
+    return JSON.stringify(raw);
+  }
+  var text = String(raw || '').trim();
+  if (!text) return '[]';
+  try {
+    var parsed = JSON.parse(text);
+    return JSON.stringify(Object.prototype.toString.call(parsed) === '[object Array]' ? parsed : []);
+  } catch (err) {
+    return '[]';
+  }
+}
+
+function parseTimeline_(raw) {
+  if (Object.prototype.toString.call(raw) === '[object Array]') return raw;
+  var text = String(raw || '').trim();
+  if (!text) return [];
+  try {
+    var parsed = JSON.parse(text);
+    return Object.prototype.toString.call(parsed) === '[object Array]' ? parsed : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+function appendTimeline_(existing, entry) {
+  var list = parseTimeline_(existing);
+  list.push(entry);
+  return list;
 }
 
 function orderToRow_(order) {
@@ -113,7 +159,22 @@ function orderToRow_(order) {
     order.courierName || '', order.consignmentNo || '',
     order.courierCharge != null ? order.courierCharge : '',
     order.shippingNote || '',
-    order.called || ''
+    order.called || '',
+    order.paymentMethod || 'COD',
+    order.paymentStatus || 'pending',
+    order.courierStatus || '',
+    order.courierPhone || '',
+    order.cancelReason || '',
+    order.returnStatus || '',
+    order.returnReason || '',
+    order.refundStatus || '',
+    order.refundAmount != null && order.refundAmount !== '' ? order.refundAmount : '',
+    order.refundMethod || '',
+    order.refundNote || '',
+    order.returnDate || '',
+    stringifyTimeline_(order.timeline),
+    order.updatedAt || '',
+    order.updatedBy || ''
   ];
 }
 
@@ -137,6 +198,7 @@ function rowsToOrders_(sheet) {
     for (var c = 0; c < headers.length; c++) {
       obj[headers[c]] = row[c];
     }
+    obj.phone = normalizeBdPhone_(obj.phone);
     obj.qty = Number(obj.qty) || 1;
     obj.combo = Number(obj.combo) || 2;
     obj.total = Number(obj.total != null && obj.total !== '' ? obj.total : obj.totalPrice) || 0;
@@ -148,6 +210,20 @@ function rowsToOrders_(sheet) {
     obj.consignmentNo = obj.consignmentNo || '';
     obj.courierCharge = obj.courierCharge === '' || obj.courierCharge == null ? '' : Number(obj.courierCharge);
     obj.shippingNote = obj.shippingNote || '';
+    obj.paymentMethod = obj.paymentMethod || 'COD';
+    obj.paymentStatus = obj.paymentStatus || 'pending';
+    obj.courierStatus = obj.courierStatus || '';
+    obj.courierPhone = obj.courierPhone || '';
+    obj.cancelReason = obj.cancelReason || '';
+    obj.returnStatus = obj.returnStatus || '';
+    obj.returnReason = obj.returnReason || '';
+    obj.refundStatus = obj.refundStatus || '';
+    obj.refundMethod = obj.refundMethod || '';
+    obj.refundNote = obj.refundNote || '';
+    obj.returnDate = obj.returnDate || '';
+    obj.updatedAt = obj.updatedAt || '';
+    obj.updatedBy = obj.updatedBy || '';
+    obj.timeline = parseTimeline_(obj.timeline);
     orders.push(obj);
   }
   orders.sort(function (a, b) {
@@ -405,11 +481,22 @@ function doGet(e) {
   try {
     var action = (e && e.parameter && e.parameter.action) ? String(e.parameter.action) : '';
     var phone = (e && e.parameter && e.parameter.phone) ? String(e.parameter.phone) : '';
+    if (action === 'boot' || action === 'storefront') {
+      return jsonOut_({
+        success: true,
+        catalog: readCatalog_(),
+        reviews: rowsToReviews_(getReviewSheet_())
+      });
+    }
     if (action === 'reviews' || action === 'reviewList') {
       return jsonOut_({ success: true, reviews: rowsToReviews_(getReviewSheet_()) });
     }
     if (action === 'catalog' || action === 'catalogGet') {
-      return jsonOut_({ success: true, catalog: readCatalog_() });
+      return jsonOut_({
+        success: true,
+        catalog: readCatalog_(),
+        reviews: rowsToReviews_(getReviewSheet_())
+      });
     }
     var sheet = getSheet_();
     if (action === 'find' && phone) {
@@ -425,6 +512,18 @@ function doPost(e) {
   try {
     var body = parseBody_(e);
     var action = body.action || 'create';
+
+    if (action === 'boot' || action === 'storefront' || action === 'catalog' || action === 'catalogGet') {
+      return jsonOut_({
+        success: true,
+        catalog: readCatalog_(),
+        reviews: rowsToReviews_(getReviewSheet_())
+      });
+    }
+    if (action === 'reviewList' || action === 'reviews') {
+      return jsonOut_({ success: true, reviews: rowsToReviews_(getReviewSheet_()) });
+    }
+
     var sheet = getSheet_();
 
     if (action === 'list') {
@@ -433,10 +532,6 @@ function doPost(e) {
 
     if (action === 'find') {
       return jsonOut_({ success: true, orders: findOrdersByPhone_(sheet, body.phone) });
-    }
-
-    if (action === 'reviewList' || action === 'reviews') {
-      return jsonOut_({ success: true, reviews: rowsToReviews_(getReviewSheet_()) });
     }
 
     if (action === 'reviewCreate') {
@@ -455,10 +550,6 @@ function doPost(e) {
       } catch (delErr) {
         return jsonOut_({ success: false, error: String(delErr.message || delErr) });
       }
-    }
-
-    if (action === 'catalog' || action === 'catalogGet') {
-      return jsonOut_({ success: true, catalog: readCatalog_() });
     }
 
     if (action === 'catalogSave') {
@@ -536,11 +627,32 @@ function doPost(e) {
         confirmedAt: body.confirmedAt || '',
         steadfastTracking: '',
         steadfastConsignmentId: '',
-        courierName: '',
+        courierName: body.courierName || '',
         consignmentNo: '',
         courierCharge: '',
         shippingNote: '',
-        called: ''
+        called: '',
+        paymentMethod: body.paymentMethod || 'COD',
+        paymentStatus: body.paymentStatus || 'pending',
+        courierStatus: '',
+        courierPhone: '',
+        cancelReason: '',
+        returnStatus: '',
+        returnReason: '',
+        refundStatus: '',
+        refundAmount: '',
+        refundMethod: '',
+        refundNote: '',
+        returnDate: '',
+        timeline: stringifyTimeline_(body.timeline || [{
+          at: body.createdAt || now.toISOString(),
+          status: body.status || 'new',
+          action: 'order_received',
+          by: (body.source === 'admin') ? 'Admin' : 'Customer',
+          note: 'Order received'
+        }]),
+        updatedAt: now.toISOString(),
+        updatedBy: body.updatedBy || (body.source === 'admin' ? 'Admin' : 'Customer')
       };
       if (!order.name || !order.phone || !order.address || !order.productCode || !order.size) {
         return jsonOut_({ success: false, error: 'নাম, মোবাইল, ঠিকানা, প্রোডাক্ট ও সাইজ দিন' });
@@ -560,30 +672,47 @@ function doPost(e) {
       }
       if (!existing) return jsonOut_({ success: false, error: 'অর্ডার পাওয়া যায়নি' });
 
+      var prevStatus = String(existing.status || 'new');
+      var patchKeys = [
+        'name', 'phone', 'address', 'note', 'productCode', 'size', 'source',
+        'called', 'steadfastTracking', 'steadfastConsignmentId', 'courierName',
+        'consignmentNo', 'shippingNote', 'paymentMethod', 'paymentStatus',
+        'courierStatus', 'courierPhone', 'cancelReason', 'returnStatus',
+        'returnReason', 'refundStatus', 'refundMethod', 'refundNote', 'returnDate',
+        'updatedBy'
+      ];
+      for (var pk = 0; pk < patchKeys.length; pk++) {
+        if (body[patchKeys[pk]] !== undefined) existing[patchKeys[pk]] = body[patchKeys[pk]];
+      }
       if (body.status) {
         existing.status = body.status;
         if (body.status === 'confirmed' && !existing.confirmedAt) {
           existing.confirmedAt = new Date().toISOString();
         }
+        if (body.status === 'delivered' && (!existing.paymentStatus || existing.paymentStatus === 'pending') && String(existing.paymentMethod || 'COD') === 'COD') {
+          existing.paymentStatus = 'paid';
+        }
+        if (body.status === 'refunded') existing.paymentStatus = 'refunded';
       }
-      if (body.name !== undefined) existing.name = body.name;
-      if (body.phone !== undefined) existing.phone = body.phone;
-      if (body.address !== undefined) existing.address = body.address;
-      if (body.note !== undefined) existing.note = body.note;
-      if (body.productCode !== undefined) existing.productCode = body.productCode;
-      if (body.size !== undefined) existing.size = body.size;
       if (body.qty !== undefined) existing.qty = Number(body.qty) || 1;
       if (body.combo !== undefined) existing.combo = Number(body.combo) || 2;
       if (body.total !== undefined) existing.total = Number(body.total) || 0;
       if (body.totalPrice !== undefined && body.total === undefined) existing.total = Number(body.totalPrice) || 0;
-      if (body.source !== undefined) existing.source = body.source;
-      if (body.steadfastTracking !== undefined) existing.steadfastTracking = body.steadfastTracking;
-      if (body.steadfastConsignmentId !== undefined) existing.steadfastConsignmentId = body.steadfastConsignmentId;
-      if (body.courierName !== undefined) existing.courierName = body.courierName;
-      if (body.consignmentNo !== undefined) existing.consignmentNo = body.consignmentNo;
       if (body.courierCharge !== undefined) existing.courierCharge = body.courierCharge;
-      if (body.shippingNote !== undefined) existing.shippingNote = body.shippingNote;
-      if (body.called !== undefined) existing.called = body.called;
+      if (body.refundAmount !== undefined) existing.refundAmount = body.refundAmount;
+      if (body.timeline !== undefined) {
+        existing.timeline = stringifyTimeline_(body.timeline);
+      } else if (body.status && String(body.status) !== prevStatus) {
+        existing.timeline = stringifyTimeline_(appendTimeline_(existing.timeline, {
+          at: new Date().toISOString(),
+          status: body.status,
+          action: body.timelineAction || ('status_' + body.status),
+          by: body.updatedBy || 'Admin',
+          note: body.timelineNote || body.cancelReason || body.returnReason || ('Status → ' + body.status)
+        }));
+      }
+      existing.updatedAt = new Date().toISOString();
+      if (!existing.updatedBy) existing.updatedBy = body.updatedBy || 'Admin';
 
       sheet.getRange(row, 1, 1, ORDER_HEADERS.length).setValues([orderToRow_(existing)]);
       return jsonOut_({ success: true, order: existing });
@@ -694,11 +823,18 @@ function doPost(e) {
 
       sfOrder.steadfastTracking = tracking;
       sfOrder.steadfastConsignmentId = String(consignmentId || '');
-      sfOrder.courierName = sfOrder.courierName || 'Steadfast';
+      sfOrder.courierName = 'Steadfast';
       sfOrder.consignmentNo = tracking || sfOrder.consignmentNo || '';
-      if (sfOrder.status === 'confirmed' || sfOrder.status === 'new') {
-        sfOrder.status = 'delivered';
-      }
+      sfOrder.courierStatus = 'consignment_created';
+      sfOrder.updatedAt = new Date().toISOString();
+      sfOrder.updatedBy = 'Admin';
+      sfOrder.timeline = stringifyTimeline_(appendTimeline_(sfOrder.timeline, {
+        at: new Date().toISOString(),
+        status: sfOrder.status,
+        action: 'sent_to_courier',
+        by: 'Admin',
+        note: 'Order sent to Steadfast' + (tracking ? (' · ' + tracking) : '')
+      }));
 
       var sfRow = findRowIndex_(sheet, sfOrder.id);
       if (sfRow > 0) {

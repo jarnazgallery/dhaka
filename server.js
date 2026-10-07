@@ -303,7 +303,11 @@ app.post("/api/admin/orders/:id", auth, (req, res) => {
   const order = orders.find((o) => o.id === req.params.id);
   if (!order) return res.status(404).json({ error: "অর্ডার নেই" });
   const body = req.body || {};
-  const allowed = ["new", "confirmed", "cancelled", "delivered"];
+  const allowed = [
+    "new", "pending", "confirmed", "processing", "ready_to_ship",
+    "shipped", "out_for_delivery", "delivered",
+    "cancelled", "return_requested", "returned", "refunded",
+  ];
   if (body.status && !allowed.includes(String(body.status))) {
     return res.status(400).json({ error: "স্ট্যাটাস ভুল" });
   }
@@ -320,7 +324,24 @@ app.post("/api/admin/orders/:id", auth, (req, res) => {
     }
   }
   if (body.total != null && body.total !== "") order.total = Number(body.total);
-  if (body.status) order.status = String(body.status);
+  [
+    "called", "courierName", "consignmentNo", "courierCharge", "shippingNote",
+    "courierStatus", "courierPhone", "paymentMethod", "paymentStatus",
+    "cancelReason", "returnStatus", "returnReason", "refundStatus",
+    "refundMethod", "refundNote", "returnDate", "updatedBy",
+    "steadfastTracking", "steadfastConsignmentId",
+  ].forEach((key) => {
+    if (body[key] != null) order[key] = body[key];
+  });
+  if (body.refundAmount != null && body.refundAmount !== "") order.refundAmount = Number(body.refundAmount);
+  if (body.timeline != null) order.timeline = body.timeline;
+  if (body.status) {
+    order.status = String(body.status);
+    if (order.status === "delivered" && (!order.paymentStatus || order.paymentStatus === "pending")) {
+      order.paymentStatus = "paid";
+    }
+    if (order.status === "refunded") order.paymentStatus = "refunded";
+  }
   if (!order.name || !order.phone || !order.address || !order.size) {
     return res.status(400).json({ error: "নাম, মোবাইল, ঠিকানা ও সাইজ দিন" });
   }

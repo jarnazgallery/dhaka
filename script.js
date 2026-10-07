@@ -11,8 +11,11 @@ let reviewIndex = 0;
 let reviewTimer = null;
 
 function visualHTML(product, index) {
-  const eager = Number(index) < 2;
-  return `<div class="set-visual"><img src="${htmlEsc(product.image)}" alt="${htmlEsc(product.code)} ${htmlEsc(product.name)}" ${eager ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} decoding="async" width="480" height="480" /><span class="set-chip">${htmlEsc(product.code)}</span></div>`;
+  const eager = Number(index) === 0;
+  const raw = String(product.image || "");
+  const src = typeof fastSrc === "function" ? fastSrc(raw) : raw;
+  const fallback = src !== raw ? ` onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src='${htmlEsc(raw)}';}"` : "";
+  return `<div class="set-visual"><img src="${htmlEsc(src)}" alt="${htmlEsc(product.code)} ${htmlEsc(product.name)}" ${eager ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} decoding="async" width="640" height="640"${fallback} /><span class="set-chip">${htmlEsc(product.code)}</span></div>`;
 }
 
 function cardHTML(product, index) {
@@ -210,12 +213,10 @@ function cacheSavedOrder(saved) {
 async function saveOrder(order) {
   const payload = window.OrdersAPI && OrdersAPI.normalizeOrder ? OrdersAPI.normalizeOrder(order) : order;
   if (window.OrdersAPI && OrdersAPI.hasCloudOrdersApi()) {
-    try {
-      const saved = await OrdersAPI.createOrderRemote(payload);
-      saved.savedOnServer = true;
-      cacheSavedOrder(saved);
-      return saved;
-    } catch (cloudErr) {}
+    const saved = await OrdersAPI.createOrderRemote(payload);
+    saved.savedOnServer = true;
+    cacheSavedOrder(saved);
+    return saved;
   }
   try {
     const result = await apiCall("orders", {
@@ -517,7 +518,21 @@ document.getElementById("goTrackBtn").addEventListener("click", () => {
 });
 
 function trackStatusLabel(status) {
-  return { new: "নতুন", confirmed: "কনফার্ম", delivered: "ডেলিভারি হয়েছে", cancelled: "ক্যান্সেল" }[status] || "নতুন";
+  const map = {
+    new: "নতুন",
+    pending: "পেন্ডিং",
+    confirmed: "কনফার্ম",
+    processing: "প্রসেসিং",
+    ready_to_ship: "শিপের জন্য তৈরি",
+    shipped: "শিপড",
+    out_for_delivery: "ডেলিভারিতে আছে",
+    delivered: "ডেলিভারি হয়েছে",
+    cancelled: "ক্যান্সেল",
+    return_requested: "রিটার্ন রিকোয়েস্ট",
+    returned: "রিটার্ন",
+    refunded: "রিফান্ড",
+  };
+  return map[status] || "নতুন";
 }
 
 function trackCard(order) {
@@ -592,6 +607,21 @@ function currentOffer() {
   return offers[offerIndex];
 }
 
+function offerImgSrc(offer) {
+  return htmlEsc(typeof fastSrc === "function" ? fastSrc(offer.image) : offer.image);
+}
+
+function revealOfferImgs(around) {
+  const imgs = document.querySelectorAll("#offerTrack img");
+  const n = offers.length;
+  if (!imgs.length || !n) return;
+  [around, around + 1].forEach((raw) => {
+    const i = ((raw % n) + n) % n;
+    const img = imgs[i];
+    if (img && !img.getAttribute("src") && img.dataset.src) img.src = img.dataset.src;
+  });
+}
+
 function renderOfferSlider() {
   offers = (OFFERS || offers || []).filter((offer) => offer && offer.image);
   if (!offers.length) {
@@ -605,7 +635,7 @@ function renderOfferSlider() {
     .map(
       (offer, i) => `
         <div class="offer-slide">
-          <img src="${htmlEsc(offer.image)}" alt="${htmlEsc(offer.title || offer.code)}" ${i === 0 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} decoding="async" width="640" height="640" />
+          <img ${i === 0 ? `src="${offerImgSrc(offer)}" loading="eager" fetchpriority="high"` : `data-src="${offerImgSrc(offer)}" loading="lazy"`} alt="${htmlEsc(offer.title || offer.code)}" decoding="async" width="640" height="640" onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src=this.src.replace(/\\.jpg$/i,'.png');}" />
         </div>
       `
     )
@@ -619,6 +649,7 @@ function renderOfferSlider() {
 function showOffer(index) {
   if (!offers.length) return;
   offerIndex = (index + offers.length) % offers.length;
+  revealOfferImgs(offerIndex);
   const track = document.getElementById("offerTrack");
   track.style.transform = `translateX(-${offerIndex * 100}%)`;
   document.querySelectorAll(".offer-dots .dot").forEach((dot, i) => {
@@ -637,12 +668,8 @@ function startOfferTimer() {
 }
 
 function bindOfferSlider() {
-  if (SITE.offersEnabled === false) {
-    clearInterval(offerTimer);
-    return;
-  }
-  renderOfferSlider();
-  startOfferTimer();
+  if (window._offerBound) return;
+  window._offerBound = true;
 
   document.getElementById("offerPrev").addEventListener("click", () => {
     showOffer(offerIndex - 1);
@@ -733,8 +760,8 @@ function startReviewTimer() {
 }
 
 function bindReviewSlider() {
-  renderReviewSlider();
-  startReviewTimer();
+  if (window._reviewBound) return;
+  window._reviewBound = true;
   document.getElementById("reviewPrev").addEventListener("click", () => {
     showReview(reviewIndex - 1);
     startReviewTimer();
@@ -763,8 +790,6 @@ function bindReviewSlider() {
 }
 
 renderSizes();
-renderProducts();
-offers = (OFFERS || []).slice();
 bindOfferSlider();
 bindReviewSlider();
 updateTotal();
@@ -774,27 +799,42 @@ loadCatalog().then((data) => {
   userReviews = shotReviews(data.reviews);
   renderProducts();
   renderOfferSlider();
+  startOfferTimer();
   renderReviewSlider();
+  startReviewTimer();
   updateTotal();
-  const later = window.requestIdleCallback || ((fn) => setTimeout(fn, 1600));
-  later(() => {
-    Promise.all([
-      typeof refreshCloudCatalog === "function" ? refreshCloudCatalog() : Promise.resolve(null),
-      window.OrdersAPI && OrdersAPI.fetchReviewsList && OrdersAPI.hasCloudOrdersApi()
-        ? OrdersAPI.fetchReviewsList().catch(() => [])
-        : Promise.resolve([]),
-    ]).then(([cloud, reviews]) => {
-      if (cloud) {
-        offers = cloud.offers || OFFERS || offers;
-        renderProducts();
-        renderOfferSlider();
-      }
-      if (Array.isArray(reviews) && reviews.length) {
-        userReviews = shotReviews(reviews);
-        try { writeLocal(LOCAL_KEYS.reviews, userReviews); } catch (err) {}
+  const kickCloud = () => {
+    if (typeof refreshCloudCatalog !== "function") return;
+    refreshCloudCatalog().then((cloud) => {
+      if (!cloud) return;
+      offers = cloud.offers || OFFERS || offers;
+      renderProducts();
+      renderOfferSlider();
+      startOfferTimer();
+      if (Array.isArray(cloud.reviews)) {
+        userReviews = shotReviews(cloud.reviews);
         renderReviewSlider();
         startReviewTimer();
       }
     });
-  });
+  };
+  const waitMs = window.OrdersAPI && OrdersAPI.isStorefrontSnapFresh && OrdersAPI.isStorefrontSnapFresh() ? 2200 : 500;
+  const later = window.requestIdleCallback || ((fn) => setTimeout(fn, waitMs));
+  later(() => kickCloud(), { timeout: waitMs + 800 });
+});
+
+function loadSiteFonts() {
+  if (document.getElementById("siteFonts")) return;
+  const link = document.createElement("link");
+  link.id = "siteFonts";
+  link.rel = "stylesheet";
+  link.href = "https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Noto+Sans+Bengali:wght@400;700&display=swap";
+  document.head.appendChild(link);
+}
+
+window.addEventListener("load", () => {
+  loadSiteFonts();
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
 });
