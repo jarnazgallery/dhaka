@@ -1,4 +1,4 @@
-const CACHE = "jarnaz-20261007f";
+const CACHE = "jarnaz-20261007h";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -21,7 +21,7 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
-  if (/admin\.html$/i.test(url.pathname)) return;
+  if (req.mode === "navigate" || /admin\.html$/i.test(url.pathname) || /index\.html$/i.test(url.pathname) || url.pathname === "/") return;
 
   const isImg = /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(url.pathname);
 

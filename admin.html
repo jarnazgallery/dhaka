@@ -324,11 +324,11 @@
       }
       .order-drawer.is-open { display: grid; place-items: start center; }
       .order-drawer-card {
-        width: min(720px, 100%);
+        width: min(680px, 100%);
         background: #fff;
-        border-radius: 24px;
-        padding: 20px;
-        margin: 24px auto 40px;
+        border-radius: 20px;
+        padding: 16px;
+        margin: 16px auto 32px;
         box-shadow: 0 20px 50px rgba(80, 20, 50, 0.18);
       }
       .order-drawer-head {
@@ -531,7 +531,7 @@
       }
       .status-menu button:hover { background: #fff4fa; }
       .status-menu button.is-danger { color: #b42318; }
-      .order-drawer-card { width: min(860px, 100%); }
+      .order-drawer-card { width: min(680px, 100%); }
       .order-sections { display: grid; gap: 12px; }
       .order-section {
         background: #fffafd;
@@ -595,6 +595,95 @@
       .status-pill.is-returned,
       .status-pill.is-refunded { background: #fff4e5; color: #b54708; }
       .invoice-print { display: none; }
+      .order-drawer-actions { margin-top: 12px; }
+      @media (max-width: 720px) {
+        .order-drawer {
+          padding: 0;
+          align-items: end;
+        }
+        .order-drawer.is-open { place-items: end center; }
+        .order-drawer-card {
+          width: 100%;
+          max-height: 86dvh;
+          overflow: auto;
+          border-radius: 16px 16px 0 0;
+          padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+          margin: 0;
+        }
+        #orderDetailSections .is-desk-only { display: none; }
+        .order-progress-wrap { padding: 8px 10px; }
+        .order-progress-wrap h4 { display: none; }
+        .order-progress li .lbl { display: none; }
+        .order-progress li + li::before {
+          content: "";
+          width: 14px;
+          height: 2px;
+          background: #ead5e6;
+          margin: 0 3px;
+        }
+        .order-drawer-head {
+          position: sticky;
+          top: 0;
+          z-index: 5;
+          background: #fff;
+          margin: -10px -12px 8px;
+          padding: 10px 12px 8px;
+          border-bottom: 1px solid #ffe3f2;
+        }
+        .order-drawer-head .eyebrow { display: none; }
+        .order-drawer-head h3 { margin: 0; font-size: 1.02rem; }
+        .order-drawer-head .soft-btn { padding: 6px 10px; font-size: 0.8rem; }
+        #orderDrawerMeta { font-size: 0.82rem; margin: 0 0 6px; }
+        .order-sections { gap: 8px; }
+        .order-section {
+          border-radius: 12px;
+          padding: 10px;
+        }
+        .order-section h4 { font-size: 0.8rem; margin: 0 0 6px; }
+        .order-section .meta-grid {
+          grid-template-columns: 1fr 1fr;
+          gap: 6px 8px;
+          font-size: 0.82rem;
+        }
+        .order-section .meta-grid span { font-size: 0.7rem; }
+        .order-section label { font-size: 0.8rem; }
+        .order-drawer-card .site-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+        .order-section input,
+        .order-section select,
+        .order-section textarea {
+          font-size: 16px;
+          padding: 8px 10px;
+        }
+        .order-section textarea { min-height: 52px; }
+        .order-progress { padding: 2px 0; }
+        .order-progress li { font-size: 0.62rem; gap: 4px; }
+        .order-progress li + li::before { margin: 0 5px 0 1px; }
+        .timeline-list { gap: 6px; }
+        .timeline-list small { font-size: 0.72rem; }
+        .order-links { gap: 6px; }
+        .order-links .btn,
+        .order-drawer-actions .btn {
+          padding: 8px 10px;
+          font-size: 0.78rem;
+        }
+        .order-drawer-actions {
+          position: sticky;
+          bottom: 0;
+          z-index: 5;
+          margin: 8px -12px 0;
+          padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+          background: #fff;
+          border-top: 1px solid #ffe3f2;
+          gap: 6px;
+        }
+        .order-drawer-actions .btn { flex: 1 1 calc(50% - 6px); }
+        .status-menu {
+          left: 0;
+          right: auto;
+          min-width: min(240px, calc(100vw - 28px));
+        }
+        .status-menu button { padding: 8px 10px; font-size: 0.82rem; }
+      }
       @media print {
         body.printing-invoice * { visibility: hidden; }
         body.printing-invoice .invoice-print,
@@ -850,7 +939,7 @@
                 <div class="order-section" id="orderCourierSection"></div>
                 <div class="order-links" id="orderQuickLinks"></div>
                 <p class="save-note" id="orderCourierNote"></p>
-                <div class="panel-actions" style="margin-top: 16px;">
+                <div class="panel-actions order-drawer-actions">
                   <button class="btn btn-dark" type="submit">ডিটেইলস সেভ</button>
                   <button class="btn soft-btn" type="button" id="copyAddressBtn">ঠিকানা কপি</button>
                   <button class="btn soft-btn" type="button" id="printInvoiceBtn">ইনভয়েস প্রিন্ট</button>
@@ -1072,9 +1161,16 @@
       </div>
     </div>
     <div class="invoice-print" id="invoicePrint"></div>
+    <script>
+      try {
+        localStorage.removeItem("jarnaz-local-products");
+        localStorage.removeItem("jarnaz-local-offers");
+        localStorage.removeItem("jarnaz-cloud-snap-v1");
+      } catch (err) {}
+    </script>
     <script src="site-config.js?v=20261007g"></script>
-    <script src="orders-api.js?v=20261007f"></script>
-    <script src="catalog.js?v=20261007f"></script>
+    <script src="orders-api.js?v=20261007i"></script>
+    <script src="catalog.js?v=20261007i"></script>
     <script>
       const TOKEN_KEY = "jarnaz-admin-token";
       let offers = [];
@@ -1796,11 +1892,11 @@
         document.getElementById("orderDrawerMeta").textContent =
           `${formatOrderTime(order.createdAt)} · ${order.source === "admin" ? "ম্যানুয়াল অর্ডার" : "ওয়েবসাইট অর্ডার"}`;
         document.getElementById("orderProgressBox").innerHTML =
-          `<div class="order-section"><h4>F. Order status</h4>${progressHtml(order, false)}</div>`;
+          `<div class="order-section order-progress-wrap"><h4>F. Order status</h4>${progressHtml(order, true)}</div>`;
         const tracking = OrdersAPI.orderTrackingId ? OrdersAPI.orderTrackingId(order) : (order.consignmentNo || order.steadfastTracking || "");
         const courier = order.courierName || "";
         document.getElementById("orderDetailSections").innerHTML = `
-          <div class="order-section">
+          <div class="order-section is-desk-only">
             <h4>A. Order information</h4>
             <div class="meta-grid">
               <div><span>Order ID</span><strong>${esc(order.id)}</strong></div>
@@ -1809,7 +1905,7 @@
               <div><span>Source</span><strong>${esc(order.source || "web")}</strong></div>
             </div>
           </div>
-          <div class="order-section">
+          <div class="order-section is-desk-only">
             <h4>B. Customer information</h4>
             <div class="meta-grid">
               <div><span>Name</span><strong>${esc(order.name || "—")}</strong></div>
@@ -1817,7 +1913,7 @@
               <div><span>Address</span><strong>${esc(order.address || "—")}</strong></div>
             </div>
           </div>
-          <div class="order-section">
+          <div class="order-section is-desk-only">
             <h4>C. Product information</h4>
             <div class="meta-grid">
               <div><span>Code</span><strong>${esc(order.productCode)}</strong></div>
@@ -1834,7 +1930,7 @@
               <div><span>Payment status</span><strong>${esc(order.paymentStatus || "pending")}</strong></div>
             </div>
           </div>
-          <div class="order-section">
+          <div class="order-section is-desk-only">
             <h4>E. Courier information</h4>
             ${tracking ? `<div class="courier-ok">✅ Courier consignment created<br />Tracking ID: ${esc(tracking)}</div>` : `<p>Courier: ${esc(courier || "Not selected")}</p>`}
           </div>

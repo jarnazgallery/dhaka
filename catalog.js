@@ -513,6 +513,15 @@ function mergeReviewLists(server, local) {
   return list;
 }
 
+function catalogLooksSafe(list) {
+  if (!Array.isArray(list) || !list.length) return false;
+  return !list.some((item) => {
+    const price = Number(item && item.price);
+    const name = String((item && item.name) || "").trim().toLowerCase();
+    return name === "assdf" || name === "test" || (Number.isFinite(price) && price > 0 && price < 20);
+  });
+}
+
 function applyCatalogData(data) {
   data = data || {};
   const liveWrite = API_MODE === "server" || API_MODE === "php" || API_MODE === "cloud" || cloudSyncOn();
@@ -559,7 +568,7 @@ async function mergeCloudCatalog(base) {
     const cloud = await OrdersAPI.fetchCatalogRemote();
     if (!cloud) return base;
     const next = Object.assign({}, base || {});
-    if (Array.isArray(cloud.products) && cloud.products.length) {
+    if (Array.isArray(cloud.products) && cloud.products.length && (catalogLooksSafe(cloud.products) || !catalogLooksSafe(next.products))) {
       next.products = cloud.products;
       API_MODE = "cloud";
     }
@@ -575,7 +584,7 @@ async function mergeCloudCatalog(base) {
 }
 
 async function loadCatalog() {
-  const snap = window.OrdersAPI && OrdersAPI.readStorefrontSnap && OrdersAPI.readStorefrontSnap(true);
+  const snap = window.OrdersAPI && OrdersAPI.readStorefrontSnap && OrdersAPI.readStorefrontSnap(false);
   if (snap && snap.catalog && Array.isArray(snap.catalog.products) && snap.catalog.products.length) {
     API_MODE = "cloud";
     const data = Object.assign({}, snap.catalog);
@@ -605,6 +614,9 @@ async function refreshCloudCatalog() {
   if (window.OrdersAPI && OrdersAPI.fetchStorefront && OrdersAPI.hasCloudOrdersApi()) {
     const store = await OrdersAPI.fetchStorefront();
     if (!store || !store.catalog) return null;
+    if (Array.isArray(store.catalog.products) && !catalogLooksSafe(store.catalog.products) && catalogLooksSafe(PRODUCTS)) {
+      return null;
+    }
     API_MODE = "cloud";
     const payload = Object.assign({}, store.catalog);
     if (Array.isArray(store.reviews)) payload.reviews = store.reviews;

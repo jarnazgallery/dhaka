@@ -818,7 +818,7 @@ loadCatalog().then((data) => {
       }
     });
   };
-  const waitMs = window.OrdersAPI && OrdersAPI.isStorefrontSnapFresh && OrdersAPI.isStorefrontSnapFresh() ? 2200 : 500;
+  const waitMs = window.OrdersAPI && OrdersAPI.isStorefrontSnapFresh && OrdersAPI.isStorefrontSnapFresh() ? 600 : 150;
   const later = window.requestIdleCallback || ((fn) => setTimeout(fn, waitMs));
   later(() => kickCloud(), { timeout: waitMs + 800 });
 });

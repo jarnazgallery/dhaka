@@ -3,6 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
     <title>Jarnaz Gallery | বেবি-কিডস কম্বো | ক্যাশ অন ডেলিভারি</title>
     <meta
       name="description"
@@ -269,9 +271,16 @@
         </div>
       </div>
     </div>
+    <script>
+      try {
+        localStorage.removeItem("jarnaz-local-products");
+        localStorage.removeItem("jarnaz-local-offers");
+        localStorage.removeItem("jarnaz-cloud-snap-v1");
+      } catch (err) {}
+    </script>
     <script src="site-config.js?v=20261007g" defer></script>
-    <script src="orders-api.js?v=20261007f" defer></script>
-    <script src="catalog.js?v=20261007f" defer></script>
-    <script src="script.js?v=20261007f" defer></script>
+    <script src="orders-api.js?v=20261007i" defer></script>
+    <script src="catalog.js?v=20261007i" defer></script>
+    <script src="script.js?v=20261007i" defer></script>
   </body>
 </html>

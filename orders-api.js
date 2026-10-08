@@ -295,16 +295,21 @@
     };
   }
 
-  const SNAP_KEY = "jarnaz-cloud-snap-v1";
   const SNAP_MS = 15 * 60 * 1000;
   let storefrontInflight = null;
   let catalogInflight = null;
 
+  function snapKey() {
+    return "jarnaz-cloud-snap-v2:" + getConfiguredOrdersApi();
+  }
+
   function readStorefrontSnap(allowStale) {
     try {
-      const raw = JSON.parse(localStorage.getItem(SNAP_KEY) || "null");
+      try { localStorage.removeItem("jarnaz-cloud-snap-v1"); } catch (err) {}
+      const raw = JSON.parse(localStorage.getItem(snapKey()) || "null");
       if (!raw || !raw.at) return null;
       if (!allowStale && Date.now() - raw.at > SNAP_MS) return null;
+      if (raw.api && raw.api !== getConfiguredOrdersApi()) return null;
       if (!raw.catalog || !Array.isArray(raw.catalog.products) || !raw.catalog.products.length) return null;
       return raw;
     } catch (err) {
@@ -313,14 +318,15 @@
   }
 
   function isStorefrontSnapFresh() {
-    const snap = readStorefrontSnap(true);
+    const snap = readStorefrontSnap(false);
     return !!(snap && Date.now() - snap.at < SNAP_MS);
   }
 
   function writeStorefrontSnap(catalog, reviews) {
     try {
-      localStorage.setItem(SNAP_KEY, JSON.stringify({
+      localStorage.setItem(snapKey(), JSON.stringify({
         at: Date.now(),
+        api: getConfiguredOrdersApi(),
         catalog: catalog || null,
         reviews: Array.isArray(reviews) ? reviews : [],
       }));
@@ -636,8 +642,16 @@
         }
       }
       if (catalog) {
-        const keep = Array.isArray(reviews) ? reviews : ((readStorefrontSnap() || {}).reviews || []);
-        writeStorefrontSnap(catalog, keep);
+        const products = catalog.products || [];
+        const junk = products.some((item) => {
+          const price = Number(item && item.price);
+          const name = String((item && item.name) || "").trim().toLowerCase();
+          return name === "assdf" || name === "test" || (Number.isFinite(price) && price > 0 && price < 20);
+        });
+        if (!junk) {
+          const keep = Array.isArray(reviews) ? reviews : ((readStorefrontSnap() || {}).reviews || []);
+          writeStorefrontSnap(catalog, keep);
+        }
       }
       return { catalog, reviews };
     })();
