@@ -108,6 +108,85 @@
       .admin-page.is-active { display: grid; gap: 18px; }
       .page-head h2 { font-size: 1.7rem; margin-bottom: 4px; }
       .page-head p { color: var(--muted); }
+      .page-head-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+      .work-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      .work-card {
+        display: grid;
+        gap: 4px;
+        width: 100%;
+        text-align: left;
+        font: inherit;
+        color: inherit;
+        border: 1px solid #ffd6ec;
+        border-radius: 18px;
+        padding: 16px 14px;
+        cursor: pointer;
+      }
+      .work-card span { color: #7a5a8a; font-size: 0.82rem; font-weight: 800; }
+      .work-card strong { font-size: 1.55rem; line-height: 1.15; }
+      .work-card small { color: #9a7a9c; font-size: 0.75rem; font-weight: 700; }
+      .work-card.is-new { background: #fff4e5; }
+      .work-card.is-pending { background: #fffbeb; }
+      .work-card.is-today { background: #f3fffe; }
+      .work-card.is-money { background: #f8f3ff; }
+      .quick-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      .quick-grid button {
+        border: 1.5px solid #ffd6ec;
+        background: #fff;
+        color: var(--ink);
+        border-radius: 14px;
+        padding: 14px 10px;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      .stat-grid.is-mini { grid-template-columns: 1fr 1fr; }
+      #tab-products.is-add-open > .page-head,
+      #tab-products.is-add-open > .list-heading,
+      #tab-products.is-add-open > #productAdmin { display: none; }
+      #tab-products.is-add-open > #addForm { display: block !important; }
+      #tab-offers.is-add-open > .page-head,
+      #tab-offers.is-add-open > .panel:not(#addOfferForm),
+      #tab-offers.is-add-open > .list-heading,
+      #tab-offers.is-add-open > #offerEditor { display: none; }
+      #tab-offers.is-add-open > #addOfferForm { display: block !important; }
+      .filter-hint { margin: 0 0 10px; color: #7a5a8a; font-size: 0.86rem; font-weight: 700; }
+      .order-easy-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
+        gap: 8px;
+      }
+      .order-easy-actions .btn {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+        padding: 12px 8px;
+        font-size: 0.88rem;
+      }
+      .order-card h4 { font-size: 1.12rem; }
+      .manual-order-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .manual-order-head h3 { margin: 0; }
+      .manual-order-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-top: 4px;
+      }
       .stat-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
@@ -313,23 +392,25 @@
       .order-card h4 { margin: 0; font-size: 1rem; }
       .order-card p { margin: 0; color: #5b3d5e; font-size: 0.92rem; }
       .order-card .addr { font-weight: 700; color: var(--ink); }
-      .order-drawer {
-        position: fixed;
-        inset: 0;
-        background: rgba(40, 12, 28, 0.45);
-        z-index: 80;
-        display: none;
-        padding: 16px;
-        overflow: auto;
-      }
-      .order-drawer.is-open { display: grid; place-items: start center; }
+      .order-drawer { display: none; }
+      .order-drawer.is-open { display: block; }
+      #tab-orders.is-order-open > .page-head,
+      #tab-orders.is-order-open > .desk-stats,
+      #tab-orders.is-order-open > .filter-hint,
+      #tab-orders.is-order-open > #manualOrderForm,
+      #tab-orders.is-order-open > .panel { display: none; }
+      #tab-orders.is-manual-open > .page-head,
+      #tab-orders.is-manual-open > .desk-stats,
+      #tab-orders.is-manual-open > .filter-hint,
+      #tab-orders.is-manual-open > .panel { display: none; }
+      #tab-orders.is-manual-open > #manualOrderForm { display: block !important; }
       .order-drawer-card {
-        width: min(680px, 100%);
+        width: 100%;
         background: #fff;
+        border: 1px solid #ffd6ec;
         border-radius: 20px;
         padding: 16px;
-        margin: 16px auto 32px;
-        box-shadow: 0 20px 50px rgba(80, 20, 50, 0.18);
+        margin: 0;
       }
       .order-drawer-head {
         display: flex;
@@ -404,26 +485,42 @@
         gap: 10px;
         margin-bottom: 16px;
       }
-      .desk-stats article {
-        background: #fffafd;
-        border: 1px solid #ffd6ec;
-        border-radius: 16px;
-        padding: 12px 14px;
-      }
       .desk-stats span { display: block; color: #7a5a8a; font-size: 0.82rem; font-weight: 700; }
       .desk-stats strong { font-size: 1.35rem; }
       .order-card.is-called { border-color: #b7ebc8; }
       .called-tag { color: #146c36; font-weight: 800; font-size: 0.78rem; }
       .desk-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .desk-stat { display: grid; gap: 2px; }
+      .desk-stat {
+        display: grid;
+        gap: 2px;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+        font: inherit;
+        color: inherit;
+        background: #fffafd;
+        border: 1px solid #ffd6ec;
+        border-radius: 16px;
+        padding: 12px 14px;
+      }
+      .desk-stat.is-active {
+        border-color: #e2187a;
+        box-shadow: 0 0 0 3px rgba(226, 24, 122, 0.16);
+      }
       .desk-stat.is-new { background: #fff4e5; }
       .desk-stat.is-pending { background: #fffbeb; }
       .desk-stat.is-processing { background: #eef6ff; }
+      .desk-stat.is-confirmed { background: #eef6ff; }
       .desk-stat.is-ready { background: #f6f0ff; }
       .desk-stat.is-shipped { background: #eef9ff; }
       .desk-stat.is-ofd { background: #eefbf3; }
       .desk-stat.is-delivered { background: #eef4ff; }
       .desk-stat.is-cancelled { background: #fff1f3; }
+      .desk-stat.is-manual {
+        background: linear-gradient(180deg, #fff0f7, #ffe6f2);
+        border-color: #ffb6d9;
+      }
+      .desk-stat.is-manual strong { color: #e2187a; }
       .order-toolbar {
         display: flex;
         flex-wrap: wrap;
@@ -531,7 +628,7 @@
       }
       .status-menu button:hover { background: #fff4fa; }
       .status-menu button.is-danger { color: #b42318; }
-      .order-drawer-card { width: min(680px, 100%); }
+      .order-drawer-card { width: 100%; }
       .order-sections { display: grid; gap: 12px; }
       .order-section {
         background: #fffafd;
@@ -597,30 +694,14 @@
       .invoice-print { display: none; }
       .order-drawer-actions { margin-top: 12px; }
       @media (max-width: 720px) {
-        .order-drawer {
-          padding: 0;
-          align-items: end;
-        }
-        .order-drawer.is-open { place-items: end center; }
         .order-drawer-card {
           width: 100%;
-          max-height: 86dvh;
-          overflow: auto;
-          border-radius: 16px 16px 0 0;
-          padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+          border-radius: 16px;
+          padding: 10px 12px calc(12px + env(safe-area-inset-bottom));
           margin: 0;
         }
-        #orderDetailSections .is-desk-only { display: none; }
-        .order-progress-wrap { padding: 8px 10px; }
-        .order-progress-wrap h4 { display: none; }
-        .order-progress li .lbl { display: none; }
-        .order-progress li + li::before {
-          content: "";
-          width: 14px;
-          height: 2px;
-          background: #ead5e6;
-          margin: 0 3px;
-        }
+        #orderProgressBox,
+        #orderDetailSections { display: none; }
         .order-drawer-head {
           position: sticky;
           top: 0;
@@ -632,6 +713,7 @@
         }
         .order-drawer-head .eyebrow { display: none; }
         .order-drawer-head h3 { margin: 0; font-size: 1.02rem; }
+        #orderEditForm .order-section > h4 { display: none; }
         .order-drawer-head .soft-btn { padding: 6px 10px; font-size: 0.8rem; }
         #orderDrawerMeta { font-size: 0.82rem; margin: 0 0 6px; }
         .order-sections { gap: 8px; }
@@ -683,6 +765,8 @@
           min-width: min(240px, calc(100vw - 28px));
         }
         .status-menu button { padding: 8px 10px; font-size: 0.82rem; }
+        .order-card .order-progress { display: none; }
+        .order-easy-actions { grid-template-columns: repeat(auto-fit, minmax(86px, 1fr)); }
       }
       @media print {
         body.printing-invoice * { visibility: hidden; }
@@ -705,6 +789,8 @@
           padding: 16px;
         }
         .stat-grid { grid-template-columns: repeat(4, 1fr); }
+        .work-grid { grid-template-columns: repeat(4, 1fr); }
+        .quick-grid { grid-template-columns: repeat(4, 1fr); }
         .desk-stats { grid-template-columns: repeat(4, 1fr); }
         .order-section .meta-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         .add-grid { grid-template-columns: repeat(3, minmax(140px, 1fr)); align-items: end; }
@@ -744,7 +830,7 @@
 
     <div class="admin-shell is-hidden" id="dashView">
       <aside class="admin-sidebar" id="adminNav">
-        <button class="admin-nav-btn is-active" type="button" data-tab="overview">ড্যাশবোর্ড</button>
+        <button class="admin-nav-btn is-active" type="button" data-tab="overview">আজকের কাজ</button>
         <button class="admin-nav-btn" type="button" data-tab="products">প্রোডাক্ট</button>
         <button class="admin-nav-btn" type="button" data-tab="offers">কম্বো অফার</button>
         <button class="admin-nav-btn" type="button" data-tab="orders">অর্ডার <span class="nav-badge is-hidden" id="newOrderBadge">0</span></button>
@@ -757,17 +843,43 @@
       <div class="admin-main">
         <section class="admin-page is-active" id="tab-overview">
           <div class="page-head">
-            <h2>ড্যাশবোর্ড</h2>
-            <p>আজকের কালেকশন ও অর্ডার এক নজরে।</p>
+            <h2>আজকের কাজ</h2>
+            <p>নতুন অর্ডার দেখুন, কল করুন, স্ট্যাটাস বদলান — সব এক ট্যাপে।</p>
           </div>
-          <div class="stat-grid">
+          <div class="work-grid" id="workGrid">
+            <button class="work-card is-new" type="button" data-go="orders" data-extra="new">
+              <span>নতুন অর্ডার</span>
+              <strong id="workNew">0</strong>
+              <small>এখনই দেখুন</small>
+            </button>
+            <button class="work-card is-pending" type="button" data-go="orders" data-extra="pending">
+              <span>পেন্ডিং</span>
+              <strong id="workPending">0</strong>
+              <small>ফোন করার বাকি</small>
+            </button>
+            <button class="work-card is-today" type="button" data-go="orders" data-extra="all">
+              <span>সব অর্ডার</span>
+              <strong id="statOrders">0</strong>
+              <small>লিস্ট খুলুন</small>
+            </button>
+            <button class="work-card is-money" type="button" data-go="orders" data-extra="delivered">
+              <span>মোট সেল</span>
+              <strong id="statRevenue">৳০</strong>
+              <small>ডেলিভার্ড সহ</small>
+            </button>
+          </div>
+          <div class="quick-grid" id="quickGrid">
+            <button type="button" data-go="orders" data-extra="add">+ অর্ডার যোগ</button>
+            <button type="button" data-go="products" data-extra="add">+ প্রোডাক্ট</button>
+            <button type="button" data-go="offers" data-extra="add">+ কম্বো</button>
+            <button type="button" data-go="comments">+ রিভিউ</button>
+          </div>
+          <div class="stat-grid is-mini">
             <article class="stat-card"><span>প্রোডাক্ট</span><strong id="statProducts">0</strong></article>
-            <article class="stat-card"><span>অর্ডার</span><strong id="statOrders">0</strong></article>
             <article class="stat-card"><span>অফার</span><strong id="statOffers">0</strong></article>
-            <article class="stat-card"><span>মোট সেল</span><strong id="statRevenue">৳০</strong></article>
           </div>
           <div class="panel">
-            <h3>সাম্প্রতিক অর্ডার</h3>
+            <h3>সাম্প্রতিক অর্ডার — ট্যাপ করলে খুলবে</h3>
             <div id="recentOrders"></div>
           </div>
         </section>
@@ -777,14 +889,20 @@
             <h2>প্রোডাক্ট</h2>
             <p>নাম, দাম, বিবরণ বদলে <strong>সেভ</strong> চাপুন। ক্লাউডে গেলে হোমপেজেও আপডেট হবে। এখন মোট <strong id="adminProductCount">0</strong> টা আছে।</p>
             <p class="save-note" id="productSyncNote"></p>
+            <div class="page-head-actions">
+              <button class="btn btn-dark" type="button" id="openAddProduct">+ প্রোডাক্ট যোগ</button>
+            </div>
           </div>
-          <form class="panel add-form" id="addForm">
-            <h3>নতুন প্রোডাক্ট যোগ করুন</h3>
+          <form class="panel add-form is-hidden" id="addForm">
+            <div class="manual-order-head">
+              <h3>নতুন প্রোডাক্ট যোগ</h3>
+              <button class="btn soft-btn" type="button" id="cancelAddProduct">Cancel</button>
+            </div>
             <div class="add-grid">
               <label>ছবি <input type="file" name="image" accept="image/*" required /></label>
               <label>নাম <input type="text" name="name" required placeholder="সেটের নাম" /></label>
-              <label>০–৩ বছর দাম (৳) <input type="number" name="price" required value="2040" min="1" /></label>
-              <label>৩–৬ বছর দাম (৳) <input type="number" name="price36" required value="2040" min="1" /></label>
+              <label>০–৩ বছর দাম (৳) <input type="number" name="price" required value="450" min="1" /></label>
+              <label>৩–৬ বছর দাম (৳) <input type="number" name="price36" required value="480" min="1" /></label>
               <label>পিস <input type="number" name="piece" required value="2" min="1" max="10" /></label>
               <label>সেট নম্বর <input type="text" name="code" placeholder="যেমন 13 — খালি রাখলে গ্যাপ ভরবে" /></label>
               <label>প্রায়োরিটি <input type="number" name="priority" min="1" placeholder="১ = প্রথমে দেখাবে" /></label>
@@ -792,7 +910,10 @@
             <label class="add-desc">বিবরণ
               <textarea name="description" rows="3" placeholder="কাপড়, কালার, কী কী আছে সেটের মধ্যে..."></textarea>
             </label>
-            <button class="btn btn-dark" type="submit">লিস্টে যোগ করুন</button>
+            <div class="manual-order-actions">
+              <button class="btn btn-dark" type="submit">লিস্টে যোগ করুন</button>
+              <button class="btn soft-btn" type="button" id="cancelAddProductBottom">Cancel</button>
+            </div>
             <p class="save-note" id="addNote"></p>
           </form>
           <h3 class="list-heading">প্রোডাক্ট লিস্ট</h3>
@@ -803,6 +924,9 @@
           <div class="page-head">
             <h2>কম্বো অফার</h2>
             <p>কম্বো সেট থেকে আলাদা। নিজের ছবি আপলোড করুন — SET-১, SET-২ থেকে নেওয়া হবে না।</p>
+            <div class="page-head-actions">
+              <button class="btn btn-dark" type="button" id="openAddOffer">+ কম্বো যোগ</button>
+            </div>
           </div>
           <div class="panel">
             <label class="offer-switch">
@@ -814,19 +938,25 @@
             </label>
             <p class="save-note" id="saveNote"></p>
           </div>
-          <form class="panel add-form" id="addOfferForm">
-            <h3>নতুন কম্বো আপলোড</h3>
+          <form class="panel add-form is-hidden" id="addOfferForm">
+            <div class="manual-order-head">
+              <h3>নতুন কম্বো আপলোড</h3>
+              <button class="btn soft-btn" type="button" id="cancelAddOffer">Cancel</button>
+            </div>
             <div class="add-grid">
               <label>ছবি <input type="file" name="image" accept="image/*" required /></label>
               <label>টাইটেল <input type="text" name="title" required placeholder="কম্বো অফার ১" /></label>
-              <label>০–৩ বছর দাম (৳) <input type="number" name="price" required value="2040" min="1" /></label>
-              <label>৩–৬ বছর দাম (৳) <input type="number" name="price36" required value="2040" min="1" /></label>
-              <label>পিস <input type="number" name="piece" required value="2" min="1" max="10" /></label>
+              <label>০–৩ বছর দাম (৳) <input type="number" name="price" required value="1350" min="1" /></label>
+              <label>৩–৬ বছর দাম (৳) <input type="number" name="price36" required value="1450" min="1" /></label>
+              <label>পিস <input type="number" name="piece" required value="6" min="1" max="10" /></label>
             </div>
             <label class="add-desc">বিবরণ
               <textarea name="description" rows="2" placeholder="কম্বোতে কী কী আছে..."></textarea>
             </label>
-            <button class="btn btn-dark" type="submit">কম্বো যোগ করুন</button>
+            <div class="manual-order-actions">
+              <button class="btn btn-dark" type="submit">কম্বো যোগ করুন</button>
+              <button class="btn soft-btn" type="button" id="cancelAddOfferBottom">Cancel</button>
+            </div>
             <p class="save-note" id="addOfferNote"></p>
           </form>
           <h3 class="list-heading">কম্বো লিস্ট</h3>
@@ -841,17 +971,22 @@
             <button class="btn soft-btn" type="button" id="refreshOrders">অর্ডার রিফ্রেশ</button>
           </div>
           <div class="desk-stats" id="orderDesk">
-            <article class="desk-stat is-new"><span>New</span><strong id="deskNew">0</strong></article>
-            <article class="desk-stat is-pending"><span>Pending</span><strong id="deskPending">0</strong></article>
-            <article class="desk-stat is-processing"><span>Processing</span><strong id="deskProcessing">0</strong></article>
-            <article class="desk-stat is-ready"><span>Ready to Ship</span><strong id="deskReady">0</strong></article>
-            <article class="desk-stat is-shipped"><span>Shipped</span><strong id="deskShipped">0</strong></article>
-            <article class="desk-stat is-ofd"><span>Out for Delivery</span><strong id="deskOfd">0</strong></article>
-            <article class="desk-stat is-delivered"><span>Delivered</span><strong id="deskDelivered">0</strong></article>
-            <article class="desk-stat is-cancelled"><span>Cancelled</span><strong id="deskCancelled">0</strong></article>
+            <button class="desk-stat is-new" type="button" data-filter="new"><span>নতুন</span><strong id="deskNew">0</strong></button>
+            <button class="desk-stat is-pending" type="button" data-filter="pending"><span>পেন্ডিং</span><strong id="deskPending">0</strong></button>
+            <button class="desk-stat is-confirmed" type="button" data-filter="confirmed"><span>কনফার্ম</span><strong id="deskConfirmed">0</strong></button>
+            <button class="desk-stat is-ready" type="button" data-filter="ready_to_ship"><span>পাঠানোর জন্য</span><strong id="deskReady">0</strong></button>
+            <button class="desk-stat is-shipped" type="button" data-filter="shipped"><span>পাঠানো</span><strong id="deskShipped">0</strong></button>
+            <button class="desk-stat is-ofd" type="button" data-filter="out_for_delivery"><span>ডেলিভারিতে</span><strong id="deskOfd">0</strong></button>
+            <button class="desk-stat is-delivered" type="button" data-filter="delivered"><span>ডেলিভার্ড</span><strong id="deskDelivered">0</strong></button>
+            <button class="desk-stat is-cancelled" type="button" data-filter="cancelled"><span>বাতিল</span><strong id="deskCancelled">0</strong></button>
+            <button class="desk-stat is-manual" type="button" id="openManualOrder"><span>অর্ডার যোগ</span><strong>+</strong></button>
           </div>
-          <form class="panel add-form" id="manualOrderForm">
-            <h3>ম্যানুয়াল অর্ডার যোগ</h3>
+          <p class="filter-hint is-hidden" id="orderFilterHint"></p>
+          <form class="panel add-form is-hidden" id="manualOrderForm">
+            <div class="manual-order-head">
+              <h3>ম্যানুয়াল অর্ডার যোগ</h3>
+              <button class="btn soft-btn" type="button" id="cancelManualOrder">Cancel</button>
+            </div>
             <div class="site-grid">
               <label>প্রোডাক্ট
                 <select id="manualProduct" name="productCode" required></select>
@@ -866,7 +1001,10 @@
             </div>
             <label>ঠিকানা <textarea name="address" rows="2" required placeholder="বাসা, রোড, থানা, জেলা"></textarea></label>
             <label class="check-row"><input type="checkbox" name="confirmNow" checked /> সাথে সাথে কনফার্ম করুন</label>
-            <button class="btn btn-dark" type="submit">অর্ডার যোগ করুন</button>
+            <div class="manual-order-actions">
+              <button class="btn btn-dark" type="submit">অর্ডার যোগ করুন</button>
+              <button class="btn soft-btn" type="button" id="cancelManualOrderBottom">Cancel</button>
+            </div>
             <p class="save-note" id="manualOrderNote"></p>
           </form>
           <div class="panel">
@@ -877,11 +1015,11 @@
               <label>তারিখ
                 <select id="orderDateFilter">
                   <option value="all">সব তারিখ</option>
-                  <option value="today">Today</option>
-                  <option value="yesterday">Yesterday</option>
-                  <option value="7">Last 7 Days</option>
-                  <option value="30">Last 30 Days</option>
-                  <option value="custom">Custom Date</option>
+                  <option value="today">আজ</option>
+                  <option value="yesterday">গতকাল</option>
+                  <option value="7">৭ দিন</option>
+                  <option value="30">৩০ দিন</option>
+                  <option value="custom">কাস্টম</option>
                 </select>
               </label>
               <label id="orderDateFromWrap" class="is-hidden">From
@@ -890,19 +1028,6 @@
               <label id="orderDateToWrap" class="is-hidden">To
                 <input id="orderDateTo" type="date" />
               </label>
-            </div>
-            <div class="filter-pills" id="orderFilters">
-              <button class="admin-nav-btn is-active" type="button" data-filter="all" data-label="All">All</button>
-              <button class="admin-nav-btn" type="button" data-filter="new" data-label="New">New</button>
-              <button class="admin-nav-btn" type="button" data-filter="pending" data-label="Pending">Pending</button>
-              <button class="admin-nav-btn" type="button" data-filter="confirmed" data-label="Confirmed">Confirmed</button>
-              <button class="admin-nav-btn" type="button" data-filter="processing" data-label="Processing">Processing</button>
-              <button class="admin-nav-btn" type="button" data-filter="ready_to_ship" data-label="Ready to Ship">Ready to Ship</button>
-              <button class="admin-nav-btn" type="button" data-filter="shipped" data-label="Shipped">Shipped</button>
-              <button class="admin-nav-btn" type="button" data-filter="out_for_delivery" data-label="Out for Delivery">Out for Delivery</button>
-              <button class="admin-nav-btn" type="button" data-filter="delivered" data-label="Delivered">Delivered</button>
-              <button class="admin-nav-btn" type="button" data-filter="cancelled" data-label="Cancelled">Cancelled</button>
-              <button class="admin-nav-btn" type="button" data-filter="returned" data-label="Returned">Returned</button>
             </div>
             <div id="list"></div>
           </div>
@@ -913,7 +1038,7 @@
                   <p class="eyebrow">Order details</p>
                   <h3 id="orderDrawerTitle">অর্ডার ডিটেইলস</h3>
                 </div>
-                <button class="btn soft-btn" type="button" id="closeOrderDrawer">বন্ধ</button>
+                <button class="btn soft-btn" type="button" id="closeOrderDrawer">← ফিরে যান</button>
               </div>
               <p id="orderDrawerMeta"></p>
               <div id="orderProgressBox"></div>
@@ -944,7 +1069,7 @@
                   <button class="btn soft-btn" type="button" id="copyAddressBtn">ঠিকানা কপি</button>
                   <button class="btn soft-btn" type="button" id="printInvoiceBtn">ইনভয়েস প্রিন্ট</button>
                   <div class="status-menu-wrap">
-                    <button class="btn ok-btn" type="button" id="drawerStatusBtn">Update Status ▼</button>
+                    <button class="btn ok-btn" type="button" id="drawerStatusBtn">স্ট্যাটাস বদলান ▼</button>
                     <div class="status-menu" id="drawerStatusMenu"></div>
                   </div>
                   <button class="btn ok-btn is-hidden" type="button" id="steadfastSendBtn">Send to Courier</button>
@@ -1104,30 +1229,30 @@
 
     <div class="admin-modal" id="orderConfirmModal" aria-hidden="true">
       <div class="admin-modal-card">
-        <h3>Confirm this order?</h3>
+        <h3>এই অর্ডার কনফার্ম করবেন?</h3>
         <p id="confirmModalBody"></p>
         <div class="panel-actions">
-          <button class="btn soft-btn" type="button" data-close-modal="orderConfirmModal">Keep</button>
-          <button class="btn ok-btn" type="button" id="confirmModalYes">Confirm Order</button>
+          <button class="btn soft-btn" type="button" data-close-modal="orderConfirmModal">না</button>
+          <button class="btn ok-btn" type="button" id="confirmModalYes">হ্যাঁ, কনফার্ম</button>
         </div>
       </div>
     </div>
     <div class="admin-modal" id="orderCancelModal" aria-hidden="true">
       <div class="admin-modal-card">
-        <h3>Cancel this order?</h3>
+        <h3>অর্ডার বাতিল করবেন?</h3>
         <p id="cancelModalBody"></p>
-        <label>Cancellation reason
+        <label>কারণ
           <select id="cancelReason">
-            <option value="Customer requested">Customer requested</option>
-            <option value="Out of stock">Out of stock</option>
-            <option value="Wrong information">Wrong information</option>
-            <option value="Duplicate order">Duplicate order</option>
-            <option value="Other">Other</option>
+            <option value="Customer requested">কাস্টমার চেয়েছে</option>
+            <option value="Out of stock">স্টক নেই</option>
+            <option value="Wrong information">ভুল তথ্য</option>
+            <option value="Duplicate order">ডুপ্লিকেট</option>
+            <option value="Other">অন্য</option>
           </select>
         </label>
         <div class="panel-actions">
-          <button class="btn soft-btn" type="button" data-close-modal="orderCancelModal">Keep Order</button>
-          <button class="btn danger" type="button" id="cancelModalYes">Confirm Cancellation</button>
+          <button class="btn soft-btn" type="button" data-close-modal="orderCancelModal">রাখুন</button>
+          <button class="btn danger" type="button" id="cancelModalYes">হ্যাঁ, বাতিল</button>
         </div>
       </div>
     </div>
@@ -1169,8 +1294,8 @@
       } catch (err) {}
     </script>
     <script src="site-config.js?v=20261007g"></script>
-    <script src="orders-api.js?v=20261007i"></script>
-    <script src="catalog.js?v=20261007i"></script>
+    <script src="orders-api.js?v=20261010b"></script>
+    <script src="catalog.js?v=20261010b"></script>
     <script>
       const TOKEN_KEY = "jarnaz-admin-token";
       let offers = [];
@@ -1351,6 +1476,55 @@
         setModeNote();
       }
 
+      function setAddOpen(kind, open) {
+        const map = {
+          products: { tab: "tab-products", form: "addForm" },
+          offers: { tab: "tab-offers", form: "addOfferForm" },
+        };
+        const cfg = map[kind];
+        if (!cfg) return;
+        const tab = document.getElementById(cfg.tab);
+        const form = document.getElementById(cfg.form);
+        if (form) form.classList.toggle("is-hidden", !open);
+        if (tab) tab.classList.toggle("is-add-open", !!open);
+        if (open) window.scrollTo(0, 0);
+        else if (form) {
+          form.reset();
+          const note = form.querySelector(".save-note");
+          if (note) {
+            note.textContent = "";
+            note.classList.remove("is-error", "is-success");
+          }
+        }
+      }
+
+      function goManage(kind, extra) {
+        extra = extra || "";
+        if (kind === "orders") {
+          switchTab("orders");
+          if (extra === "add") setManualOrderOpen(true);
+          else {
+            setManualOrderOpen(false);
+            orderFilter = extra || "all";
+            updateFilterCounts();
+            renderOrders();
+            window.scrollTo(0, 0);
+          }
+          return;
+        }
+        if (kind === "products") {
+          switchTab("products");
+          setAddOpen("products", extra === "add");
+          return;
+        }
+        if (kind === "offers") {
+          switchTab("offers");
+          setAddOpen("offers", extra === "add");
+          return;
+        }
+        if (kind === "comments") switchTab("comments");
+      }
+
       function switchTab(id) {
         document.querySelectorAll(".admin-page").forEach((page) => {
           page.classList.toggle("is-active", page.id === "tab-" + id);
@@ -1358,6 +1532,12 @@
         document.querySelectorAll("#adminNav .admin-nav-btn").forEach((btn) => {
           btn.classList.toggle("is-active", btn.dataset.tab === id);
         });
+        if (id !== "orders") {
+          closeOrderDrawer();
+          setManualOrderOpen(false);
+        }
+        if (id !== "products") setAddOpen("products", false);
+        if (id !== "offers") setAddOpen("offers", false);
       }
 
       function productOptions(selected) {
@@ -1374,10 +1554,21 @@
 
       function statusLabel(status) {
         const s = orderStatus({ status });
-        if (s === "new") return "New";
-        const pipe = ((OrdersAPI.ORDER_PIPELINE || []).concat(OrdersAPI.ORDER_EXCEPTIONS || []));
-        const found = pipe.find((item) => item.id === s);
-        return found ? found.label : s;
+        const bn = {
+          new: "নতুন",
+          pending: "পেন্ডিং",
+          confirmed: "কনফার্ম",
+          processing: "প্রসেসিং",
+          ready_to_ship: "পাঠানোর জন্য",
+          shipped: "পাঠানো",
+          out_for_delivery: "ডেলিভারিতে",
+          delivered: "ডেলিভার্ড",
+          cancelled: "বাতিল",
+          return_requested: "রিটার্ন",
+          returned: "ফেরত",
+          refunded: "রিফান্ড",
+        };
+        return bn[s] || s;
       }
 
       function waitLabel(iso) {
@@ -1395,44 +1586,47 @@
         const items = [];
         const add = (next, icon, label, kind) => items.push({ status: next, icon, label, kind: kind || "next" });
         if (s === "new" || s === "pending") {
-          if (s === "new") add("pending", "🟡", "Mark Pending");
-          add("confirmed", "📞", "Confirm Order", "confirm");
-          add("cancelled", "❌", "Cancel Order", "cancel");
-        } else if (s === "confirmed") {
-          add("processing", "📦", "Start Processing");
-          add("cancelled", "❌", "Cancel Order", "cancel");
-        } else if (s === "processing") {
-          add("ready_to_ship", "🏷️", "Mark Ready to Ship");
-          add("cancelled", "❌", "Cancel Order", "cancel");
+          if (s === "new") add("pending", "🟡", "পেন্ডিং");
+          add("confirmed", "📞", "কনফার্ম", "confirm");
+          add("cancelled", "❌", "বাতিল", "cancel");
+        } else if (s === "confirmed" || s === "processing") {
+          add("ready_to_ship", "🏷️", "পাঠানোর জন্য");
+          add("cancelled", "❌", "বাতিল", "cancel");
         } else if (s === "ready_to_ship") {
-          add("shipped", "🚚", "Mark as Shipped");
-          add("cancelled", "❌", "Cancel Order", "cancel");
+          add("shipped", "🚚", "পাঠিয়েছি");
+          add("cancelled", "❌", "বাতিল", "cancel");
         } else if (s === "shipped") {
-          add("out_for_delivery", "🏠", "Mark Out for Delivery");
+          add("out_for_delivery", "🏠", "ডেলিভারিতে");
         } else if (s === "out_for_delivery") {
-          add("delivered", "✅", "Mark as Delivered");
+          add("delivered", "✅", "ডেলিভার্ড");
         } else if (s === "delivered") {
-          add("return_requested", "↩️", "Return / Refund", "return");
+          add("return_requested", "↩️", "রিটার্ন", "return");
         } else if (s === "return_requested") {
-          add("returned", "↩️", "Mark Returned", "return");
-          add("refunded", "↩️", "Mark Refunded", "return");
+          add("returned", "↩️", "ফেরত", "return");
+          add("refunded", "↩️", "রিফান্ড", "return");
         } else if (s === "returned") {
-          add("refunded", "↩️", "Mark Refunded", "return");
+          add("refunded", "↩️", "রিফান্ড", "return");
         }
         return items;
       }
 
+      function primaryNext(status) {
+        const items = statusActionsFor(status).filter((item) => item.kind !== "cancel");
+        return items.find((item) => item.kind === "confirm" || item.status === "confirmed") || items[0];
+      }
+
       function progressHtml(order, compact) {
         const status = orderStatus(order);
-        if (OrdersAPI.isExceptionStatus && OrdersAPI.isExceptionStatus(status)) {
+        if (window.OrdersAPI && OrdersAPI.isExceptionStatus && OrdersAPI.isExceptionStatus(status)) {
           const extra = order.cancelReason || order.returnReason || "";
           return `<div class="order-exception is-${esc(status)}">${esc(statusLabel(status))}${extra ? " · " + esc(extra) : ""}</div>`;
         }
-        const idx = OrdersAPI.pipelineIndex ? OrdersAPI.pipelineIndex(status) : 0;
+        const idx = window.OrdersAPI && OrdersAPI.pipelineIndex ? OrdersAPI.pipelineIndex(status) : -1;
+        const pipe = (window.OrdersAPI && OrdersAPI.ORDER_PIPELINE) || [];
         return `<ol class="order-progress${compact ? " is-compact" : ""}">${
-          (OrdersAPI.ORDER_PIPELINE || []).map((step, i) => {
+          pipe.map((step, i) => {
             const state = i < idx ? "is-done" : i === idx ? "is-current" : "is-todo";
-            return `<li class="${state}"><span class="dot"></span><span class="lbl">${esc(step.label)}</span></li>`;
+            return `<li class="${state}"><span class="dot"></span><span class="lbl">${esc(step.labelBn || step.label)}</span></li>`;
           }).join("")
         }</ol>`;
       }
@@ -1513,10 +1707,14 @@
       }
 
       function updateManualTotal() {
-        const product = findProduct(document.getElementById("manualProduct").value);
-        const qty = Number(document.getElementById("manualQty").value) || 1;
-        const size = document.getElementById("manualSize").value;
-        document.getElementById("manualTotal").textContent = taka((product ? priceForSize(product, size) : 0) * qty);
+        const productEl = document.getElementById("manualProduct");
+        const qtyEl = document.getElementById("manualQty");
+        const sizeEl = document.getElementById("manualSize");
+        const totalEl = document.getElementById("manualTotal");
+        if (!productEl || !qtyEl || !sizeEl || !totalEl) return;
+        const product = findProduct(productEl.value);
+        const qty = Number(qtyEl.value) || 1;
+        totalEl.textContent = taka((product ? priceForSize(product, sizeEl.value) : 0) * qty);
       }
 
       function renderStats() {
@@ -1542,16 +1740,19 @@
         };
         setDesk("deskNew", news);
         setDesk("deskPending", countBy("pending"));
-        setDesk("deskProcessing", countBy("processing"));
+        setDesk("deskConfirmed", countBy("confirmed") + countBy("processing"));
         setDesk("deskReady", countBy("ready_to_ship"));
         setDesk("deskShipped", countBy("shipped"));
         setDesk("deskOfd", countBy("out_for_delivery"));
         setDesk("deskDelivered", countBy("delivered"));
         setDesk("deskCancelled", countBy("cancelled"));
+        setDesk("workNew", news);
+        setDesk("workPending", countBy("pending"));
       }
 
       function renderRecent() {
         const root = document.getElementById("recentOrders");
+        if (!root) return;
         if (!lastOrders.length) {
           root.innerHTML = ordersLoading
             ? '<p class="empty">অর্ডার লোড হচ্ছে...</p>'
@@ -1712,11 +1913,13 @@
       }
 
       function filteredOrders() {
-        const q = (document.getElementById("orderSearch").value || "").trim().toLowerCase();
+        const search = document.getElementById("orderSearch");
+        const q = ((search && search.value) || "").trim().toLowerCase();
         return lastOrders.filter((o) => {
           const status = orderStatus(o);
           const statusOk = orderFilter === "all"
             || status === orderFilter
+            || (orderFilter === "confirmed" && (status === "confirmed" || status === "processing"))
             || (orderFilter === "returned" && (status === "returned" || status === "return_requested" || status === "refunded"));
           if (!statusOk) return false;
           if (!orderInDateRange(o)) return false;
@@ -1757,15 +1960,16 @@
       }
 
       function updateFilterCounts() {
-        document.querySelectorAll("#orderFilters [data-filter]").forEach((btn) => {
-          const filter = btn.dataset.filter;
-          const label = btn.dataset.label || btn.textContent.split("·")[0].trim();
-          btn.dataset.label = label;
-          const count = filter === "all"
-            ? lastOrders.length
-            : lastOrders.filter((o) => orderStatus(o) === filter).length;
-          btn.textContent = count ? `${label} · ${count}` : label;
+        document.querySelectorAll("#orderDesk [data-filter]").forEach((btn) => {
+          btn.classList.toggle("is-active", btn.dataset.filter === orderFilter);
         });
+        const hint = document.getElementById("orderFilterHint");
+        if (hint) {
+          hint.classList.toggle("is-hidden", orderFilter === "all");
+          hint.textContent = orderFilter === "all"
+            ? ""
+            : statusLabel(orderFilter) + " অর্ডার দেখাচ্ছে · আবার সেই বক্সে ট্যাপ করলে সব দেখাবে";
+        }
       }
 
       function copyText(text) {
@@ -1809,6 +2013,7 @@
         updateFilterCounts();
         const rows = filteredOrders();
         const root = document.getElementById("list");
+        if (!root) return;
         if (!rows.length) {
           root.innerHTML = ordersLoading
             ? '<p class="empty">অর্ডার লোড হচ্ছে...</p>'
@@ -1822,40 +2027,31 @@
             const called = o.called === "yes" || o.called === true;
             const isNew = status === "new";
             const wait = (isNew || status === "pending") ? waitLabel(o.createdAt) : "";
-            const courier = (OrdersAPI.orderCourierName && OrdersAPI.orderCourierName(o)) || o.courierName || "Not selected";
+            const courier = (window.OrdersAPI && OrdersAPI.orderCourierName && OrdersAPI.orderCourierName(o)) || o.courierName || "";
             const pay = o.paymentMethod || "COD";
+            const next = primaryNext(status);
             return `
               <article class="order-card${called ? " is-called" : ""}${isNew ? " is-fresh" : ""}">
                 <div class="order-card-top">
                   <div>
-                    ${isNew ? '<span class="new-badge">🟠 NEW</span> ' : ""}
+                    ${isNew ? '<span class="new-badge">নতুন</span> ' : ""}
                     <span class="status-pill is-${status}">${statusLabel(status)}</span>
-                    ${wait ? `<span class="wait-tag">Waiting: ${esc(wait)}</span>` : ""}
+                    ${wait ? `<span class="wait-tag">অপেক্ষা: ${esc(wait)}</span>` : ""}
                   </div>
                   <span class="order-id">${esc(o.id)}</span>
                 </div>
+                <h4>${esc(o.name || "—")}</h4>
                 <div class="order-kv">
-                  <div><span>Customer</span><strong>${esc(o.name || "—")}</strong></div>
-                  <div>Phone: <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>${called ? ' <span class="called-tag">Called</span>' : ""}</div>
-                  <div>Address: ${esc(o.address || "—")}</div>
-                  <div>Product: <strong>${esc(o.productCode)} × ${esc(o.qty)}</strong>${product ? " · " + esc(product.name) : ""}</div>
+                  <div><a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>${called ? ' <span class="called-tag">কল হয়েছে</span>' : ""}</div>
+                  <div class="addr">${esc(o.address || "—")}</div>
+                  <div><strong>${esc(o.productCode)} × ${esc(o.qty)}</strong>${product ? " · " + esc(product.name) : ""} · ${taka(o.total)}</div>
                 </div>
-                <div class="order-card-meta">
-                  <strong>${taka(o.total)}</strong>
-                  <span>Payment: ${esc(pay)} · ${esc(o.paymentStatus || "pending")}</span>
-                  <span>Courier: ${esc(courier)}</span>
+                <div class="order-easy-actions">
+                  <a class="btn ok-btn" href="tel:${esc(o.phone)}">কল</a>
+                  ${next ? `<button class="btn btn-dark" type="button" data-status-order="${esc(o.id)}" data-status="${esc(next.status)}" data-kind="${esc(next.kind)}">${esc(next.label)}</button>` : ""}
+                  <button class="btn soft-btn" type="button" data-open-order="${esc(o.id)}">দেখুন</button>
                 </div>
-                ${progressHtml(o, true)}
-                <div class="order-card-meta">
-                  <small>${formatOrderTime(o.createdAt)}</small>
-                  <div class="row-actions">
-                    <button class="btn soft-btn" type="button" data-open-order="${esc(o.id)}">View Order</button>
-                    <div class="status-menu-wrap">
-                      <button class="btn btn-dark" type="button" data-status-toggle="${esc(o.id)}">Update Status ▼</button>
-                      <div class="status-menu" id="menu-${esc(o.id)}">${statusMenuHtml(o.id, status)}</div>
-                    </div>
-                  </div>
-                </div>
+                <small>${formatOrderTime(o.createdAt)}${pay ? " · " + esc(pay) : ""}${courier ? " · " + esc(courier) : ""}</small>
               </article>`;
           })
           .join("")}</div>`;
@@ -1863,13 +2059,17 @@
 
       function closeOrderDrawer() {
         const drawer = document.getElementById("orderDrawer");
-        drawer.classList.remove("is-open");
-        drawer.setAttribute("aria-hidden", "true");
+        const tab = document.getElementById("tab-orders");
+        if (drawer) {
+          drawer.classList.remove("is-open");
+          drawer.setAttribute("aria-hidden", "true");
+        }
+        if (tab) tab.classList.remove("is-order-open");
         currentOrderId = "";
       }
 
       function timelineHtml(order) {
-        const list = OrdersAPI.parseTimeline ? OrdersAPI.parseTimeline(order.timeline) : [];
+        const list = window.OrdersAPI && OrdersAPI.parseTimeline ? OrdersAPI.parseTimeline(order.timeline) : [];
         if (!list.length) return '<p class="empty">এখনো হিস্ট্রি নেই।</p>';
         return `<ol class="timeline-list">${list.map((item) => `
           <li>
@@ -1893,7 +2093,7 @@
           `${formatOrderTime(order.createdAt)} · ${order.source === "admin" ? "ম্যানুয়াল অর্ডার" : "ওয়েবসাইট অর্ডার"}`;
         document.getElementById("orderProgressBox").innerHTML =
           `<div class="order-section order-progress-wrap"><h4>F. Order status</h4>${progressHtml(order, true)}</div>`;
-        const tracking = OrdersAPI.orderTrackingId ? OrdersAPI.orderTrackingId(order) : (order.consignmentNo || order.steadfastTracking || "");
+        const tracking = window.OrdersAPI && OrdersAPI.orderTrackingId ? OrdersAPI.orderTrackingId(order) : (order.consignmentNo || order.steadfastTracking || "");
         const courier = order.courierName || "";
         document.getElementById("orderDetailSections").innerHTML = `
           <div class="order-section is-desk-only">
@@ -1957,7 +2157,7 @@
           ? "https://steadfast.com.bd/t/" + encodeURIComponent(tracking)
           : "";
         document.getElementById("orderQuickLinks").innerHTML = `
-          <a class="btn soft-btn" href="tel:${esc(order.phone)}">📞 Call</a>
+          <a class="btn soft-btn" href="tel:${esc(order.phone)}">📞 কল</a>
           ${digits ? `<a class="btn ok-btn" href="https://wa.me/${digits}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ""}
           ${trackUrl ? `<a class="btn soft-btn" href="${esc(trackUrl)}" target="_blank" rel="noopener">Track Shipment</a>` : ""}
         `;
@@ -1993,8 +2193,16 @@
         const drawerMenu = document.getElementById("drawerStatusMenu");
         if (drawerMenu) drawerMenu.innerHTML = statusMenuHtml(order.id, status);
         const drawer = document.getElementById("orderDrawer");
+        const tab = document.getElementById("tab-orders");
         drawer.classList.add("is-open");
         drawer.setAttribute("aria-hidden", "false");
+        if (tab) {
+          tab.classList.add("is-order-open");
+          tab.classList.remove("is-manual-open");
+        }
+        const manualForm = document.getElementById("manualOrderForm");
+        if (manualForm) manualForm.classList.add("is-hidden");
+        window.scrollTo(0, 0);
       }
 
       function openAdminModal(id) {
@@ -2016,7 +2224,7 @@
         const current = lastOrders.find((o) => o.id === id);
         if (!current) throw new Error("অর্ডার নেই");
         const note = timelineNoteFor(next, extra);
-        const timeline = OrdersAPI.appendTimeline
+        const timeline = window.OrdersAPI && OrdersAPI.appendTimeline
           ? OrdersAPI.appendTimeline(current, {
               status: next,
               action: extra.action || ("status_" + next),
@@ -2120,6 +2328,17 @@
         const btn = event.target.closest("[data-tab]");
         if (btn) switchTab(btn.dataset.tab);
       });
+      document.getElementById("tab-overview").addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-go]");
+        if (!btn) return;
+        goManage(btn.dataset.go, btn.dataset.extra || "");
+      });
+      document.getElementById("openAddProduct").addEventListener("click", () => setAddOpen("products", true));
+      document.getElementById("cancelAddProduct").addEventListener("click", () => setAddOpen("products", false));
+      document.getElementById("cancelAddProductBottom").addEventListener("click", () => setAddOpen("products", false));
+      document.getElementById("openAddOffer").addEventListener("click", () => setAddOpen("offers", true));
+      document.getElementById("cancelAddOffer").addEventListener("click", () => setAddOpen("offers", false));
+      document.getElementById("cancelAddOfferBottom").addEventListener("click", () => setAddOpen("offers", false));
 
       document.getElementById("refreshOrders").addEventListener("click", async () => {
         try {
@@ -2139,15 +2358,40 @@
       });
       document.getElementById("orderDateFrom").addEventListener("change", () => renderOrders());
       document.getElementById("orderDateTo").addEventListener("change", () => renderOrders());
-      document.getElementById("orderFilters").addEventListener("click", (event) => {
+      document.getElementById("orderDesk").addEventListener("click", (event) => {
         const btn = event.target.closest("[data-filter]");
         if (!btn) return;
-        orderFilter = btn.dataset.filter;
-        document.querySelectorAll("#orderFilters .admin-nav-btn").forEach((el) => {
-          el.classList.toggle("is-active", el === btn);
-        });
+        orderFilter = orderFilter === btn.dataset.filter ? "all" : btn.dataset.filter;
+        updateFilterCounts();
         renderOrders();
       });
+      function setManualOrderOpen(open) {
+        const form = document.getElementById("manualOrderForm");
+        const tab = document.getElementById("tab-orders");
+        const opener = document.getElementById("openManualOrder");
+        const note = document.getElementById("manualOrderNote");
+        if (!form) return;
+        form.classList.toggle("is-hidden", !open);
+        if (tab) tab.classList.toggle("is-manual-open", open);
+        if (opener) opener.classList.toggle("is-active", open);
+        if (open) {
+          closeOrderDrawer();
+          updateManualTotal();
+          window.scrollTo(0, 0);
+        } else {
+          form.reset();
+          if (form.elements.qty) form.elements.qty.value = 1;
+          if (form.confirmNow) form.confirmNow.checked = true;
+          updateManualTotal();
+          if (note) {
+            note.textContent = "";
+            note.classList.remove("is-error");
+          }
+        }
+      }
+      document.getElementById("openManualOrder").addEventListener("click", () => setManualOrderOpen(true));
+      document.getElementById("cancelManualOrder").addEventListener("click", () => setManualOrderOpen(false));
+      document.getElementById("cancelManualOrderBottom").addEventListener("click", () => setManualOrderOpen(false));
       document.getElementById("manualProduct").addEventListener("change", updateManualTotal);
       document.getElementById("manualQty").addEventListener("input", updateManualTotal);
       document.getElementById("manualSize").addEventListener("change", updateManualTotal);
@@ -2185,11 +2429,8 @@
               body: JSON.stringify(manualOrder),
             });
           }
-          form.reset();
-          form.qty.value = 1;
-          if (form.confirmNow) form.confirmNow.checked = true;
-          updateManualTotal();
-          setNote(note, "অর্ডার যোগ হয়েছে ✓", true);
+          setManualOrderOpen(false);
+          notify("অর্ডার যোগ হয়েছে ✓", true);
           bootDash();
         } catch (err) {
           note.classList.add("is-error");
@@ -2255,15 +2496,30 @@
         site.howto = readRepeat("#howtoEditor .repeat-row", ["title", "text"]);
         site.offersEnabled = siteDraft.offersEnabled !== false;
         if (siteDraft.logo) site.logo = siteDraft.logo;
-        const data = new FormData();
-        data.append("site", JSON.stringify(site));
-        data.append("token", token());
-        const logo = form.elements.logo.files[0];
-        if (logo) data.append("logo", logo);
+        if (site.logo && /^blob:/i.test(String(site.logo))) delete site.logo;
+        if (!PRODUCTS.length) {
+          setNote(note, "প্রোডাক্ট লোড হয়নি — একটু পরে আবার সেভ করুন", false);
+          return;
+        }
         try {
-          const saved = await api("admin/site", { method: "POST", headers: headers(), body: data });
-          fillWebsiteForm(saved);
-          setNote(note, "ওয়েবসাইট সেভ হয়েছে ✓", true);
+          if (window.OrdersAPI && OrdersAPI.saveCatalogRemote && OrdersAPI.hasCloudOrdersApi()) {
+            const saved = await OrdersAPI.saveCatalogRemote({
+              products: PRODUCTS,
+              offers: OFFERS,
+              site,
+            });
+            fillWebsiteForm((saved && saved.site) || site);
+            setNote(note, "ওয়েবসাইট সেভ হয়েছে ✓", true);
+          } else {
+            const data = new FormData();
+            data.append("site", JSON.stringify(site));
+            data.append("token", token());
+            const logo = form.elements.logo && form.elements.logo.files && form.elements.logo.files[0];
+            if (logo) data.append("logo", logo);
+            const saved = await api("admin/site", { method: "POST", headers: headers(), body: data });
+            fillWebsiteForm(saved);
+            setNote(note, "ওয়েবসাইট সেভ হয়েছে ✓", true);
+          }
         } catch (err) {
           setNote(note, err.message, false);
         }
@@ -2329,8 +2585,8 @@
               ? Math.max(1, Number(priorityRaw) || 1)
               : Number(code.replace(/\D/g, "")) || PRODUCTS.length + 1,
             name: String(form.name.value || "নতুন সেট").trim(),
-            price: Number(form.price.value || 2040),
-            price36: Number(form.price36.value || form.price.value || 2040),
+            price: Number(form.price.value || 450),
+            price36: Number(form.price36.value || form.price.value || 450),
             piece: Number(form.piece.value || 2),
             description: String(form.description.value || "").trim(),
             image: "",
@@ -2346,6 +2602,7 @@
               });
               if (cloud && cloud.code) {
                 Object.assign(product, cloud);
+                if (product.image && typeof fastSrc === "function") product.image = fastSrc(product.image);
                 via = "cloud";
                 API_MODE = "cloud";
               }
@@ -2382,13 +2639,14 @@
           PRODUCTS = sortProducts(PRODUCTS);
           try { writeLocal(LOCAL_KEYS.products, PRODUCTS); } catch (err) {}
           form.reset();
+          setAddOpen("products", false);
           switchTab("products");
           renderProducts(product.code);
           fillManualOrderForm();
           setModeNote();
           const row = document.querySelector(`[data-code="${product.code}"]`);
           if (row) row.scrollIntoView({ behavior: "smooth", block: "center" });
-          setNote(note, `${product.code} যোগ হয়েছে ✓`, true);
+          setNote(document.getElementById("productSyncNote"), `${product.code} যোগ হয়েছে ✓`, true);
         } catch (err) {
           setNote(note, err.message || "প্রোডাক্ট যোগ হয়নি", false);
         } finally {
@@ -2436,6 +2694,7 @@
               });
               if (saved && saved.code) {
                 Object.assign(product, saved);
+                if (product.image && typeof fastSrc === "function") product.image = fastSrc(product.image);
                 via = "cloud";
                 API_MODE = "cloud";
               }
@@ -2522,35 +2781,72 @@
         note.classList.remove("is-error");
         btn.disabled = true;
         try {
-          const data = new FormData(event.target);
-          const image = event.target.image && event.target.image.files[0];
-          if (image) data.set("image", await compressImage(image));
-          data.append("token", token());
-          const offer = await api("admin/offers", { method: "POST", headers: headers(), body: data });
-          event.target.reset();
-          if (offer && !OFFERS.some((o) => o.code === offer.code)) OFFERS.unshift(offer);
-          offers = OFFERS;
-          try { writeLocal(LOCAL_KEYS.offers, OFFERS); } catch (err) {}
-          let via = API_MODE === "php" || API_MODE === "server" ? "php" : "";
+          const form = event.target;
+          const image = form.image && form.image.files && form.image.files[0];
+          if (!image || !image.size) throw new Error("কম্বোর ছবি সিলেক্ট করুন");
+          const compressed = await compressImage(image, 1000);
+          const offer = {
+            code: firstFreeComboCode(OFFERS),
+            title: String(form.title.value || "কম্বো অফার").trim(),
+            price: Number(form.price.value || 1350),
+            price36: Number(form.price36.value || form.price.value || 1350),
+            piece: Number(form.piece.value || 6),
+            description: String(form.description.value || "").trim(),
+            image: "",
+          };
+          let via = "";
           if (window.OrdersAPI && OrdersAPI.saveOfferRemote && OrdersAPI.hasCloudOrdersApi()) {
             try {
               const cloud = await OrdersAPI.saveOfferRemote({
                 offer,
+                file: compressed,
                 seedProducts: PRODUCTS,
-                seedOffers: OFFERS,
+                seedOffers: OFFERS.concat([offer]),
               });
               if (cloud && cloud.code) {
                 Object.assign(offer, cloud);
+                if (offer.image && typeof fastSrc === "function") offer.image = fastSrc(offer.image);
                 via = "cloud";
                 API_MODE = "cloud";
               }
             } catch (err) {}
           }
+          if (!via) {
+            try {
+              const data = new FormData();
+              data.append("title", offer.title);
+              data.append("price", offer.price);
+              data.append("price36", offer.price36);
+              data.append("piece", offer.piece);
+              data.append("description", offer.description);
+              data.append("image", compressed);
+              data.append("token", token());
+              const saved = await api("admin/offers", { method: "POST", headers: headers(), body: data });
+              if (saved && saved.code) Object.assign(offer, saved);
+              if (API_MODE === "php" || API_MODE === "server") via = "php";
+              else via = via || "local";
+            } catch (err) {
+              if (!via) via = "local";
+            }
+          }
+          if (!offer.image) {
+            try {
+              offer.image = await fileToDataUrl(compressed);
+            } catch (err) {
+              offer.image = "images/set-01.jpg";
+            }
+          }
+          if (!OFFERS.some((o) => o.code === offer.code)) OFFERS.unshift(offer);
+          offers = OFFERS;
+          try { writeLocal(LOCAL_KEYS.offers, OFFERS); } catch (err) {}
+          form.reset();
+          setAddOpen("offers", false);
           renderOffers(offer.code);
           fillManualOrderForm();
-          setNote(note, `${offer.code} যোগ হয়েছে ✓`, true);
+          setModeNote();
+          notify(offer.code + " যোগ হয়েছে ✓", true);
         } catch (err) {
-          setNote(note, err.message, false);
+          setNote(note, err.message || "কম্বো যোগ হয়নি", false);
         } finally {
           btn.disabled = false;
         }
@@ -2630,8 +2926,21 @@
       });
 
       async function persistSiteDraft() {
+        const site = mergeSite(siteDraft);
+        if (site.logo && /^blob:/i.test(String(site.logo))) delete site.logo;
+        if (!PRODUCTS.length) throw new Error("প্রোডাক্ট লোড হয়নি — একটু পরে আবার চেষ্টা করুন");
+        if (window.OrdersAPI && OrdersAPI.saveCatalogRemote && OrdersAPI.hasCloudOrdersApi()) {
+          const saved = await OrdersAPI.saveCatalogRemote({
+            products: PRODUCTS,
+            offers: OFFERS,
+            site,
+          });
+          siteDraft = mergeSite((saved && saved.site) || site);
+          applySite(siteDraft);
+          return siteDraft;
+        }
         const data = new FormData();
-        data.append("site", JSON.stringify(mergeSite(siteDraft)));
+        data.append("site", JSON.stringify(site));
         data.append("token", token());
         const saved = await api("admin/site", { method: "POST", headers: headers(), body: data });
         siteDraft = mergeSite(saved);

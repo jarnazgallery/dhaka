@@ -114,7 +114,7 @@
 
   function pipelineIndex(status) {
     const s = canonicalStatus(status);
-    if (s === "new") return 0;
+    if (s === "new") return -1;
     const idx = ORDER_PIPELINE.findIndex((item) => item.id === s);
     return idx < 0 ? -1 : idx;
   }
@@ -666,6 +666,9 @@
     if (!item || typeof item !== "object") return item;
     const out = Object.assign({}, item);
     if (/^data:/i.test(String(out.image || ""))) delete out.image;
+    else if (/images\/set-\d+\.png$/i.test(String(out.image || ""))) {
+      out.image = String(out.image).replace(/\.png$/i, ".jpg");
+    }
     return out;
   }
 
@@ -709,13 +712,15 @@
 
   async function saveCatalogRemote(payload) {
     if (!isCloudOrdersApi()) throw new Error("cloud not configured");
-    const json = await cloudPost({
+    const body = {
       action: "catalogSave",
       products: (payload.products || []).map(cloudItemPayload),
       offers: (payload.offers || []).map(cloudItemPayload),
       seedProducts: (payload.seedProducts || payload.products || []).map(cloudItemPayload),
       seedOffers: (payload.seedOffers || payload.offers || []).map(cloudItemPayload),
-    });
+    };
+    if (payload.site) body.site = payload.site;
+    const json = await cloudPost(body);
     if (json && json.success) return json.catalog || json;
     throw new Error((json && json.error) || "ক্যাটালগ সেভ হয়নি");
   }

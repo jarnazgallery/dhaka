@@ -11,26 +11,24 @@ const SIZES = [
 ];
 
 const FALLBACK_PRODUCTS = [
-  { code: "SET-01", priority: 1, piece: 2, name: "Floral Top + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। ফ্লোরাল টপ ও ডেইজি শর্টস। নরম কটন।", image: "images/set-01.jpg" },
-  { code: "SET-02", priority: 2, piece: 2, name: "Navy Polka + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। নেভি পোলকা টপ ও পার্ল শর্টস।", image: "images/set-02.jpg" },
-  { code: "SET-03", priority: 3, piece: 2, name: "Blue Floral + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। ব্লু ফ্লোরাল টপ ও পার্ল শর্টস।", image: "images/set-03.jpg" },
-  { code: "SET-04", priority: 4, piece: 2, name: "Strawberry Top + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। স্ট্রবেরি টপ ও ডেইজি শর্টস।", image: "images/set-04.jpg" },
-  { code: "SET-05", priority: 5, piece: 2, name: "Navy Floral + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। নেভি ফ্লোরাল টপ ও পার্ল শর্টস।", image: "images/set-05.jpg" },
-  { code: "SET-06", priority: 6, piece: 2, name: "Pink Bow Top + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। পিঙ্ক বো টপ ও পার্ল শর্টস।", image: "images/set-06.jpg" },
-  { code: "SET-07", priority: 7, piece: 2, name: "Pink Check + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। পিঙ্ক চেক টপ ও ডেইজি শর্টস।", image: "images/set-07.jpg" },
-  { code: "SET-08", priority: 8, piece: 2, name: "Red Check + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। রেড চেক টপ ও ডেইজি শর্টস।", image: "images/set-08.jpg" },
-  { code: "SET-09", priority: 9, piece: 2, name: "Lilac Check + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। লাইলাক চেক টপ ও পার্ল শর্টস।", image: "images/set-09.jpg" },
-  { code: "SET-10", priority: 10, piece: 2, name: "Heart Top + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। হার্ট টপ ও ডেইজি শর্টস।", image: "images/set-10.jpg" },
-  { code: "SET-11", priority: 11, piece: 2, name: "Black Check + Daisy Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। ব্ল্যাক চেক টপ ও ডেইজি শর্টস।", image: "images/set-11.jpg" },
-  { code: "SET-12", priority: 12, piece: 2, name: "White Bow Top + Pearl Shorts", price: 2040, price36: 2040, description: "২ পিস কম্বো। হোয়াইট বো টপ ও পার্ল শর্টস।", image: "images/set-12.jpg" },
+  { code: "SET-01", priority: 1, piece: 2, name: "Floral Top + Daisy Shorts", price: 450, price36: 480, description: "২ পিস কম্বো। ফ্লোরাল টপ ও ডেইজি শর্টস। নরম কটন।", image: "images/set-01.jpg" },
+  { code: "SET-02", priority: 2, piece: 2, name: "Navy Polka + Pearl Shorts", price: 450, price36: 480, description: "২ পিস কম্বো। নেভি পোলকা টপ ও পার্ল শর্টস।", image: "images/set-02.jpg" },
+  { code: "SET-03", priority: 3, piece: 2, name: "Blue Floral + Pearl Shorts", price: 450, price36: 480, description: "২ পিস কম্বো। ব্লু ফ্লোরাল টপ ও পার্ল শর্টস।", image: "images/set-03.jpg" },
+  { code: "SET-04", priority: 4, piece: 2, name: "Strawberry Top + Daisy Shorts", price: 450, price36: 480, description: "২ পিস কম্বো। স্ট্রবেরি টপ ও ডেইজি শর্টস।", image: "images/set-04.jpg" },
+  { code: "SET-05", priority: 5, piece: 2, name: "Navy Floral + Pearl Shorts", price: 450, price36: 480, description: "২ পিস কম্বো। নেভি ফ্লোরাল টপ ও পার্ল শর্টস।", image: "images/set-05.jpg" },
+  { code: "SET-06", priority: 6, piece: 2, name: "Pink Bow Top + Pearl Shorts", price: 450, price36: 480, description: "২ পিস কম্বো। পিঙ্ক বো টপ ও পার্ল শর্টস।", image: "images/set-06.jpg" },
+  { code: "SET-07", priority: 7, piece: 2, name: "Pink Check + Daisy Shorts", price: 450, price36: 480, description: "২ পিস কম্বো। পিঙ্ক চেক টপ ও ডেইজি শর্টস।", image: "images/set-07.jpg" },
+  { code: "SET-08", priority: 8, piece: 2, name: "Red Check + Daisy Shorts", price: 450, price36: 480, description: "২ পিস কম্বো। রেড চেক টপ ও ডেইজি শর্টস।", image: "images/set-08.jpg" },
+  { code: "SET-09", priority: 9, piece: 2, name: "Lilac Check + Pearl Shorts", price: 450, price36: 480, description: "২ পিস কম্বো। লাইলাক চেক টপ ও পার্ল শর্টস।", image: "images/set-09.jpg" },
+  { code: "SET-10", priority: 10, piece: 2, name: "Heart Top + Daisy Shorts", price: 450, price36: 480, description: "২ পিস কম্বো। হার্ট টপ ও ডেইজি শর্টস।", image: "images/set-10.jpg" },
+  { code: "SET-11", priority: 11, piece: 2, name: "Black Check + Daisy Shorts", price: 450, price36: 480, description: "২ পিস কম্বো। ব্ল্যাক চেক টপ ও ডেইজি শর্টস।", image: "images/set-11.jpg" },
+  { code: "SET-12", priority: 12, piece: 2, name: "White Bow Top + Pearl Shorts", price: 450, price36: 480, description: "২ পিস কম্বো। হোয়াইট বো টপ ও পার্ল শর্টস।", image: "images/set-12.jpg" },
 ];
 
 const FALLBACK_OFFERS = [
-  { code: "COMBO-01", title: "কম্বো অফার ১", price: 2040, price36: 2040, piece: 2, image: "images/set-01.jpg", description: "" },
-  { code: "COMBO-02", title: "কম্বো অফার ২", price: 2040, price36: 2040, piece: 2, image: "images/set-02.jpg", description: "" },
-  { code: "COMBO-03", title: "কম্বো অফার ৩", price: 2040, price36: 2040, piece: 2, image: "images/set-04.jpg", description: "" },
-  { code: "COMBO-04", title: "কম্বো অফার ৪", price: 2040, price36: 2040, piece: 2, image: "images/set-07.jpg", description: "" },
-  { code: "COMBO-05", title: "কম্বো অফার ৫", price: 2690, price36: 2690, piece: 3, image: "images/set-10.jpg", description: "" },
+  { code: "COMBO-01", title: "কম্বো অফার ১", price: 1350, price36: 1450, piece: 6, image: "images/set-01.jpg", description: "৩ পিস টপস্ ৩ পিস জিন্স প্যান্ট" },
+  { code: "COMBO-02", title: "কম্বো অফার ২", price: 1350, price36: 1450, piece: 6, image: "images/set-02.jpg", description: "৩ পিস টপস্ ৩ পিস জিন্স প্যান্ট" },
+  { code: "COMBO-03", title: "কম্বো অফার ৩", price: 1350, price36: 1450, piece: 6, image: "images/set-04.jpg", description: "৩ পিস টপস্ ৩ পিস জিন্স প্যান্ট" },
 ];
 
 const FALLBACK_SITE = {
@@ -105,8 +103,12 @@ function taka(n) {
   return `৳${Number(n).toLocaleString("bn-BD")}`;
 }
 
-function fastSrc(src) {
-  const s = String(src || "").trim();
+function fastSrc(src, code) {
+  let s = String(src || "").trim();
+  if (/images\/set-\.(png|jpe?g|webp)$/i.test(s)) {
+    const n = String(code || "").replace(/\D/g, "");
+    if (n) s = "images/set-" + String(n).padStart(2, "0") + ".jpg";
+  }
   if (/images\/set-\d+\.png$/i.test(s)) return s.replace(/\.png$/i, ".jpg");
   return s;
 }
@@ -116,9 +118,9 @@ function isOlderSize(sizeValue) {
 }
 
 function priceForSize(product, sizeValue) {
-  if (!product) return 2040;
-  if (isOlderSize(sizeValue)) return Number(product.price36 || product.price || 2040);
-  return Number(product.price || 2040);
+  if (!product) return 450;
+  if (isOlderSize(sizeValue)) return Number(product.price36 || product.price || 450);
+  return Number(product.price || 450);
 }
 
 function htmlEsc(value) {
@@ -296,7 +298,7 @@ function offerAsProduct(offer) {
 function normalizeOffer(offer, products) {
   if (!offer) return null;
   const linked = (products || []).find((p) => p.code === offer.code);
-  const image = offer.image || (linked && linked.image) || "";
+  const image = fastSrc(offer.image || (linked && linked.image) || "", offer.code || (linked && linked.code));
   if (!image && !(offer.title || offer.name)) return null;
   return {
     code: offer.code || "COMBO-01",
@@ -522,15 +524,22 @@ function catalogLooksSafe(list) {
   });
 }
 
+function normalizeCatalogProduct(item) {
+  if (!item || typeof item !== "object") return item;
+  const out = Object.assign({}, item);
+  if (out.image) out.image = fastSrc(out.image, out.code);
+  return out;
+}
+
 function applyCatalogData(data) {
   data = data || {};
   const liveWrite = API_MODE === "server" || API_MODE === "php" || API_MODE === "cloud" || cloudSyncOn();
   if (liveWrite && Array.isArray(data.products)) {
-    PRODUCTS = sortProducts(data.products);
+    PRODUCTS = sortProducts(data.products.map(normalizeCatalogProduct));
     try { writeLocal(LOCAL_KEYS.products, PRODUCTS); } catch (err) {}
   } else {
     const localProducts = cloudSyncOn() ? null : readLocal(LOCAL_KEYS.products, null);
-    PRODUCTS = sortProducts(Array.isArray(localProducts) && localProducts.length ? localProducts : (data.products || FALLBACK_PRODUCTS.slice()));
+    PRODUCTS = sortProducts((Array.isArray(localProducts) && localProducts.length ? localProducts : (data.products || FALLBACK_PRODUCTS.slice())).map(normalizeCatalogProduct));
   }
   SITE = mergeSite(data.site);
   WHATSAPP = SITE.whatsapp || data.whatsapp || WHATSAPP;

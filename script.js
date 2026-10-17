@@ -13,7 +13,7 @@ let reviewTimer = null;
 function visualHTML(product, index) {
   const eager = Number(index) === 0;
   const raw = String(product.image || "");
-  const src = typeof fastSrc === "function" ? fastSrc(raw) : raw;
+  const src = typeof fastSrc === "function" ? fastSrc(raw, product && product.code) : raw;
   const fallback = src !== raw ? ` onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src='${htmlEsc(raw)}';}"` : "";
   return `<div class="set-visual"><img src="${htmlEsc(src)}" alt="${htmlEsc(product.code)} ${htmlEsc(product.name)}" ${eager ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} decoding="async" width="640" height="640"${fallback} /><span class="set-chip">${htmlEsc(product.code)}</span></div>`;
 }
@@ -45,6 +45,7 @@ function cardHTML(product, index) {
 function renderProducts() {
   PRODUCTS = sortProducts(PRODUCTS);
   const grid = document.getElementById("productGrid");
+  if (!grid) return;
   if (!PRODUCTS.length) {
     grid.innerHTML = '<p class="empty-pick">এখনো প্রোডাক্ট নেই। একটু পরে আবার দেখুন।</p>';
   } else {
@@ -651,7 +652,7 @@ function showOffer(index) {
   offerIndex = (index + offers.length) % offers.length;
   revealOfferImgs(offerIndex);
   const track = document.getElementById("offerTrack");
-  track.style.transform = `translateX(-${offerIndex * 100}%)`;
+  if (track) track.style.transform = `translateX(-${offerIndex * 100}%)`;
   document.querySelectorAll(".offer-dots .dot").forEach((dot, i) => {
     dot.classList.toggle("is-active", i === offerIndex);
   });
@@ -669,30 +670,34 @@ function startOfferTimer() {
 
 function bindOfferSlider() {
   if (window._offerBound) return;
+  const prev = document.getElementById("offerPrev");
+  const next = document.getElementById("offerNext");
+  const dots = document.getElementById("offerDots");
+  const orderNow = document.getElementById("offerOrderNow");
+  const slider = document.getElementById("offerSlider");
+  if (!prev || !next || !dots || !orderNow || !slider) return;
   window._offerBound = true;
 
-  document.getElementById("offerPrev").addEventListener("click", () => {
+  prev.addEventListener("click", () => {
     showOffer(offerIndex - 1);
     startOfferTimer();
   });
-  document.getElementById("offerNext").addEventListener("click", () => {
+  next.addEventListener("click", () => {
     showOffer(offerIndex + 1);
     startOfferTimer();
   });
-  document.getElementById("offerDots").addEventListener("click", (event) => {
+  dots.addEventListener("click", (event) => {
     const dot = event.target.closest("[data-dot]");
     if (!dot) return;
     showOffer(Number(dot.dataset.dot));
     startOfferTimer();
   });
-  document.getElementById("offerOrderNow").addEventListener("click", () => {
+  orderNow.addEventListener("click", () => {
     const offer = currentOffer();
     if (!offer) return;
     document.getElementById("comboSelect").value = String(offer.piece || 2);
     openSizeModal(offer.code, offer.price);
   });
-
-  const slider = document.getElementById("offerSlider");
   let startX = 0;
   slider.addEventListener("touchstart", (event) => {
     startX = event.changedTouches[0].clientX;
@@ -746,7 +751,8 @@ function showReview(index) {
   const items = reviewList();
   if (!items.length) return;
   reviewIndex = (index + items.length) % items.length;
-  document.getElementById("reviewTrack").style.transform = `translateX(-${reviewIndex * 100}%)`;
+  const track = document.getElementById("reviewTrack");
+  if (track) track.style.transform = `translateX(-${reviewIndex * 100}%)`;
   document.querySelectorAll("#reviewDots .dot").forEach((dot, i) => {
     dot.classList.toggle("is-active", i === reviewIndex);
   });
@@ -761,22 +767,26 @@ function startReviewTimer() {
 
 function bindReviewSlider() {
   if (window._reviewBound) return;
+  const prev = document.getElementById("reviewPrev");
+  const next = document.getElementById("reviewNext");
+  const dots = document.getElementById("reviewDots");
+  const slider = document.getElementById("reviewSlider");
+  if (!prev || !next || !dots || !slider) return;
   window._reviewBound = true;
-  document.getElementById("reviewPrev").addEventListener("click", () => {
+  prev.addEventListener("click", () => {
     showReview(reviewIndex - 1);
     startReviewTimer();
   });
-  document.getElementById("reviewNext").addEventListener("click", () => {
+  next.addEventListener("click", () => {
     showReview(reviewIndex + 1);
     startReviewTimer();
   });
-  document.getElementById("reviewDots").addEventListener("click", (event) => {
+  dots.addEventListener("click", (event) => {
     const dot = event.target.closest("[data-review-dot]");
     if (!dot) return;
     showReview(Number(dot.dataset.reviewDot));
     startReviewTimer();
   });
-  const slider = document.getElementById("reviewSlider");
   let startX = 0;
   slider.addEventListener("touchstart", (event) => {
     startX = event.changedTouches[0].clientX;
