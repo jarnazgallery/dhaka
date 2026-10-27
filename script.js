@@ -1,3 +1,28 @@
+function pixelTrack(event, data) {
+  if (typeof window.fbq !== "function") return;
+  try {
+    window.fbq("track", event, data || {});
+  } catch (err) {}
+}
+
+function pixelPayload(product, extra) {
+  extra = extra || {};
+  const code = extra.content_ids ? extra.content_ids[0] : (product && product.code) || "";
+  const qty = Number(extra.num_items || extra.qty || 1) || 1;
+  const value = Number(extra.value != null ? extra.value : (product && product.price) || 0);
+  const payload = {
+    content_ids: code ? [String(code)] : [],
+    content_name: String((product && (product.name || product.title)) || extra.content_name || ""),
+    content_type: "product",
+    contents: code ? [{ id: String(code), quantity: qty }] : [],
+    value,
+    currency: "BDT",
+    num_items: qty,
+  };
+  if (extra.order_id) payload.order_id = String(extra.order_id);
+  return payload;
+}
+
 let selected = null;
 let pendingCode = null;
 let lastOrder = null;
@@ -111,6 +136,9 @@ function openSizeModal(code, offerPrice) {
   document.body.classList.add("modal-open");
   document.getElementById("sizeModal").classList.add("is-open");
   document.getElementById("sizeModal").setAttribute("aria-hidden", "false");
+  pixelTrack("ViewContent", pixelPayload(product, {
+    value: Number(offerPrice || product.price || 0),
+  }));
 }
 
 function closeSizeModal() {
@@ -128,6 +156,9 @@ function applySize(sizeValue) {
   document.querySelectorAll(".size-btn").forEach((btn) => {
     btn.classList.toggle("is-active", btn.dataset.size === size.value);
   });
+  const product = findProduct(pendingCode);
+  const unit = unitPrice(product, size.value);
+  pixelTrack("AddToCart", pixelPayload(product, { value: unit, num_items: 1 }));
   setTimeout(goToDetails, 120);
 }
 
@@ -142,6 +173,12 @@ function goToDetails() {
   fillRememberedCustomer();
   showStep(2);
   updateTotal();
+  const qtyInput = document.querySelector('#orderForm [name="qty"]');
+  const qty = Number((qtyInput && qtyInput.value) || 1) || 1;
+  pixelTrack("InitiateCheckout", pixelPayload(selected || findProduct(pendingCode), {
+    value: unit * qty,
+    num_items: qty,
+  }));
 }
 
 function unitPrice(product, sizeValue) {
@@ -271,6 +308,13 @@ function waLink(order) {
 
 function showConfirm(order) {
   lastOrder = order;
+  const productForPixel = findProduct(order.productCode);
+  pixelTrack("Purchase", pixelPayload(productForPixel, {
+    value: Number(order.total || 0),
+    num_items: Number(order.qty || 1) || 1,
+    order_id: order.id,
+    content_ids: [order.productCode],
+  }));
   const product = findProduct(order.productCode);
   const size = (SIZES.find((item) => item.value === order.size) || {}).label || order.size;
   const onServer = order.savedOnServer !== false && (
